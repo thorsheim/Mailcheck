@@ -85,6 +85,7 @@ Custom selectors can be entered in the DKIM tab.
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-April-08-5 | 2026-04-08 | Security.txt: also tries www. subdomain; CORS-blocked fetches show informative message + manual check links |
 | 2026-April-08-4 | 2026-04-08 | Footer version line hints "click for changelog" |
 | 2026-April-08-3 | 2026-04-08 | Changelog panel in footer |
 | 2026-April-08-2 | 2026-04-08 | Raw DKIM record displayed in key details |

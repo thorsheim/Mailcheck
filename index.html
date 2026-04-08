@@ -510,8 +510,15 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-April-08-4 &mdash; click for changelog</summary>
+      <summary>Version 2026-April-08-5 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-April-08-5</span>
+          <ul class="cl-changes">
+            <li>Security.txt: also checks https://www.&lt;domain&gt; when bare domain fetch fails (many orgs host security.txt on www subdomain)</li>
+            <li>Security.txt: when fetch fails due to CORS, shows informative message and clickable links to all checked URLs for manual verification</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-April-08-4</span>
           <ul class="cl-changes">
@@ -678,6 +685,8 @@ const STRINGS = {
       STXT_FOUND:          '\u2713 security.txt found',
       STXT_RAW:            'Raw security.txt',
       STXT_NOT_FOUND:      'Not found.',
+      STXT_CORS_BLOCKED:   'Could not fetch security.txt \u2014 server does not allow cross-origin requests (CORS). The file may exist; verify manually:',
+      STXT_CHECK_MANUALLY: 'URLs checked:',
       // WHOIS
       WHOIS_RDAP_OK:       '\u2713 RDAP data retrieved',
       WHOIS_ROW_REGISTRAR: 'Registrar',
@@ -1094,6 +1103,8 @@ const STRINGS = {
       STXT_FOUND:          '\u2713 security.txt funnet',
       STXT_RAW:            'R\u00e5 security.txt',
       STXT_NOT_FOUND:      'Ikke funnet.',
+      STXT_CORS_BLOCKED:   'Kunne ikke hente security.txt \u2014 serveren tillater ikke kryssopprinnelsesforesp\u00f8rsler (CORS). Filen kan finnes; sjekk manuelt:',
+      STXT_CHECK_MANUALLY: 'URL-er sjekket:',
       // WHOIS
       WHOIS_RDAP_OK:       '\u2713 RDAP-data hentet',
       WHOIS_ROW_REGISTRAR: 'Registrar',
@@ -2475,22 +2486,29 @@ async function checkCAA(domain) {
 // ── Security.txt (RFC 9116) ───────────────────────────────────────────────────
 
 async function checkSecurityTxt(domain) {
+  const base = 'https://' + domain;
+  const wwwBase = domain.startsWith('www.') ? null : 'https://www.' + domain;
   const urls = [
-    'https://' + domain + '/.well-known/security.txt',
-    'https://' + domain + '/security.txt',
+    base + '/.well-known/security.txt',
+    base + '/security.txt',
+    ...(wwwBase ? [wwwBase + '/.well-known/security.txt', wwwBase + '/security.txt'] : []),
   ];
 
   let text = null;
   let fetchedUrl = null;
+  let corsBlocked = false;
   for (const url of urls) {
     try {
-      const resp = await fetch(url);
+      const resp = await fetch(url, { signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined });
       if (resp.ok) { text = await resp.text(); fetchedUrl = url; break; }
-    } catch (_) {}
+    } catch (e) {
+      // TypeError usually means CORS or network failure; track for messaging
+      if (e instanceof TypeError) corsBlocked = true;
+    }
   }
 
   if (!text) {
-    return { rating: 'warning', found: false, message: 'No security.txt found at /.well-known/security.txt or /security.txt.' };
+    return { rating: 'warning', found: false, corsBlocked, checkedUrls: urls };
   }
 
   // Parse RFC 9116 fields (key: value lines, # comments ignored)
@@ -3862,7 +3880,25 @@ function renderSecurityTxt(result) {
   const d = result.status === 'fulfilled' ? result.value : { rating: 'warning', found: false, message: 'Check failed' };
   setTabResult('security-txt', d.rating, body => {
     if (!d.found) {
-      body.appendChild(el('div', 'card-summary', d.message || ts('STXT_NOT_FOUND')));
+      const msg = el('div', 'card-summary');
+      if (d.corsBlocked) {
+        msg.appendChild(document.createTextNode(ts('STXT_CORS_BLOCKED')));
+      } else {
+        msg.appendChild(document.createTextNode(d.message || ts('STXT_NOT_FOUND')));
+      }
+      body.appendChild(msg);
+      // Show manual check links
+      if (d.checkedUrls && d.checkedUrls.length > 0) {
+        const linkSec = el('div', 'panel-section');
+        linkSec.appendChild(el('div', 'panel-section-label', ts('STXT_CHECK_MANUALLY')));
+        for (const u of d.checkedUrls) {
+          const a = document.createElement('a');
+          a.href = u; a.textContent = u; a.target = '_blank'; a.rel = 'noopener noreferrer';
+          a.style.cssText = 'display:block;font-size:0.82rem;margin-bottom:0.2rem';
+          linkSec.appendChild(a);
+        }
+        body.appendChild(linkSec);
+      }
     } else {
       const sum = el('div', 'card-summary');
       sum.appendChild(el('b', null, ts('STXT_FOUND')));
