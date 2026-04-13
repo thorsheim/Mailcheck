@@ -323,9 +323,6 @@ remain scalar.
 ## Testing notes
 - `gmail.com` — SPF `~all`, DKIM `google`/`selector1`/`selector2`, DMARC p=none
 - `cloudflare.com` — DNSSEC alg 13 (ECDSAP256SHA256); good CAA + RPKI coverage; DMARC p=reject
-- `domeneshop.no` — DNSSEC alg 15 (ED25519); MX host at `mx.domeneshop.no` (triggers zone-apex fallback); MTA-STS policy fetch fails with CORS (correct: shows warning)
-- `eika.no` — selector `mta` (RSA 1024-bit), `pp2022` (RSA 2048-bit)
-- `tietoevry.com` — good general test with multiple DKIM selectors
 - `dmarcadvisor.com` — SPF redirect= only (no mechanisms, no all); tests redirect following
 - `apple.com` — has BIMI record; tests BIMI tab
 - `fastmail.com` — MTA-STS enforce mode with multiple mx: lines; tests MX match check
