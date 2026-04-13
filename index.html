@@ -429,7 +429,7 @@
   <div id="tab-panels">
     <div class="tab-panel active" id="panel-overview">
       <div class="panel-body">
-        <div id="overview-placeholder" style="color:var(--text-muted);font-size:0.88rem" data-i18n="OVERVIEW_PLACEHOLDER">Enter a domain and click Check.</div>
+        <div id="overview-placeholder" style="color:var(--text-muted);font-size:0.88rem" data-i18n="OVERVIEW_PLACEHOLDER">Type in a domain name like google.com or microsoft.com, and click Check. Please understand that results may not be correct due to limitations in your browser or in the network from which you are testing. Scores are for indicative purposes only, they do not necessarily tell the full truth or show compliance with relevant standards.</div>
         <div id="overview-content" style="display:none">
           <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
             <div class="grade-badge" id="summary-grade">?</div>
@@ -577,8 +577,14 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-April-13-3 &mdash; click for changelog</summary>
+      <summary>Version 2026-April-13-4 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-April-13-4</span>
+          <ul class="cl-changes">
+            <li>Overview placeholder text updated with usage guidance and disclaimer about result accuracy</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-April-13-3</span>
           <ul class="cl-changes">
@@ -667,7 +673,7 @@ const STRINGS = {
       BTN_CHECK:           'Check',
       BTN_CHECKING:        'Checking\u2026',
       LANG_LABEL:          'Language',
-      OVERVIEW_PLACEHOLDER:'Enter a domain and click Check.',
+      OVERVIEW_PLACEHOLDER:'Type in a domain name like google.com or microsoft.com, and click Check. Please understand that results may not be correct due to limitations in your browser or in the network from which you are testing. Scores are for indicative purposes only, they do not necessarily tell the full truth or show compliance with relevant standards.',
       RUNNING_CHECKS:      'Running checks\u2026',
       CHECKING:            'Checking\u2026',
       PANEL_DNSSEC:        'DNSSEC',
@@ -1100,7 +1106,7 @@ const STRINGS = {
       BTN_CHECK:           'Sjekk',
       BTN_CHECKING:        'Sjekker\u2026',
       LANG_LABEL:          'Spr\u00e5k',
-      OVERVIEW_PLACEHOLDER:'Skriv inn et domene og klikk Sjekk.',
+      OVERVIEW_PLACEHOLDER:'Skriv inn et domenenavn som google.com eller microsoft.com, og klikk Sjekk. Merk at resultatene kan v\u00e6re feil p\u00e5 grunn av begrensninger i nettleseren din eller i nettverket du tester fra. Poengsummene er kun veiledende og viser ikke n\u00f8dvendigvis sannheten eller etterlevelse av relevante standarder.',
       RUNNING_CHECKS:      'Kj\u00f8rer sjekker\u2026',
       CHECKING:            'Sjekker\u2026',
       PANEL_DNSSEC:        'DNSSEC',
