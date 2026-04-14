@@ -155,7 +155,11 @@ const resolvedText = iss.textKey
   : iss.text;   // legacy fallback
 ```
 
+**`STRINGS` lives in its own `<script>` block**, separated from the main logic script by a closing `</script>` / opening `<script>` pair. The block is preceded by a `<!-- TRANSLATIONS -->` HTML comment banner. The main logic script opens immediately after with `'use strict'`.
+
 **Adding a new language**: add a new key (e.g. `fr`) to `STRINGS` with all three sub-objects (`s`, `d`, `x`), then add `<option value="fr">Français</option>` to `#lang-select`. No other changes needed.
+
+**Contributor workflow**: external translators submit only `translations/<lang>.js` (copied from `translations/TEMPLATE.js`). The maintainer pastes it into the `STRINGS` block in `index.html` and adds the `<option>` tag on merge. See `translations/CONTRIBUTING.md`.
 
 **Current languages**: `en` (English, default), `no` (Norwegian Bokmål).
 

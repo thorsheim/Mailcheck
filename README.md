@@ -75,6 +75,21 @@ Custom selectors can be entered in the DKIM tab.
 - Links validated to `https?:` or `mailto:` schemes before use as `href`
 - No data is sent to any server other than Cloudflare DoH, RIPE Stat, and rdap.org
 
+## Contributing a translation
+
+The UI currently ships in **English** and **Norwegian Bokmål**. Adding a new language requires editing only two places in `index.html` — no build tools needed.
+
+See **[translations/CONTRIBUTING.md](translations/CONTRIBUTING.md)** for the full step-by-step guide.
+
+**Quick overview:**
+1. Copy [`translations/TEMPLATE.js`](translations/TEMPLATE.js) and fill in your translations
+2. Open a pull request with only your language file — do not edit `index.html`
+3. The maintainer integrates it on merge
+
+Missing keys fall back to English automatically, so partial translations are welcome.
+
+---
+
 ## Adding a new release
 
 1. Do the work in `index.html`

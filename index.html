@@ -666,16 +666,36 @@
   </footer>
 </div>
 
+<!-- =============================================================
+     TRANSLATIONS
+     To add a new language:
+       1. Copy translations/TEMPLATE.js as your starting point.
+       2. Add a new key (e.g. "fr") to the STRINGS object below,
+          with all three sub-objects: s, d, and x.
+       3. Add <option value="fr">Français</option> to #lang-select
+          (search for "lang-select" in this file — it is near the top).
+       4. Open a pull request. See translations/CONTRIBUTING.md for details.
+     ============================================================= -->
 <script>
-'use strict';
-
-/* Security note: All DNS data uses textContent (never innerHTML). Issue strings use
-   textContent. Explanations use safeMarkup() which only allows <b>, <code>, <br> tags. */
-
-// ── i18n ──────────────────────────────────────────────────────────────────────
+// ── Translations ──────────────────────────────────────────────────────────────
+//
+//  STRINGS is the single source of all user-visible text.
+//  Each language key ("en", "no", …) contains three namespaces:
+//
+//  s  — Static strings.   Plain key → string.   Access via  ts('KEY')
+//  d  — Dynamic strings.  key → arrow function that takes arguments and
+//       returns a string (used for pluralisation / interpolation).
+//                                                Access via  td('KEY', arg1, …)
+//  x  — Explanations.     key → HTML string shown in the expandable
+//       "What is this?" section at the bottom of each tab.
+//       Allowed HTML tags: <b>  <a href="…">  <code>  <br>
+//                                                Access via  tx('KEY')
+//
+//  Missing keys fall back to English automatically.
 
 const STRINGS = {
   en: {
+    // ── s: static strings ────────────────────────────────────────────────────
     s: {
       APP_TITLE:           'DNS Email Security Checker',
       APP_SUBTITLE:        'Check DNSSEC, MX, SPF, DKIM and more for any domain',
@@ -775,6 +795,7 @@ const STRINGS = {
       DKIM_DNSSEC:         'DNSSEC',
       DKIM_DNSSEC_OK:      '\u2713 validated',
       DKIM_DNSSEC_FAIL:    '\u2717 not validated',
+      DKIM_NONE_FOUND_NOTE:'This does not mean DKIM is not configured \u2014 it only means none of the standard selector names commonly used were found.',
       // TLS-RPT
       TLSRPT_FOUND:        'TLS-RPT record found.',
       TLSRPT_NOT_FOUND:    'No TLS-RPT record.',
@@ -887,13 +908,16 @@ const STRINGS = {
       MTASTS_MX_MISMATCH:  'One or more MX hosts not covered by any policy mx: pattern',
       MTASTS_MX_NO_PATTERNS: 'MTA-STS policy has no mx: lines',
     },
+    // ── d: dynamic strings (arrow functions) ─────────────────────────────────
+    // Each value is an arrow function.  Write the translated sentence as the
+    // function body, using the same argument names.  Example:
+    //   MX_HOSTS_FOUND: n => n + ' MX hosts found.'
     d: {
       MX_HOSTS_FOUND:        n => n + ' MX host' + (n !== 1 ? 's' : '') + ' found.',
       DKIM_SELECTORS_FOUND:  n => n + ' selector' + (n !== 1 ? 's' : '') + ' found',
       DKIM_ACROSS_PROVIDERS: n => 'across ' + n + ' provider' + (n !== 1 ? 's' : ''),
       DKIM_SELECTORS_TESTED: n => n + ' selectors tested.',
       DKIM_NONE_FOUND:       n => 'No DKIM selectors found. ' + n + ' selectors were tested.',
-      DKIM_NONE_FOUND_NOTE:  'This does not mean DKIM is not configured \u2014 it only means none of the standard selector names commonly used were found.',
       DKIM_AUTO_TESTED:      n => n + ' selectors automatically tested',
       SPF_FOUND_LOOKUPS:     n => 'SPF record found. ' + n + ' DNS lookup mechanism' + (n !== 1 ? 's' : '') + '.',
       SPF_MULTI_RECORDS:     n => 'Multiple SPF records found (' + n + ') \u2014 requires exactly one',
@@ -936,6 +960,10 @@ const STRINGS = {
       BIMI_AUTHORITY_URL:    url => 'Authority URL: ' + url,
       PTR_VALUE:             v => 'PTR: ' + v,
     },
+    // ── x: explanation strings (HTML) ────────────────────────────────────────
+    // Each value is an HTML string rendered in the expandable "What is this?"
+    // section at the bottom of each tab.
+    // Allowed tags: <b>  <a href="…">  <code>  <br>
     x: {
       DMARC:
         '<b>DMARC (Domain-based Message Authentication, Reporting and Conformance, <a href="https://www.rfc-editor.org/rfc/rfc7489">RFC 7489</a>)</b> ' +
@@ -1116,6 +1144,7 @@ const STRINGS = {
     },
   },
   no: {
+    // ── s: static strings ────────────────────────────────────────────────────
     s: {
       APP_TITLE:           'DNS e-postsikkerhetssjekk',
       APP_SUBTITLE:        'Sjekk DNSSEC, MX, SPF, DKIM og mer for et domene',
@@ -1215,6 +1244,7 @@ const STRINGS = {
       DKIM_DNSSEC:         'DNSSEC',
       DKIM_DNSSEC_OK:      '\u2713 validert',
       DKIM_DNSSEC_FAIL:    '\u2717 ikke validert',
+      DKIM_NONE_FOUND_NOTE:'Dette betyr ikke at DKIM ikke er konfigurert \u2014 det betyr bare at ingen av de vanlige selectornavnene ble funnet.',
       // TLS-RPT
       TLSRPT_FOUND:        'TLS-RPT-post funnet.',
       TLSRPT_NOT_FOUND:    'Ingen TLS-RPT-post.',
@@ -1327,13 +1357,13 @@ const STRINGS = {
       MTASTS_MX_MISMATCH:  '\u00c9n eller flere MX-verter dekkes ikke av noen policy mx:-m\u00f8nster',
       MTASTS_MX_NO_PATTERNS: 'MTA-STS-policyen har ingen mx:-linjer',
     },
+    // ── d: dynamic strings (arrow functions) ─────────────────────────────────
     d: {
       MX_HOSTS_FOUND:        n => n + ' MX-vert' + (n !== 1 ? 'er' : '') + ' funnet.',
       DKIM_SELECTORS_FOUND:  n => n + ' selektor' + (n !== 1 ? 'er' : '') + ' funnet',
       DKIM_ACROSS_PROVIDERS: n => 'hos ' + n + ' leverand\u00f8r' + (n !== 1 ? 'er' : ''),
       DKIM_SELECTORS_TESTED: n => n + ' selektorer testet.',
       DKIM_NONE_FOUND:       n => 'Ingen DKIM-selektorer funnet. ' + n + ' selektorer ble testet.',
-      DKIM_NONE_FOUND_NOTE:  'Dette betyr ikke at DKIM ikke er konfigurert \u2014 det betyr bare at ingen av de vanlige selectornavnene ble funnet.',
       DKIM_AUTO_TESTED:      n => n + ' selektorer testet automatisk',
       SPF_FOUND_LOOKUPS:     n => 'SPF-post funnet. ' + n + ' DNS-oppslagsmekanisme' + (n !== 1 ? 'r' : '') + '.',
       SPF_MULTI_RECORDS:     n => 'Flere SPF-poster funnet (' + n + ') \u2014 m\u00e5 v\u00e6re n\u00f8yaktig \u00e9n',
@@ -1376,6 +1406,7 @@ const STRINGS = {
       BIMI_AUTHORITY_URL:    url => 'Autoritets-URL: ' + url,
       PTR_VALUE:             v => 'PTR: ' + v,
     },
+    // ── x: explanation strings (HTML) ────────────────────────────────────────
     x: {
       DMARC:
         '<b>DMARC (Domain-based Message Authentication, Reporting and Conformance, <a href="https://www.rfc-editor.org/rfc/rfc7489">RFC 7489</a>)</b> ' +
@@ -1556,6 +1587,13 @@ const STRINGS = {
     },
   },
 };
+</script>
+
+<script>
+'use strict';
+
+/* Security note: All DNS data uses textContent (never innerHTML). Issue strings use
+   textContent. Explanations use safeMarkup() which only allows <b>, <code>, <br> tags. */
 
 let currentLang = localStorage.getItem('mailcheck-lang') || 'en';
 
@@ -4379,7 +4417,7 @@ function renderSummary({ dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, 
   // Separator for informational tabs
   const sep = el('div', null);
   sep.style.cssText = 'font-size:0.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:0.6rem;padding-top:0.4rem;border-top:1px solid var(--border)';
-  sep.textContent = 'Informational (not scored)';
+  sep.textContent = ts('SCORING_INFO');
   barsEl.appendChild(sep);
 
   [['PTR', ptr_r], ['BIMI', bimi_r], ['RPKI', rpki_r], ['ASPA', aspa_r], ['Sec.txt', stxt_r], ['WHOIS', whois_r]
