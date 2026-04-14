@@ -109,7 +109,7 @@ const LANG_TEMPLATE = {
     SCORING_GRADES:         '',  // "Grade thresholds"
 
     // Skip options (checkboxes on the input page)
-    OPT_SKIP_CORS:          '',  // Label: "Skip to avoid CORS issues:"
+    OPT_SKIP_CORS:          '',  // Checkbox label: "Skip MTA-STS and Security.txt checks to avoid CORS issues"
     CHECK_SKIPPED:          '',  // Shown in panel body when a check was skipped: "This check was skipped."
     RATING_SKIP:            '',  // Badge label: "Skipped"
 

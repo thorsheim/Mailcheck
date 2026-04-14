@@ -414,13 +414,9 @@
         <option value="no">Norsk</option>
       </select>
     </div>
-    <div style="margin-top:0.45rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-      <span style="font-size:0.78rem;color:var(--text-muted)" data-i18n="OPT_SKIP_CORS">Skip to avoid CORS issues:</span>
+    <div style="margin-top:0.45rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
       <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.82rem;color:var(--text-muted);cursor:pointer">
-        <input type="checkbox" id="skip-mtasts-cb"> <span data-i18n="PANEL_MTASTS">MTA-STS</span>
-      </label>
-      <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.82rem;color:var(--text-muted);cursor:pointer">
-        <input type="checkbox" id="skip-stxt-cb"> <span data-i18n="PANEL_STXT">Security.txt</span>
+        <input type="checkbox" id="skip-cors-cb"> <span data-i18n="OPT_SKIP_CORS">Skip MTA-STS and Security.txt checks to avoid CORS issues</span>
       </label>
     </div>
     <div id="share-row" style="display:none;margin-top:0.45rem">
@@ -600,8 +596,14 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-April-14-5 &mdash; click for changelog</summary>
+      <summary>Version 2026-April-14-6 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-April-14-6</span>
+          <ul class="cl-changes">
+            <li>Skip CORS option consolidated to a single checkbox: &ldquo;Skip MTA-STS and Security.txt checks to avoid CORS issues&rdquo;</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-April-14-5</span>
           <ul class="cl-changes">
@@ -812,7 +814,7 @@ const STRINGS = {
       SCORING_RATINGS:     'Rating points',
       SCORING_GRADES:      'Grade thresholds',
       // Skip options
-      OPT_SKIP_CORS:       'Skip to avoid CORS issues:',
+      OPT_SKIP_CORS:       'Skip MTA-STS and Security.txt checks to avoid CORS issues',
       CHECK_SKIPPED:       'This check was skipped.',
       RATING_SKIP:         'Skipped',
       // Share link
@@ -1268,7 +1270,7 @@ const STRINGS = {
       SCORING_RATINGS:     'Ratingpoeng',
       SCORING_GRADES:      'Karaktergrenser',
       // Skip options
-      OPT_SKIP_CORS:       'Hopp over for \u00e5 unng\u00e5 CORS-problemer:',
+      OPT_SKIP_CORS:       'Hopp over MTA-STS- og Security.txt-sjekker for \u00e5 unng\u00e5 CORS-problemer',
       CHECK_SKIPPED:       'Denne sjekken ble hoppet over.',
       RATING_SKIP:         'Hoppet over',
       // Share link
@@ -1720,7 +1722,7 @@ const STRINGS = {
       SCORING_INFO:        'Informaj (ne poentitaj)',
       SCORING_RATINGS:     'Poentoj la\u016d taksado',
       SCORING_GRADES:      'Grado-sojloj',
-      OPT_SKIP_CORS:       'Preterpasi por eviti CORS-problemojn:',
+      OPT_SKIP_CORS:       'Preterpasi MTA-STS kaj Security.txt-kontrolojn por eviti CORS-problemojn',
       CHECK_SKIPPED:       '\u0108i tiu kontrolo estis preterpasita.',
       DNSSEC_VALIDATED:    '\u2713 DNSSEC konfirmita (AD=vera)',
       DNSSEC_UNVALIDATED:  '\u26a0 Subskribita sed ne konfirmita de solvilisto (AD=malvera)',
@@ -5003,16 +5005,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const selectorInput = document.getElementById('selector-input');
   const checkBtn      = document.getElementById('check-btn');
   const errorEl       = document.getElementById('input-error');
-  const skipMTASTSCb  = document.getElementById('skip-mtasts-cb');
-  const skipStxtCb    = document.getElementById('skip-stxt-cb');
+  const skipCorsCb    = document.getElementById('skip-cors-cb');
   const shareRow      = document.getElementById('share-row');
   const copyLinkBtn   = document.getElementById('copy-link-btn');
 
-  // Restore persisted skip preferences (URL params will override below if present)
-  skipMTASTSCb.checked = localStorage.getItem('mailcheck-skip-mtasts') === '1';
-  skipStxtCb.checked   = localStorage.getItem('mailcheck-skip-stxt')   === '1';
-  skipMTASTSCb.addEventListener('change', () => localStorage.setItem('mailcheck-skip-mtasts', skipMTASTSCb.checked ? '1' : '0'));
-  skipStxtCb.addEventListener('change',   () => localStorage.setItem('mailcheck-skip-stxt',   skipStxtCb.checked   ? '1' : '0'));
+  // Restore persisted skip preference (URL params will override below if present)
+  skipCorsCb.checked = localStorage.getItem('mailcheck-skip-cors') === '1';
+  skipCorsCb.addEventListener('change', () => localStorage.setItem('mailcheck-skip-cors', skipCorsCb.checked ? '1' : '0'));
 
   // Copy link button
   copyLinkBtn.addEventListener('click', () => {
@@ -5033,14 +5032,11 @@ document.addEventListener('DOMContentLoaded', () => {
     checkBtn.disabled = true;
     checkBtn.textContent = ts('BTN_CHECKING');
     try {
-      await runChecks(domain, customSelectors, { skipMTASTS: skipMTASTSCb.checked, skipSecTxt: skipStxtCb.checked });
+      await runChecks(domain, customSelectors, { skipMTASTS: skipCorsCb.checked, skipSecTxt: skipCorsCb.checked });
       // Update URL so the scan is shareable
       const params = new URLSearchParams({ domain });
       if (customSelectors.length) params.set('selectors', customSelectors.join(','));
-      const skipParts = [];
-      if (skipMTASTSCb.checked) skipParts.push('mtasts');
-      if (skipStxtCb.checked)   skipParts.push('stxt');
-      if (skipParts.length)     params.set('skip', skipParts.join(','));
+      if (skipCorsCb.checked) params.set('skip', 'cors');
       history.pushState(null, '', '?' + params.toString());
       shareRow.style.display = '';
       copyLinkBtn.textContent = ts('BTN_COPY_LINK');
@@ -5061,8 +5057,7 @@ document.addEventListener('DOMContentLoaded', () => {
     domainInput.value = urlDomain;
     if (urlParams.has('selectors')) selectorInput.value = urlParams.get('selectors');
     const skipParam = (urlParams.get('skip') || '').split(',');
-    if (skipParam.includes('mtasts')) skipMTASTSCb.checked = true;
-    if (skipParam.includes('stxt'))   skipStxtCb.checked   = true;
+    if (skipParam.includes('cors') || skipParam.includes('mtasts') || skipParam.includes('stxt')) skipCorsCb.checked = true;
     doCheck();
   }
 

@@ -102,6 +102,7 @@ Missing keys fall back to English automatically, so partial translations are wel
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-April-14-6 | 2026-04-14 | Skip CORS option consolidated to a single checkbox covering both MTA-STS and Security.txt |
 | 2026-April-14-5 | 2026-04-14 | Esperanto (eo) UI language — full translation of all strings and explanations |
 | 2026-April-14-4 | 2026-04-14 | Acknowledgements section in footer with fireworks on hover |
 | 2026-April-14-3 | 2026-04-14 | Shareable link: "Copy link" button after scan encodes domain, selectors, and skip preferences in URL; auto-run on load from URL params |
