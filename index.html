@@ -596,8 +596,15 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-April-14-6 &mdash; click for changelog</summary>
+      <summary>Version 2026-April-14-7 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-April-14-7</span>
+          <ul class="cl-changes">
+            <li>BIMI tab dot no longer coloured — BIMI is not scored and not shown in score bars or Fixes tab</li>
+            <li>BIMI explanation opens with an editorial note on its lack of security value</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-April-14-6</span>
           <ul class="cl-changes">
@@ -1194,6 +1201,7 @@ const STRINGS = {
         '<b>Note:</b> A recently created domain is a recognised indicator of reduced trust and an elevated risk of the domain being used for malware distribution, phishing, or fraud. ' +
         'If you are checking a domain you do not own or control, treat a very recent creation date as a warning sign and apply extra caution and verification before interacting with any email or service from that domain.',
       BIMI:
+        '<b>BIMI is widely considered a marketing thing, which doesn\'t provide any additional security value to anyone. Displaying a logo in a mailbox to "prove" the real sender is like any GIF image saying "100% guaranteed". If you still want to pay CAs for it, go ahead.</b><br><br>' +
         '<b>BIMI (Brand Indicators for Message Identification)</b> allows organizations to display their logo in email clients that support it (e.g. Gmail, Apple Mail, Yahoo).<br><br>' +
         '<b>DNS record:</b> Published as a TXT record at <code>default._bimi.<domain></code>.<br><br>' +
         '<b>l= (logo URL):</b> A URL pointing to an SVG logo file. Required for BIMI to function. ' +
@@ -1644,6 +1652,7 @@ const STRINGS = {
         '<b>Merk:</b> Et nylig opprettet domene er en anerkjent indikator p\u00e5 redusert tillit og \u00f8kt risiko for at domenet brukes til distribusjon av skadelig programvare, phishing eller svindel. ' +
         'Hvis du sjekker et domene du ikke eier eller kontrollerer, b\u00f8r en svært nylig opprettelsesdato behandles som et advarselstegn \u2014 v\u00e6r ekstra forsiktig og verifiser grundig f\u00f8r du samhandler med e-post eller tjenester fra det domenet.',
       BIMI:
+        '<b>BIMI er bredt ansett som en markedsf\u00f8ringsting som ikke gir noen ekstra sikkerhetsverdi for noen. \u00c5 vise en logo i en innboks for \u00e5 \u00abbekrefte\u00bb den ekte avsenderen er som et GIF-bilde som sier \u00ab100 % garantert\u00bb. Hvis du fortsatt vil betale CA-er for det, v\u00e6r s\u00e5 god.</b><br><br>' +
         '<b>BIMI (Brand Indicators for Message Identification)</b> lar organisasjoner vise logoen sin i e-postklienter som st\u00f8tter det (f.eks. Gmail, Apple Mail, Yahoo).<br><br>' +
         '<b>DNS-post:</b> Publiseres som en TXT-post p\u00e5 <code>default._bimi.<domene></code>.<br><br>' +
         '<b>l= (logo-URL):</b> En URL til en SVG-logofil. P\u00e5krevd for at BIMI skal fungere. ' +
@@ -2069,6 +2078,7 @@ const STRINGS = {
         '<b>Noto:</b> Lastatempe kreita domajno estas rekonate indikilo de malplii\u011dinta fido kaj pliigita risko de la domajno estanta uzata por malica programaro, phi\u015ding a\u016d fra\u016ddo. ' +
         'Se vi kontrolas domajnon kiu ne apartenas al vi, traktu tre fre\u015dan krea-daton kiel avertosigno kaj apliku ekstra singardo kaj kontrolon anta\u016d interagi kun iu ajn retpo\u015dto a\u016d servo de tiu domajno.',
       BIMI:
+        '<b>BIMI estas vaste konsiderata kiel merkata afero, kiu ne provizas iun ajn plian sekurecan valoron al iu ajn. Montri logoon en reto-kesto por \u201ckonfirmi\u201d la veran sendiston estas kiel iu ajn GIF-bildo diranta \u201c100% garantiita\u201d. Se vi ankoraŭ volas pagi CA-ojn por \u011di, bonvolu.</b><br><br>' +
         '<b>BIMI (Brand Indicators for Message Identification)</b> permesas al organizoj montri sian logoon en retpo\u015dt-programoj kiuj subtenas \u011din (ekz. Gmail, Apple Mail, Yahoo).<br><br>' +
         '<b>DNS-registro:</b> Publikigita kiel TXT-registro \u0109e <code>default._bimi.&lt;domajno&gt;</code>.<br><br>' +
         '<b>l= (logo-URL):</b> URL montranta al SVG-logo dosiero. Postulata por ke BIMI funkcii. ' +
@@ -4252,7 +4262,8 @@ function renderDMARC(result) {
 
 function renderBIMI(result) {
   const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', message: 'Check failed' };
-  setTabResult('bimi', d.rating, body => {
+  // BIMI is not scored and the tab dot intentionally stays grey (no rating colour).
+  setTabResult('bimi', 'none', body => {
     if (d.error) {
       body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + d.message));
     } else {
@@ -4790,7 +4801,6 @@ function renderRecommendations(r) {
 
   const INFO = [
     { tabId: 'ptr',          label: 'PTR',          weight: 0, result: g(r.ptr)         },
-    { tabId: 'bimi',         label: 'BIMI',         weight: 0, result: g(r.bimi)        },
     { tabId: 'rpki',         label: 'RPKI',         weight: 0, result: g(r.rpki)        },
     { tabId: 'aspa',         label: 'ASPA',         weight: 0, result: { rating: getASPARating(r.rpki), issues: [] } },
     { tabId: 'security-txt', label: 'Security.txt', weight: 0, result: g(r.securityTxt) },
@@ -4931,7 +4941,7 @@ function renderSummary({ dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, 
   sep.textContent = ts('SCORING_INFO');
   barsEl.appendChild(sep);
 
-  [['PTR', ptr_r], ['BIMI', bimi_r], ['RPKI', rpki_r], ['ASPA', aspa_r], ['Sec.txt', stxt_r], ['WHOIS', whois_r]
+  [['PTR', ptr_r], ['RPKI', rpki_r], ['ASPA', aspa_r], ['Sec.txt', stxt_r], ['WHOIS', whois_r]
   ].forEach(([label, rating]) => addBar(label, rating, 0));
 
   document.getElementById('overview-placeholder').style.display = 'none';
