@@ -58,7 +58,9 @@ PTR, BIMI, RPKI, ASPA, Security.txt, and WHOIS are informational — shown but n
 - **Settings menu** (⚙, top-right) — dark/light theme toggle + scoring system explanation
 - **Mobile-friendly** — horizontal scrolling tab bar
 - **Language switch** — rerenders all panels without re-querying DNS
-- **Skip MTA-STS / Security.txt** — checkboxes on the input page to skip checks that require direct server access (avoids CORS failures); preference persisted in `localStorage`
+- **Skip MTA-STS / Security.txt** — checkbox to skip checks that require direct server access (avoids CORS failures); preference persisted in `localStorage`
+- **Shareable link** — "Copy link" button after scan encodes domain, selectors, and skip preference in URL; auto-runs on load
+- **Statistics panel** — collapsible "🤓 Statistics" section on Overview tab showing total scan time, DoH query count, RIPE Stat API calls (with cache hits), HTTP fetches, DKIM selectors tested/found, IPs resolved, and per-check timing bars
 - **Changelog** — version string in footer expands to full release history
 
 ## DKIM selector coverage

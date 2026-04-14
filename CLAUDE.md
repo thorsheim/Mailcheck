@@ -130,8 +130,16 @@ renderSummary()     Weighted grade: DKIM 20%, SPF 15%, DMARC 15%, MTA-STS 15%, D
                       bars (weight=0). Grade calculation unchanged.
 currentDomain       module-level domain state (set in runChecks)
 lastResults         stores last Promise.allSettled results for language-switch re-render
+scanStats           module-level stats object (null before first scan); reset at top of runChecks();
+                      fields: startMs, totalMs, checks{}, dohRequests, ripeStatRequests,
+                      ripeStatCacheHits, httpRequests
+timed(name, p)      wraps a promise; records elapsed ms into scanStats.checks[name] on settle
 rerenderAll(r)      re-renders all 16 panels from stored results (no DNS re-query)
-runChecks()         orchestrator; accepts opts={skipMTASTS,skipSecTxt}; saves lastResults; calls rerenderAll()
+runChecks()         orchestrator; accepts opts={skipMTASTS,skipSecTxt}; resets scanStats; wraps all
+                      14 checks in timed(); saves lastResults; calls rerenderAll()
+renderStatsPanel(dkim, rpki)
+                    appends/replaces <details id="stats-panel"> to #overview-content; reads
+                      scanStats for counts and check timings; called at end of renderSummary()
 ```
 
 ### i18n system
