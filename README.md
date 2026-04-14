@@ -54,7 +54,7 @@ PTR, BIMI, RPKI, ASPA, Security.txt, and WHOIS are informational — shown but n
 - **DNS over HTTPS** via Cloudflare (`cloudflare-dns.com/dns-query`)
 - **RPKI/ASPA** via RIPE Stat API
 - **WHOIS/RDAP** via rdap.org
-- **English / Esperanto / Norwegian** (Bokmål) UI — persisted in `localStorage`
+- **English / Esperanto / Spanish / Norwegian** (Bokmål) UI — persisted in `localStorage`
 - **Settings menu** (⚙, top-right) — dark/light theme toggle + scoring system explanation
 - **Mobile-friendly** — horizontal scrolling tab bar
 - **Language switch** — rerenders all panels without re-querying DNS
@@ -104,6 +104,7 @@ Missing keys fall back to English automatically, so partial translations are wel
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-April-14-9 | 2026-04-14 | Español (es) UI language — full translation of all strings and explanations |
 | 2026-April-14-8 | 2026-04-14 | "Statistics" collapsible panel on Overview tab: total scan time, DoH queries, RIPE Stat API calls (with cache hits), HTTP fetches, DKIM selectors tested/found, IPs resolved, per-check timing bars |
 | 2026-April-14-7 | 2026-04-14 | BIMI removed from score bars and Fixes tab; tab dot always grey; explanation opens with editorial note |
 | 2026-April-14-6 | 2026-04-14 | Skip CORS option consolidated to a single checkbox covering both MTA-STS and Security.txt |
