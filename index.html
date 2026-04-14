@@ -313,6 +313,15 @@
   }
   #footer a { color: var(--accent-hover); text-decoration: none; }
   #footer a:hover { text-decoration: underline; }
+  #ack-section { margin-top: 1rem; }
+  #ack-toggle { background: none; border: none; color: var(--text-muted); font-size: 0.78rem; cursor: pointer; padding: 0; text-decoration: underline dotted; }
+  #ack-toggle:hover { color: var(--accent-hover); }
+  #ack-table-wrap { margin-top: 0.5rem; display: none; }
+  #ack-section.open #ack-table-wrap { display: block; }
+  #ack-table { border-collapse: collapse; margin: 0 auto; font-size: 0.78rem; }
+  #ack-table th { color: var(--text-muted); font-weight: 600; padding: 0.2rem 1rem 0.2rem 0; text-align: left; border-bottom: 1px solid var(--border); }
+  #ack-table td { padding: 0.18rem 1rem 0.18rem 0; color: var(--text-muted); }
+  .fw-particle { position: fixed; pointer-events: none; border-radius: 50%; z-index: 9999; }
   #changelog { display: inline; }
   #changelog summary {
     display: inline; cursor: pointer; list-style: none;
@@ -590,8 +599,14 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-April-14-3 &mdash; click for changelog</summary>
+      <summary>Version 2026-April-14-4 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-April-14-4</span>
+          <ul class="cl-changes">
+            <li>Acknowledgements section in footer: click to expand a table of contributors; hover triggers a 5-second fireworks display</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-April-14-3</span>
           <ul class="cl-changes">
@@ -690,6 +705,17 @@
         </div>
       </div>
     </details>
+    <div id="ack-section">
+      <button id="ack-toggle" type="button">Acknowledgements</button>
+      <div id="ack-table-wrap">
+        <table id="ack-table">
+          <thead><tr><th>Name</th><th>Contribution</th></tr></thead>
+          <tbody>
+            <tr><td>Tor Vigesdal</td><td>Suggestions for easier translations &amp; skipping tests blocked by CORS</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </footer>
 </div>
 
@@ -4729,6 +4755,57 @@ document.addEventListener('DOMContentLoaded', () => {
     closeBtn.addEventListener('click', () => { scoringBackdrop.classList.remove('visible'); });
     scoringModalEl.appendChild(closeBtn);
   }
+
+  // ── Acknowledgements fireworks ───────────────────────────────────────────────
+  const ackSection = document.getElementById('ack-section');
+  const ackToggle  = document.getElementById('ack-toggle');
+  ackToggle.addEventListener('click', () => { ackSection.classList.toggle('open'); });
+
+  let fwTimer = null;
+  let fwInterval = null;
+
+  function launchFirework() {
+    const colors = ['#ff4e50','#fc913a','#f9d62e','#7bc67e','#4fc3f7','#ce93d8','#ff80ab','#80deea'];
+    const ox = Math.random() * window.innerWidth;
+    const oy = Math.random() * window.innerHeight * 0.75;
+    const count = 28 + Math.floor(Math.random() * 18);
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      p.className = 'fw-particle';
+      const size = 5 + Math.random() * 5;
+      p.style.cssText = 'width:' + size + 'px;height:' + size + 'px;' +
+        'background:' + colors[Math.floor(Math.random() * colors.length)] + ';' +
+        'left:' + ox + 'px;top:' + oy + 'px;' +
+        'transition:none;';
+      document.body.appendChild(p);
+      const angle = (i / count) * 2 * Math.PI + (Math.random() - 0.5) * 0.4;
+      const dist  = 60 + Math.random() * 110;
+      const dx = Math.cos(angle) * dist;
+      const dy = Math.sin(angle) * dist;
+      const dur = 0.7 + Math.random() * 0.5;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          p.style.transition = 'transform ' + dur + 's cubic-bezier(.2,.6,.4,1), opacity ' + dur + 's ease-out';
+          p.style.transform  = 'translate(' + dx + 'px,' + dy + 'px)';
+          p.style.opacity    = '0';
+        });
+      });
+      setTimeout(() => { p.remove(); }, (dur + 0.1) * 1000);
+    }
+  }
+
+  function startFireworks() {
+    if (fwTimer) return;
+    launchFirework();
+    fwInterval = setInterval(launchFirework, 400);
+    fwTimer = setTimeout(() => {
+      clearInterval(fwInterval);
+      fwInterval = null;
+      fwTimer = null;
+    }, 5000);
+  }
+
+  ackSection.addEventListener('mouseenter', startFireworks);
 });
 </script>
 </body>
