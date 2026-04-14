@@ -102,6 +102,7 @@ Missing keys fall back to English automatically, so partial translations are wel
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-April-14-3 | 2026-04-14 | Shareable link: "Copy link" button after scan encodes domain, selectors, and skip preferences in URL; auto-run on load from URL params |
 | 2026-April-14-2 | 2026-04-14 | Skip checkboxes for MTA-STS and Security.txt to avoid CORS issues; skipped checks excluded from score and Fixes tab |
 | 2026-April-14-1 | 2026-04-14 | CORS bold note (MTA-STS/Security.txt); DKIM no-selector note; ASPA RFC status note; WHOIS new-domain trust note; DNSSEC alg rating badges; light theme default |
 | 2026-April-13-4 | 2026-04-13 | Overview placeholder updated with usage guidance and accuracy disclaimer |

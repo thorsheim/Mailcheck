@@ -45,6 +45,8 @@ const LANG_TEMPLATE = {
     LABEL_SELECTORS:        '',  // Input label for extra DKIM selectors
     BTN_CHECK:              '',  // "Check" button label
     BTN_CHECKING:           '',  // "Checking…" while running
+    BTN_COPY_LINK:          '',  // Copy-shareable-link button: "🔗 Copy link"
+    BTN_COPIED:             '',  // Confirmation after copying: "✓ Copied!"
     LANG_LABEL:             '',  // "Language" label next to the language picker
     OVERVIEW_PLACEHOLDER:   '',  // Placeholder shown before first check is run
     RUNNING_CHECKS:         '',  // "Running checks…" message

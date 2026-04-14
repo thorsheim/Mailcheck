@@ -413,6 +413,9 @@
         <input type="checkbox" id="skip-stxt-cb"> <span data-i18n="PANEL_STXT">Security.txt</span>
       </label>
     </div>
+    <div id="share-row" style="display:none;margin-top:0.45rem">
+      <button id="copy-link-btn" style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-size:0.8rem;padding:0.28rem 0.7rem;cursor:pointer" data-i18n="BTN_COPY_LINK">🔗 Copy link</button>
+    </div>
     <div id="input-error"></div>
   </div>
 
@@ -587,8 +590,15 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-April-14-2 &mdash; click for changelog</summary>
+      <summary>Version 2026-April-14-3 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-April-14-3</span>
+          <ul class="cl-changes">
+            <li>Shareable link: after a scan, a &ldquo;Copy link&rdquo; button appears; the URL encodes domain, custom selectors, and skip preferences so the same scan can be re-run from the link</li>
+            <li>Auto-run on load when <code>?domain=</code> URL parameter is present</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-April-14-2</span>
           <ul class="cl-changes">
@@ -772,6 +782,9 @@ const STRINGS = {
       OPT_SKIP_CORS:       'Skip to avoid CORS issues:',
       CHECK_SKIPPED:       'This check was skipped.',
       RATING_SKIP:         'Skipped',
+      // Share link
+      BTN_COPY_LINK:       '\uD83D\uDD17 Copy link',
+      BTN_COPIED:          '\u2713 Copied!',
       // DNSSEC
       DNSSEC_VALIDATED:    '\u2713 DNSSEC validated (AD=true)',
       DNSSEC_UNVALIDATED:  '\u26a0 Signed but not validated by resolver (AD=false)',
@@ -1225,6 +1238,9 @@ const STRINGS = {
       OPT_SKIP_CORS:       'Hopp over for \u00e5 unng\u00e5 CORS-problemer:',
       CHECK_SKIPPED:       'Denne sjekken ble hoppet over.',
       RATING_SKIP:         'Hoppet over',
+      // Share link
+      BTN_COPY_LINK:       '\uD83D\uDD17 Kopier lenke',
+      BTN_COPIED:          '\u2713 Kopiert!',
       // DNSSEC
       DNSSEC_VALIDATED:    '\u2713 DNSSEC validert (AD=true)',
       DNSSEC_UNVALIDATED:  '\u26a0 Signert, men ikke validert av resolver (AD=false)',
@@ -4531,12 +4547,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const errorEl       = document.getElementById('input-error');
   const skipMTASTSCb  = document.getElementById('skip-mtasts-cb');
   const skipStxtCb    = document.getElementById('skip-stxt-cb');
+  const shareRow      = document.getElementById('share-row');
+  const copyLinkBtn   = document.getElementById('copy-link-btn');
 
-  // Restore persisted skip preferences
+  // Restore persisted skip preferences (URL params will override below if present)
   skipMTASTSCb.checked = localStorage.getItem('mailcheck-skip-mtasts') === '1';
   skipStxtCb.checked   = localStorage.getItem('mailcheck-skip-stxt')   === '1';
   skipMTASTSCb.addEventListener('change', () => localStorage.setItem('mailcheck-skip-mtasts', skipMTASTSCb.checked ? '1' : '0'));
   skipStxtCb.addEventListener('change',   () => localStorage.setItem('mailcheck-skip-stxt',   skipStxtCb.checked   ? '1' : '0'));
+
+  // Copy link button
+  copyLinkBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      copyLinkBtn.textContent = ts('BTN_COPIED');
+      setTimeout(() => { copyLinkBtn.textContent = ts('BTN_COPY_LINK'); }, 2000);
+    });
+  });
 
   async function doCheck() {
     const domain = normalizeDomain(domainInput.value);
@@ -4548,13 +4574,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const customSelectors = parseCustomSelectors(selectorInput.value);
     checkBtn.disabled = true;
     checkBtn.textContent = ts('BTN_CHECKING');
-    try { await runChecks(domain, customSelectors, { skipMTASTS: skipMTASTSCb.checked, skipSecTxt: skipStxtCb.checked }); }
-    finally { checkBtn.disabled = false; checkBtn.textContent = ts('BTN_CHECK'); }
+    try {
+      await runChecks(domain, customSelectors, { skipMTASTS: skipMTASTSCb.checked, skipSecTxt: skipStxtCb.checked });
+      // Update URL so the scan is shareable
+      const params = new URLSearchParams({ domain });
+      if (customSelectors.length) params.set('selectors', customSelectors.join(','));
+      const skipParts = [];
+      if (skipMTASTSCb.checked) skipParts.push('mtasts');
+      if (skipStxtCb.checked)   skipParts.push('stxt');
+      if (skipParts.length)     params.set('skip', skipParts.join(','));
+      history.pushState(null, '', '?' + params.toString());
+      shareRow.style.display = '';
+      copyLinkBtn.textContent = ts('BTN_COPY_LINK');
+    } finally {
+      checkBtn.disabled = false;
+      checkBtn.textContent = ts('BTN_CHECK');
+    }
   }
 
   checkBtn.addEventListener('click', doCheck);
   domainInput.addEventListener('keydown',   e => { if (e.key === 'Enter') doCheck(); });
   selectorInput.addEventListener('keydown', e => { if (e.key === 'Enter') doCheck(); });
+
+  // Auto-run if URL contains ?domain=
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlDomain = urlParams.get('domain');
+  if (urlDomain && DOMAIN_RE.test(normalizeDomain(urlDomain))) {
+    domainInput.value = urlDomain;
+    if (urlParams.has('selectors')) selectorInput.value = urlParams.get('selectors');
+    const skipParam = (urlParams.get('skip') || '').split(',');
+    if (skipParam.includes('mtasts')) skipMTASTSCb.checked = true;
+    if (skipParam.includes('stxt'))   skipStxtCb.checked   = true;
+    doCheck();
+  }
 
   // ── Language selector ────────────────────────────────────────────────────────
   const langSelect = document.getElementById('lang-select');
