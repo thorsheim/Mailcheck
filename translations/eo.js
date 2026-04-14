@@ -69,8 +69,19 @@ const LANG_EO = {
     SCORING_RATINGS:     'Poentoj la\u016d taksado',
     SCORING_GRADES:      'Grado-sojloj',
 
-    OPT_SKIP_CORS:       'Preterpasi por eviti CORS-problemojn:',
+    OPT_SKIP_CORS:       'Preterpasi MTA-STS kaj Security.txt-kontrolojn por eviti CORS-problemojn',
     CHECK_SKIPPED:       '\u0108i tiu kontrolo estis preterpasita.',
+
+    STATS_TITLE:         '\uD83E\uDD13 Statistikoj',
+    STATS_TOTAL_TIME:    'Totala skan-tempo',
+    STATS_DOH_REQUESTS:  'Cloudflare DoH-demandoj',
+    STATS_RIPE_REQUESTS: 'RIPE Stat API-alvokoj',
+    STATS_RIPE_CACHE:    'el ka\u015dmemoro',
+    STATS_HTTP_FETCHES:  'HTTP-el\u015dutoj',
+    STATS_CHECK_TIMING:  'Tempo po-kontrole',
+    STATS_DKIM_SELECTORS:'DKIM-elektiloj testitaj / trovitaj',
+    STATS_IPS_RESOLVED:  'IP-oj solvitaj (RPKI)',
+    STATS_MS:            'ms',
 
     DNSSEC_VALIDATED:    '\u2713 DNSSEC konfirmita (AD=vera)',
     DNSSEC_UNVALIDATED:  '\u26a0 Subskribita sed ne konfirmita de solvilisto (AD=malvera)',

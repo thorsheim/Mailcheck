@@ -102,6 +102,7 @@ Missing keys fall back to English automatically, so partial translations are wel
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-April-14-8 | 2026-04-14 | "Statistics" collapsible panel on Overview tab: total scan time, DoH queries, RIPE Stat API calls (with cache hits), HTTP fetches, DKIM selectors tested/found, IPs resolved, per-check timing bars |
 | 2026-April-14-7 | 2026-04-14 | BIMI removed from score bars and Fixes tab; tab dot always grey; explanation opens with editorial note |
 | 2026-April-14-6 | 2026-04-14 | Skip CORS option consolidated to a single checkbox covering both MTA-STS and Security.txt |
 | 2026-April-14-5 | 2026-04-14 | Esperanto (eo) UI language — full translation of all strings and explanations |

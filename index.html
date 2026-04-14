@@ -322,6 +322,19 @@
   #ack-table th { color: var(--text-muted); font-weight: 600; padding: 0.2rem 1rem 0.2rem 0; text-align: left; border-bottom: 1px solid var(--border); }
   #ack-table td { padding: 0.18rem 1rem 0.18rem 0; color: var(--text-muted); }
   .fw-particle { position: fixed; pointer-events: none; border-radius: 50%; z-index: 9999; }
+  #stats-panel { margin-top: 1.2rem; font-size: 0.78rem; color: var(--text-muted); }
+  #stats-panel > summary { cursor: pointer; font-weight: 600; list-style: none; user-select: none; padding: 0.2rem 0; }
+  #stats-panel > summary::-webkit-details-marker { display: none; }
+  .stats-grid { display: grid; grid-template-columns: auto 1fr; gap: 0.15rem 1.2rem; margin-top: 0.5rem; }
+  .stats-key { color: var(--text-muted); white-space: nowrap; }
+  .stats-val { color: var(--text); font-variant-numeric: tabular-nums; }
+  #stats-timing { margin-top: 0.6rem; }
+  #stats-timing > summary { cursor: pointer; color: var(--text-muted); font-size: 0.75rem; list-style: none; }
+  #stats-timing > summary::-webkit-details-marker { display: none; }
+  .stats-timing-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.1rem 0; }
+  .stats-timing-name { width: 90px; color: var(--text-muted); font-size: 0.73rem; }
+  .stats-timing-bar { display: inline-block; height: 6px; background: var(--accent); border-radius: 2px; opacity: 0.7; }
+  .stats-timing-ms { width: 60px; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; font-size: 0.73rem; }
   #changelog { display: inline; }
   #changelog summary {
     display: inline; cursor: pointer; list-style: none;
@@ -596,8 +609,14 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-April-14-7 &mdash; click for changelog</summary>
+      <summary>Version 2026-April-14-8 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-April-14-8</span>
+          <ul class="cl-changes">
+            <li>&ldquo;Statistics&rdquo; collapsible panel on Overview tab: total scan time, Cloudflare DoH query count, RIPE Stat API calls (with cache hits), HTTP fetches, DKIM selectors tested/found, IPs resolved, and per-check timing bars</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-April-14-7</span>
           <ul class="cl-changes">
@@ -828,6 +847,17 @@ const STRINGS = {
       // Share link
       BTN_COPY_LINK:       '\uD83D\uDD17 Copy link',
       BTN_COPIED:          '\u2713 Copied!',
+      // Stats panel
+      STATS_TITLE:         '\uD83E\uDD13 Statistics',
+      STATS_TOTAL_TIME:    'Total scan time',
+      STATS_DOH_REQUESTS:  'Cloudflare DoH queries',
+      STATS_RIPE_REQUESTS: 'RIPE Stat API calls',
+      STATS_RIPE_CACHE:    'from cache',
+      STATS_HTTP_FETCHES:  'HTTP fetches',
+      STATS_CHECK_TIMING:  'Per-check timing',
+      STATS_DKIM_SELECTORS:'DKIM selectors tested / found',
+      STATS_IPS_RESOLVED:  'IPs resolved (RPKI)',
+      STATS_MS:            'ms',
       // DNSSEC
       DNSSEC_VALIDATED:    '\u2713 DNSSEC validated (AD=true)',
       DNSSEC_UNVALIDATED:  '\u26a0 Signed but not validated by resolver (AD=false)',
@@ -1285,6 +1315,17 @@ const STRINGS = {
       // Share link
       BTN_COPY_LINK:       '\uD83D\uDD17 Kopier lenke',
       BTN_COPIED:          '\u2713 Kopiert!',
+      // Stats panel
+      STATS_TITLE:         '\uD83E\uDD13 Statistikk',
+      STATS_TOTAL_TIME:    'Total skanningstid',
+      STATS_DOH_REQUESTS:  'Cloudflare DoH-foresp\u00f8rsler',
+      STATS_RIPE_REQUESTS: 'RIPE Stat API-kall',
+      STATS_RIPE_CACHE:    'fra cache',
+      STATS_HTTP_FETCHES:  'HTTP-hentinger',
+      STATS_CHECK_TIMING:  'Tid per sjekk',
+      STATS_DKIM_SELECTORS:'DKIM-velgere testet / funnet',
+      STATS_IPS_RESOLVED:  'IP-er sl\u00e5tt opp (RPKI)',
+      STATS_MS:            'ms',
       // DNSSEC
       DNSSEC_VALIDATED:    '\u2713 DNSSEC validert (AD=true)',
       DNSSEC_UNVALIDATED:  '\u26a0 Signert, men ikke validert av resolver (AD=false)',
@@ -1683,6 +1724,17 @@ const STRINGS = {
       BTN_CHECKING:        'Kontrolante\u2026',
       BTN_COPY_LINK:       '\uD83D\uDD17 Kopii ligilon',
       BTN_COPIED:          '\u2713 Kopiita!',
+      // Stats panel
+      STATS_TITLE:         '\uD83E\uDD13 Statistikoj',
+      STATS_TOTAL_TIME:    'Totala skan-tempo',
+      STATS_DOH_REQUESTS:  'Cloudflare DoH-demandoj',
+      STATS_RIPE_REQUESTS: 'RIPE Stat API-alvokoj',
+      STATS_RIPE_CACHE:    'el ka\u015dmemoro',
+      STATS_HTTP_FETCHES:  'HTTP-el\u015dutoj',
+      STATS_CHECK_TIMING:  'Tempo po-kontrole',
+      STATS_DKIM_SELECTORS:'DKIM-elektiloj testitaj / trovitaj',
+      STATS_IPS_RESOLVED:  'IP-oj solvitaj (RPKI)',
+      STATS_MS:            'ms',
       LANG_LABEL:          'Lingvo',
       OVERVIEW_PLACEHOLDER:'Tajpu domajnonomon kiel google.com a\u016d microsoft.com, kaj alklaku Kontroli. Bonvolu kompreni ke la rezultoj eble ne estas \u011dustaj pro limigoj en via retumilo a\u016d en la reto el kiu vi testas. Poentoj estas nur indikaj; ili ne nepre montras la tutan veron a\u016d konformecon kun rilataj normoj.',
       RUNNING_CHECKS:      'Plenumas kontrolojn\u2026',
@@ -2161,6 +2213,7 @@ function uriHostname(uri) {
 // ── DNS-over-HTTPS ────────────────────────────────────────────────────────────
 
 async function dohQuery(name, type) {
+  if (scanStats) scanStats.dohRequests++;
   const url = 'https://cloudflare-dns.com/dns-query?name=' + encodeURIComponent(name) + '&type=' + encodeURIComponent(type);
   const resp = await fetch(url, { headers: { Accept: 'application/dns-json' } });
   if (!resp.ok) throw new Error('DoH HTTP ' + resp.status);
@@ -3012,6 +3065,7 @@ async function checkMTASTS(domain) {
     let policy = null;
     let policyError = null;
     try {
+      if (scanStats) scanStats.httpRequests++;
       const pResp = await fetch(policyUrl, { signal: AbortSignal.timeout(8000) });
       if (pResp.ok) {
         const text = await pResp.text();
@@ -3202,6 +3256,7 @@ async function checkSecurityTxt(domain) {
   let corsBlocked = false;
   for (const url of urls) {
     try {
+      if (scanStats) scanStats.httpRequests++;
       const resp = await fetch(url, { signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined });
       if (resp.ok) { text = await resp.text(); fetchedUrl = url; break; }
     } catch (e) {
@@ -3269,6 +3324,7 @@ async function checkSecurityTxt(domain) {
 
 async function checkWHOIS(domain) {
   try {
+    if (scanStats) scanStats.httpRequests++;
     const resp = await fetch('https://rdap.org/domain/' + encodeURIComponent(domain), {
       headers: { Accept: 'application/rdap+json, application/json' },
     });
@@ -3450,11 +3506,12 @@ const aspaAsnCache = new Map();  // asn → aspaLookupASN result
 const asnInfoCache = new Map();  // asn → holder name string | null
 
 async function rpkiLookupIP(ip) {
-  if (rpkiIpCache.has(ip)) return rpkiIpCache.get(ip);
+  if (rpkiIpCache.has(ip)) { if (scanStats) scanStats.ripeStatCacheHits++; return rpkiIpCache.get(ip); }
 
   const base = 'https://stat.ripe.net/data/';
   const qs = '&sourceapp=email-security-checker';
 
+  if (scanStats) scanStats.ripeStatRequests++;
   const netResp = await fetch(base + 'network-info/data.json?resource=' + encodeURIComponent(ip) + qs);
   if (!netResp.ok) throw new Error('network-info HTTP ' + netResp.status);
   const netData = await netResp.json();
@@ -3468,6 +3525,7 @@ async function rpkiLookupIP(ip) {
   }
 
   const asn = asns[0];
+  if (scanStats) scanStats.ripeStatRequests++;
   const valResp = await fetch(
     base + 'rpki-validation/data.json?resource=AS' + encodeURIComponent(asn) +
     '&prefix=' + encodeURIComponent(prefix) + qs,
@@ -3483,8 +3541,9 @@ async function rpkiLookupIP(ip) {
 }
 
 async function aspaLookupASN(asn) {
-  if (aspaAsnCache.has(asn)) return aspaAsnCache.get(asn);
+  if (aspaAsnCache.has(asn)) { if (scanStats) scanStats.ripeStatCacheHits++; return aspaAsnCache.get(asn); }
 
+  if (scanStats) scanStats.ripeStatRequests++;
   const resp = await fetch(
     'https://stat.ripe.net/data/aspa/data.json?resource=AS' + encodeURIComponent(asn) +
     '&sourceapp=email-security-checker',
@@ -3513,7 +3572,8 @@ async function aspaLookupASN(asn) {
 }
 
 async function fetchASNHolder(asn) {
-  if (asnInfoCache.has(asn)) return asnInfoCache.get(asn);
+  if (asnInfoCache.has(asn)) { if (scanStats) scanStats.ripeStatCacheHits++; return asnInfoCache.get(asn); }
+  if (scanStats) scanStats.ripeStatRequests++;
   const r = await fetch(
     'https://stat.ripe.net/data/as-overview/data.json?resource=AS' + encodeURIComponent(asn) +
     '&sourceapp=email-security-checker'
@@ -4880,6 +4940,69 @@ function renderRecommendations(r) {
   });
 }
 
+function renderStatsPanel(dkim, rpki) {
+  const old = document.getElementById('stats-panel');
+  if (old) old.parentNode.removeChild(old);
+  if (!scanStats) return;
+
+  const panel = el('details', null);
+  panel.id = 'stats-panel';
+  panel.appendChild(el('summary', null, ts('STATS_TITLE')));
+
+  const grid = el('div', 'stats-grid');
+  function addRow(label, value) {
+    grid.appendChild(el('span', 'stats-key', label + ':'));
+    grid.appendChild(el('span', 'stats-val', value));
+  }
+
+  addRow(ts('STATS_TOTAL_TIME'), scanStats.totalMs.toLocaleString() + '\u202f' + ts('STATS_MS'));
+  addRow(ts('STATS_DOH_REQUESTS'), String(scanStats.dohRequests));
+
+  const ripeStr = String(scanStats.ripeStatRequests) +
+    (scanStats.ripeStatCacheHits > 0 ? '  (' + scanStats.ripeStatCacheHits + ' ' + ts('STATS_RIPE_CACHE') + ')' : '');
+  addRow(ts('STATS_RIPE_REQUESTS'), ripeStr);
+
+  addRow(ts('STATS_HTTP_FETCHES'), String(scanStats.httpRequests));
+
+  const dkimVal = dkim && dkim.status === 'fulfilled' ? dkim.value : null;
+  if (dkimVal) {
+    addRow(ts('STATS_DKIM_SELECTORS'), (dkimVal.testedCount || 0) + ' / ' + (dkimVal.found ? dkimVal.found.length : 0));
+  }
+
+  const rpkiVal = rpki && rpki.status === 'fulfilled' ? rpki.value : null;
+  if (rpkiVal && rpkiVal.hosts && rpkiVal.hosts.length > 0) {
+    const allIPs = new Set(rpkiVal.hosts.flatMap(h => h.ips || []));
+    addRow(ts('STATS_IPS_RESOLVED'), String(allIPs.size));
+  }
+
+  panel.appendChild(grid);
+
+  const checkEntries = Object.entries(scanStats.checks).sort((a, b) => b[1] - a[1]);
+  if (checkEntries.length > 0) {
+    const td = el('details', null);
+    td.id = 'stats-timing';
+    td.appendChild(el('summary', null, ts('STATS_CHECK_TIMING')));
+    const CHECK_LABELS = {
+      dnssec: 'DNSSEC', mx: 'MX', ptr: 'PTR', dane: 'DANE', spf: 'SPF',
+      dkim: 'DKIM', dmarc: 'DMARC', bimi: 'BIMI', tlsrpt: 'TLS-RPT',
+      mtasts: 'MTA-STS', caa: 'CAA', rpki: 'RPKI', stxt: 'Sec.txt', whois: 'WHOIS',
+    };
+    const maxMs = checkEntries[0][1] || 1;
+    for (const [name, ms] of checkEntries) {
+      const row = el('div', 'stats-timing-row');
+      row.appendChild(el('span', 'stats-timing-name', CHECK_LABELS[name] || name));
+      const bar = el('span', 'stats-timing-bar');
+      bar.style.width = Math.max(2, Math.round((ms / maxMs) * 120)) + 'px';
+      row.appendChild(bar);
+      row.appendChild(el('span', 'stats-timing-ms', ms.toLocaleString() + '\u202f' + ts('STATS_MS')));
+      td.appendChild(row);
+    }
+    panel.appendChild(td);
+  }
+
+  document.getElementById('overview-content').appendChild(panel);
+}
+
 function renderSummary({ dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, securityTxt, whois }) {
   const gv = r => (r && r.status === 'fulfilled' ? r.value : { rating: 'fail' });
   const g  = r => gv(r).rating;
@@ -4947,12 +5070,22 @@ function renderSummary({ dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, 
 
   document.getElementById('overview-placeholder').style.display = 'none';
   document.getElementById('overview-content').style.display = '';
+  renderStatsPanel(dkim, rpki);
 }
 
 // ── Orchestrator ──────────────────────────────────────────────────────────────
 
 let currentDomain = '';
 let lastResults = null;
+let scanStats = null;
+
+function timed(name, promise) {
+  const t0 = performance.now();
+  return promise.then(
+    v  => { if (scanStats) scanStats.checks[name] = Math.round(performance.now() - t0); return v; },
+    e  => { if (scanStats) scanStats.checks[name] = Math.round(performance.now() - t0); throw e; },
+  );
+}
 
 function rerenderAll(r) {
   renderDNSSEC(r.dnssec); renderMX(r.mx); renderPTR(r.ptr); renderDANE(r.dane); renderSPF(r.spf);
@@ -4966,6 +5099,8 @@ async function runChecks(domain, customSelectors, opts = {}) {
   currentDomain = domain;
   const { skipMTASTS = false, skipSecTxt = false } = opts;
   const SKIPPED = { skipped: true, rating: 'skip' };
+
+  scanStats = { startMs: Date.now(), totalMs: 0, checks: {}, dohRequests: 0, ripeStatRequests: 0, ripeStatCacheHits: 0, httpRequests: 0 };
 
   document.getElementById('tab-bar').classList.add('visible');
 
@@ -4989,11 +5124,22 @@ async function runChecks(domain, customSelectors, opts = {}) {
   tabsToLoad.forEach(setTabLoading);
 
   const [dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, securityTxt, whois] = await Promise.allSettled([
-    checkDNSSEC(domain), checkMX(domain), checkPTR(domain), checkDANE(domain), checkSPF(domain),
-    checkDKIM(domain, customSelectors), checkDMARC(domain), checkBIMI(domain), checkTLSRPT(domain),
-    skipMTASTS ? Promise.resolve(SKIPPED) : checkMTASTS(domain), checkCAA(domain),
-    checkRPKI(domain), skipSecTxt ? Promise.resolve(SKIPPED) : checkSecurityTxt(domain), checkWHOIS(domain),
+    timed('dnssec',  checkDNSSEC(domain)),
+    timed('mx',      checkMX(domain)),
+    timed('ptr',     checkPTR(domain)),
+    timed('dane',    checkDANE(domain)),
+    timed('spf',     checkSPF(domain)),
+    timed('dkim',    checkDKIM(domain, customSelectors)),
+    timed('dmarc',   checkDMARC(domain)),
+    timed('bimi',    checkBIMI(domain)),
+    timed('tlsrpt',  checkTLSRPT(domain)),
+    timed('mtasts',  skipMTASTS ? Promise.resolve(SKIPPED) : checkMTASTS(domain)),
+    timed('caa',     checkCAA(domain)),
+    timed('rpki',    checkRPKI(domain)),
+    timed('stxt',    skipSecTxt ? Promise.resolve(SKIPPED) : checkSecurityTxt(domain)),
+    timed('whois',   checkWHOIS(domain)),
   ]);
+  if (scanStats) scanStats.totalMs = Date.now() - scanStats.startMs;
 
   lastResults = { dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, securityTxt, whois };
   rerenderAll(lastResults);

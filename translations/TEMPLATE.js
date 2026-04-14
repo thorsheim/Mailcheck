@@ -113,6 +113,18 @@ const LANG_TEMPLATE = {
     CHECK_SKIPPED:          '',  // Shown in panel body when a check was skipped: "This check was skipped."
     RATING_SKIP:            '',  // Badge label: "Skipped"
 
+    // Stats panel (Overview tab — collapsible "Statistics" section)
+    STATS_TITLE:            '',  // Panel heading, e.g. "🤓 Statistics"
+    STATS_TOTAL_TIME:       '',  // "Total scan time"
+    STATS_DOH_REQUESTS:     '',  // "Cloudflare DoH queries"
+    STATS_RIPE_REQUESTS:    '',  // "RIPE Stat API calls"
+    STATS_RIPE_CACHE:       '',  // "from cache" (appended to RIPE Stat line, e.g. "12  (4 from cache)")
+    STATS_HTTP_FETCHES:     '',  // "HTTP fetches"
+    STATS_CHECK_TIMING:     '',  // Per-check timing sub-section label: "Per-check timing"
+    STATS_DKIM_SELECTORS:   '',  // "DKIM selectors tested / found"
+    STATS_IPS_RESOLVED:     '',  // "IPs resolved (RPKI)"
+    STATS_MS:               '',  // Millisecond abbreviation: "ms"
+
     // DNSSEC
     DNSSEC_VALIDATED:       '',  // "✓ DNSSEC validated (AD=true)"
     DNSSEC_UNVALIDATED:     '',  // "⚠ Signed but not validated by resolver (AD=false)"
