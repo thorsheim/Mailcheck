@@ -577,8 +577,19 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-April-13-4 &mdash; click for changelog</summary>
+      <summary>Version 2026-April-14-1 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-April-14-1</span>
+          <ul class="cl-changes">
+            <li>MTA-STS &amp; Security.txt: CORS-blocked fetches now show a bold note explaining that CORS restrictions indicate stronger-than-normal server security</li>
+            <li>DKIM: no-selectors-found result now shows a bold note clarifying that DKIM may still be configured with a non-standard selector name</li>
+            <li>ASPA explanation: added note that RFC 9582 is a proposed standard with very limited deployment; absence of ASPA does not affect scoring; encourages asking providers about deployment plans</li>
+            <li>WHOIS explanation: added note that recently created domains are an indicator of reduced trust and elevated risk of malware/phishing use</li>
+            <li>DNSSEC algorithm details: each algorithm now shows a coloured rating badge (Excellent / Good / Warning / Fail)</li>
+            <li>Light theme set as default (previously followed OS preference)</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-April-13-4</span>
           <ul class="cl-changes">
@@ -794,6 +805,7 @@ const STRINGS = {
       STXT_NOT_FOUND:      'Not found.',
       STXT_CORS_BLOCKED:   'Could not fetch security.txt \u2014 server does not allow cross-origin requests (CORS). The file may exist; verify manually:',
       STXT_CHECK_MANUALLY: 'URLs checked:',
+      CORS_SECURITY_NOTE:  'This is good — the server has better than normal security! However, due to this fact, this check cannot complete automatically.',
       // WHOIS
       WHOIS_RDAP_OK:       '\u2713 RDAP data retrieved',
       WHOIS_ROW_REGISTRAR: 'Registrar',
@@ -881,6 +893,7 @@ const STRINGS = {
       DKIM_ACROSS_PROVIDERS: n => 'across ' + n + ' provider' + (n !== 1 ? 's' : ''),
       DKIM_SELECTORS_TESTED: n => n + ' selectors tested.',
       DKIM_NONE_FOUND:       n => 'No DKIM selectors found. ' + n + ' selectors were tested.',
+      DKIM_NONE_FOUND_NOTE:  'This does not mean DKIM is not configured \u2014 it only means none of the standard selector names commonly used were found.',
       DKIM_AUTO_TESTED:      n => n + ' selectors automatically tested',
       SPF_FOUND_LOOKUPS:     n => 'SPF record found. ' + n + ' DNS lookup mechanism' + (n !== 1 ? 's' : '') + '.',
       SPF_MULTI_RECORDS:     n => 'Multiple SPF records found (' + n + ') \u2014 requires exactly one',
@@ -1054,7 +1067,10 @@ const STRINGS = {
         'Published ASPA records enable route leak detection: if traffic arrives through an unauthorized provider, ASPA-aware routers can reject it.<br><br>' +
         '<b>Published</b> \u2014 ASPA record exists with declared providers. ' +
         '<b>No ASPA</b> \u2014 no record published; route leaks involving this AS cannot be detected by ASPA-aware routers.<br><br>' +
-        'This check reads the ASPA data fetched during the RPKI check, showing provider authorization records for all ASNs associated with the domain\'s NS and MX hosts.',
+        'This check reads the ASPA data fetched during the RPKI check, showing provider authorization records for all ASNs associated with the domain\'s NS and MX hosts.<br><br>' +
+        '<b>Note:</b> RFC 9582 is still a proposed standard and real-world deployment is currently very limited. ' +
+        'Because of this, the absence of ASPA records does not affect your score \u2014 this check is purely informational for now. ' +
+        'That said, it is worth reaching out to your hosting provider or ISP(s) to ask whether they are tracking the development of ASPA and considering deployment.',
       STXT:
         '<b>security.txt (<a href="https://www.rfc-editor.org/rfc/rfc9116">RFC 9116</a>)</b> is a standard for publishing vulnerability disclosure information.<br><br>' +
         'Place the file at <code>/.well-known/security.txt</code> (preferred) or <code>/security.txt</code>.<br><br>' +
@@ -1077,7 +1093,9 @@ const STRINGS = {
         '<b>Key fields:</b> <b>Registrar</b> \u2014 who manages the registration. ' +
         '<b>Expires</b> \u2014 when the registration must be renewed. ' +
         '<b>Status</b> \u2014 domain locks (e.g. <code>clientTransferProhibited</code> prevents unauthorized transfers).<br><br>' +
-        'RDAP replaces the older plaintext WHOIS protocol (<a href="https://www.rfc-editor.org/rfc/rfc3912">RFC 3912</a>) with a structured JSON-based API.',
+        'RDAP replaces the older plaintext WHOIS protocol (<a href="https://www.rfc-editor.org/rfc/rfc3912">RFC 3912</a>) with a structured JSON-based API.<br><br>' +
+        '<b>Note:</b> A recently created domain is a recognised indicator of reduced trust and an elevated risk of the domain being used for malware distribution, phishing, or fraud. ' +
+        'If you are checking a domain you do not own or control, treat a very recent creation date as a warning sign and apply extra caution and verification before interacting with any email or service from that domain.',
       BIMI:
         '<b>BIMI (Brand Indicators for Message Identification)</b> allows organizations to display their logo in email clients that support it (e.g. Gmail, Apple Mail, Yahoo).<br><br>' +
         '<b>DNS record:</b> Published as a TXT record at <code>default._bimi.<domain></code>.<br><br>' +
@@ -1227,6 +1245,7 @@ const STRINGS = {
       STXT_NOT_FOUND:      'Ikke funnet.',
       STXT_CORS_BLOCKED:   'Kunne ikke hente security.txt \u2014 serveren tillater ikke kryssopprinnelsesforesp\u00f8rsler (CORS). Filen kan finnes; sjekk manuelt:',
       STXT_CHECK_MANUALLY: 'URL-er sjekket:',
+      CORS_SECURITY_NOTE:  'Dette er bra \u2014 serveren har bedre enn normal sikkerhet! Men p\u00e5 grunn av dette kan denne sjekken ikke fullf\u00f8res automatisk.',
       // WHOIS
       WHOIS_RDAP_OK:       '\u2713 RDAP-data hentet',
       WHOIS_ROW_REGISTRAR: 'Registrar',
@@ -1314,6 +1333,7 @@ const STRINGS = {
       DKIM_ACROSS_PROVIDERS: n => 'hos ' + n + ' leverand\u00f8r' + (n !== 1 ? 'er' : ''),
       DKIM_SELECTORS_TESTED: n => n + ' selektorer testet.',
       DKIM_NONE_FOUND:       n => 'Ingen DKIM-selektorer funnet. ' + n + ' selektorer ble testet.',
+      DKIM_NONE_FOUND_NOTE:  'Dette betyr ikke at DKIM ikke er konfigurert \u2014 det betyr bare at ingen av de vanlige selectornavnene ble funnet.',
       DKIM_AUTO_TESTED:      n => n + ' selektorer testet automatisk',
       SPF_FOUND_LOOKUPS:     n => 'SPF-post funnet. ' + n + ' DNS-oppslagsmekanisme' + (n !== 1 ? 'r' : '') + '.',
       SPF_MULTI_RECORDS:     n => 'Flere SPF-poster funnet (' + n + ') \u2014 m\u00e5 v\u00e6re n\u00f8yaktig \u00e9n',
@@ -1487,7 +1507,10 @@ const STRINGS = {
         'Publiserte ASPA-poster muliggj\u00f8r deteksjon av rutelekk: hvis trafikk ankommer gjennom en uautorisert leverand\u00f8r, kan ASPA-bevisste rutere avvise den.<br><br>' +
         '<b>Publisert</b> \u2014 ASPA-post finnes med erkl\u00e6rte leverand\u00f8rer. ' +
         '<b>Ingen ASPA</b> \u2014 ingen post publisert; rutelekker for dette AS-et kan ikke oppdages av ASPA-bevisste rutere.<br><br>' +
-        'Denne sjekken leser ASPA-data hentet under RPKI-sjekken og viser leverand\u00f8rautorisasjonsposter for alle ASN-er tilknyttet domenets NS- og MX-verter.',
+        'Denne sjekken leser ASPA-data hentet under RPKI-sjekken og viser leverand\u00f8rautorisasjonsposter for alle ASN-er tilknyttet domenets NS- og MX-verter.<br><br>' +
+        '<b>Merk:</b> RFC 9582 er fortsatt en foreslått standard og faktisk distribusjon er forel\u00f8pig svært begrenset. ' +
+        'Derfor p\u00e5virker manglende ASPA-poster ikke poengsummen din \u2014 denne sjekken er rent informativ for n\u00e5. ' +
+        'Likevel er det verdt \u00e5 kontakte din hostingleverand\u00f8r eller internettleverand\u00f8r(er) og sp\u00f8rre om de f\u00f8lger utviklingen av ASPA og vurderer distribusjon.',
       STXT:
         '<b>security.txt (<a href="https://www.rfc-editor.org/rfc/rfc9116">RFC 9116</a>)</b> er en standard for publisering av informasjon om s\u00e5rbarhetsavsl\u00f8ring.<br><br>' +
         'Plasser filen p\u00e5 <code>/.well-known/security.txt</code> (foretrukket) eller <code>/security.txt</code>.<br><br>' +
@@ -1510,7 +1533,9 @@ const STRINGS = {
         '<b>Nykkelfelter:</b> <b>Registrar</b> \u2014 hvem som administrerer registreringen. ' +
         '<b>Utl\u00f8per</b> \u2014 n\u00e5r registreringen m\u00e5 fornyes. ' +
         '<b>Status</b> \u2014 domenel\u00e5ser (f.eks. <code>clientTransferProhibited</code> forhindrer uautorisert overf\u00f8ring).<br><br>' +
-        'RDAP erstatter den eldre ren-tekst WHOIS-protokollen (<a href="https://www.rfc-editor.org/rfc/rfc3912">RFC 3912</a>) med et strukturert JSON-basert API.',
+        'RDAP erstatter den eldre ren-tekst WHOIS-protokollen (<a href="https://www.rfc-editor.org/rfc/rfc3912">RFC 3912</a>) med et strukturert JSON-basert API.<br><br>' +
+        '<b>Merk:</b> Et nylig opprettet domene er en anerkjent indikator p\u00e5 redusert tillit og \u00f8kt risiko for at domenet brukes til distribusjon av skadelig programvare, phishing eller svindel. ' +
+        'Hvis du sjekker et domene du ikke eier eller kontrollerer, b\u00f8r en svært nylig opprettelsesdato behandles som et advarselstegn \u2014 v\u00e6r ekstra forsiktig og verifiser grundig f\u00f8r du samhandler med e-post eller tjenester fra det domenet.',
       BIMI:
         '<b>BIMI (Brand Indicators for Message Identification)</b> lar organisasjoner vise logoen sin i e-postklienter som st\u00f8tter det (f.eks. Gmail, Apple Mail, Yahoo).<br><br>' +
         '<b>DNS-post:</b> Publiseres som en TXT-post p\u00e5 <code>default._bimi.<domene></code>.<br><br>' +
@@ -2461,6 +2486,7 @@ async function checkMTASTS(domain) {
       policyError = fe.name === 'TimeoutError' ? 'Policy file fetch timed out'
                   : 'Policy file not accessible (CORS or network error)';
     }
+    const corsBlocked = policyError === 'Policy file not accessible (CORS or network error)';
 
     const issues = [];
     let rating = 'warning';
@@ -2525,7 +2551,7 @@ async function checkMTASTS(domain) {
       rating = 'warning';
     }
 
-    return { rating, record, policy, policyUrl, issues };
+    return { rating, record, policy, policyUrl, issues, corsBlocked };
   } catch (e) {
     return { error: true, rating: 'fail', message: e.message === 'Failed to fetch' ? 'Network error' : e.message };
   }
@@ -3252,7 +3278,10 @@ function renderDNSSEC(result) {
         li.appendChild(el('span', 'issue-dot dot-' + a.rating));
         const info = el('span');
         info.appendChild(el('span', 'tag-pill', 'Alg ' + a.algNum));
-        info.appendChild(document.createTextNode(' ' + a.name + (a.isKSK ? ' (KSK)' : '')));
+        info.appendChild(document.createTextNode(' ' + a.name + (a.isKSK ? ' (KSK)' : '') + ' '));
+        const badge = makeBadge(a.rating);
+        badge.style.fontSize = '0.68rem';
+        info.appendChild(badge);
         li.appendChild(info);
         algList.appendChild(li);
       }
@@ -3530,6 +3559,11 @@ function renderDKIM(result) {
 
       if (d.found.length === 0) {
         body.appendChild(el('div', 'card-summary', td('DKIM_NONE_FOUND', testedCount)));
+        const note = el('p', 'card-summary');
+        const strong = document.createElement('strong');
+        strong.textContent = ts('DKIM_NONE_FOUND_NOTE');
+        note.appendChild(strong);
+        body.appendChild(note);
       } else {
         const providers = new Set(d.found.map(s => s.provider).filter(Boolean));
         const sumParts = [
@@ -3775,6 +3809,13 @@ function renderMTASTS(result) {
           body.appendChild(makeDetails(ts('MTASTS_RECORD_NOTES'), frag));
         } else {
           body.appendChild(issueList);
+        }
+        if (d.corsBlocked) {
+          const note = el('p', 'card-summary');
+          const strong = document.createElement('strong');
+          strong.textContent = ts('CORS_SECURITY_NOTE');
+          note.appendChild(strong);
+          body.appendChild(note);
         }
       }
     }
@@ -4059,6 +4100,10 @@ function renderSecurityTxt(result) {
       const msg = el('div', 'card-summary');
       if (d.corsBlocked) {
         msg.appendChild(document.createTextNode(ts('STXT_CORS_BLOCKED')));
+        msg.appendChild(document.createElement('br'));
+        const strong = document.createElement('strong');
+        strong.textContent = ts('CORS_SECURITY_NOTE');
+        msg.appendChild(strong);
       } else {
         msg.appendChild(document.createTextNode(d.message || ts('STXT_NOT_FOUND')));
       }
@@ -4444,8 +4489,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const scoringBackdrop = document.getElementById('scoring-modal-backdrop');
   const scoringModalEl = document.getElementById('scoring-modal');
 
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-  let isLight = !prefersDark.matches;
+  let isLight = true;
 
   function applyTheme() {
     document.documentElement.classList.toggle('light', isLight);

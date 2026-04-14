@@ -86,6 +86,7 @@ Custom selectors can be entered in the DKIM tab.
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-April-14-1 | 2026-04-14 | CORS bold note (MTA-STS/Security.txt); DKIM no-selector note; ASPA RFC status note; WHOIS new-domain trust note; DNSSEC alg rating badges; light theme default |
 | 2026-April-13-4 | 2026-04-13 | Overview placeholder updated with usage guidance and accuracy disclaimer |
 | 2026-April-13-3 | 2026-04-13 | RPKI/ASPA: in-memory session caching for all RIPE Stat API calls; `fetchASNHolder()` helper extracted |
 | 2026-April-13-2 | 2026-04-13 | Settings menu (⚙) replaces theme toggle — adds scoring system explanation panel |
