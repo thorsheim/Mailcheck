@@ -58,6 +58,7 @@ PTR, BIMI, RPKI, ASPA, Security.txt, and WHOIS are informational — shown but n
 - **Settings menu** (⚙, top-right) — dark/light theme toggle + scoring system explanation
 - **Mobile-friendly** — horizontal scrolling tab bar
 - **Language switch** — rerenders all panels without re-querying DNS
+- **Skip MTA-STS / Security.txt** — checkboxes on the input page to skip checks that require direct server access (avoids CORS failures); preference persisted in `localStorage`
 - **Changelog** — version string in footer expands to full release history
 
 ## DKIM selector coverage
@@ -101,6 +102,7 @@ Missing keys fall back to English automatically, so partial translations are wel
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-April-14-2 | 2026-04-14 | Skip checkboxes for MTA-STS and Security.txt to avoid CORS issues; skipped checks excluded from score and Fixes tab |
 | 2026-April-14-1 | 2026-04-14 | CORS bold note (MTA-STS/Security.txt); DKIM no-selector note; ASPA RFC status note; WHOIS new-domain trust note; DNSSEC alg rating badges; light theme default |
 | 2026-April-13-4 | 2026-04-13 | Overview placeholder updated with usage guidance and accuracy disclaimer |
 | 2026-April-13-3 | 2026-04-13 | RPKI/ASPA: in-memory session caching for all RIPE Stat API calls; `fetchASNHolder()` helper extracted |

@@ -106,6 +106,11 @@ const LANG_TEMPLATE = {
     SCORING_RATINGS:        '',  // "Rating points"
     SCORING_GRADES:         '',  // "Grade thresholds"
 
+    // Skip options (checkboxes on the input page)
+    OPT_SKIP_CORS:          '',  // Label: "Skip to avoid CORS issues:"
+    CHECK_SKIPPED:          '',  // Shown in panel body when a check was skipped: "This check was skipped."
+    RATING_SKIP:            '',  // Badge label: "Skipped"
+
     // DNSSEC
     DNSSEC_VALIDATED:       '',  // "✓ DNSSEC validated (AD=true)"
     DNSSEC_UNVALIDATED:     '',  // "⚠ Signed but not validated by resolver (AD=false)"

@@ -96,6 +96,7 @@
   .tab-dot.dot-good { background: var(--good); }
   .tab-dot.dot-warning { background: var(--warning); }
   .tab-dot.dot-fail { background: var(--fail); }
+  .tab-dot.dot-skip { background: var(--text-muted); opacity: 0.45; }
 
   /* ── Panels ──────────────────────────────────────────────────────────────── */
   .tab-panel { display: none; }
@@ -403,6 +404,15 @@
         <option value="no">Norsk</option>
       </select>
     </div>
+    <div style="margin-top:0.45rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+      <span style="font-size:0.78rem;color:var(--text-muted)" data-i18n="OPT_SKIP_CORS">Skip to avoid CORS issues:</span>
+      <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.82rem;color:var(--text-muted);cursor:pointer">
+        <input type="checkbox" id="skip-mtasts-cb"> <span data-i18n="PANEL_MTASTS">MTA-STS</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.82rem;color:var(--text-muted);cursor:pointer">
+        <input type="checkbox" id="skip-stxt-cb"> <span data-i18n="PANEL_STXT">Security.txt</span>
+      </label>
+    </div>
     <div id="input-error"></div>
   </div>
 
@@ -577,8 +587,15 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-April-14-1 &mdash; click for changelog</summary>
+      <summary>Version 2026-April-14-2 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-April-14-2</span>
+          <ul class="cl-changes">
+            <li>Skip checkboxes for MTA-STS and Security.txt on the input page to avoid CORS issues; preferences persisted in localStorage</li>
+            <li>Skipped checks show a grey "Skipped" badge and panel message; MTA-STS score weight excluded and normalised when skipped; skipped checks excluded from Fixes tab</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-April-14-1</span>
           <ul class="cl-changes">
@@ -751,6 +768,10 @@ const STRINGS = {
       SCORING_INFO:        'Informational (not scored)',
       SCORING_RATINGS:     'Rating points',
       SCORING_GRADES:      'Grade thresholds',
+      // Skip options
+      OPT_SKIP_CORS:       'Skip to avoid CORS issues:',
+      CHECK_SKIPPED:       'This check was skipped.',
+      RATING_SKIP:         'Skipped',
       // DNSSEC
       DNSSEC_VALIDATED:    '\u2713 DNSSEC validated (AD=true)',
       DNSSEC_UNVALIDATED:  '\u26a0 Signed but not validated by resolver (AD=false)',
@@ -1200,6 +1221,10 @@ const STRINGS = {
       SCORING_INFO:        'Informasjon (ikke scoret)',
       SCORING_RATINGS:     'Ratingpoeng',
       SCORING_GRADES:      'Karaktergrenser',
+      // Skip options
+      OPT_SKIP_CORS:       'Hopp over for \u00e5 unng\u00e5 CORS-problemer:',
+      CHECK_SKIPPED:       'Denne sjekken ble hoppet over.',
+      RATING_SKIP:         'Hoppet over',
       // DNSSEC
       DNSSEC_VALIDATED:    '\u2713 DNSSEC validert (AD=true)',
       DNSSEC_UNVALIDATED:  '\u26a0 Signert, men ikke validert av resolver (AD=false)',
@@ -3824,6 +3849,7 @@ function renderTLSRPT(result) {
 
 function renderMTASTS(result) {
   const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', message: 'Check failed' };
+  if (d.skipped) { setTabResult('mtasts', 'skip', body => { body.appendChild(el('div', 'card-summary', ts('CHECK_SKIPPED'))); }); return; }
   setTabResult('mtasts', d.rating, body => {
     if (d.error) {
       body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + d.message));
@@ -4133,6 +4159,7 @@ function renderASPA(result) {
 
 function renderSecurityTxt(result) {
   const d = result.status === 'fulfilled' ? result.value : { rating: 'warning', found: false, message: 'Check failed' };
+  if (d.skipped) { setTabResult('security-txt', 'skip', body => { body.appendChild(el('div', 'card-summary', ts('CHECK_SKIPPED'))); }); return; }
   setTabResult('security-txt', d.rating, body => {
     if (!d.found) {
       const msg = el('div', 'card-summary');
@@ -4283,7 +4310,7 @@ function renderRecommendations(r) {
     { tabId: 'dane',        label: 'DANE',        weight: 10, result: g(r.dane)        },
     { tabId: 'tlsrpt',      label: 'TLS-RPT',     weight:  3, result: g(r.tlsrpt)      },
     { tabId: 'caa',         label: 'CAA',         weight:  2, result: g(r.caa)         },
-  ];
+  ].filter(c => !c.result.skipped);
 
   const INFO = [
     { tabId: 'ptr',          label: 'PTR',          weight: 0, result: g(r.ptr)         },
@@ -4292,7 +4319,7 @@ function renderRecommendations(r) {
     { tabId: 'aspa',         label: 'ASPA',         weight: 0, result: { rating: getASPARating(r.rpki), issues: [] } },
     { tabId: 'security-txt', label: 'Security.txt', weight: 0, result: g(r.securityTxt) },
     { tabId: 'whois',        label: 'WHOIS',        weight: 0, result: g(r.whois)       },
-  ];
+  ].filter(c => !c.result.skipped);
 
   const overallRating = SCORED.reduce((acc, c) => worstRating(acc, c.result.rating), 'excellent');
 
@@ -4367,18 +4394,24 @@ function renderRecommendations(r) {
 }
 
 function renderSummary({ dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, securityTxt, whois }) {
-  const g = r => (r && r.status === 'fulfilled' ? r.value : { rating: 'fail' }).rating;
+  const gv = r => (r && r.status === 'fulfilled' ? r.value : { rating: 'fail' });
+  const g  = r => gv(r).rating;
+  const skipped = r => gv(r).skipped === true;
   const dr = g(dnssec), mr = g(mx), nr = g(dane), sr = g(spf), kr = g(dkim);
   const dmr = g(dmarc), tr = g(tlsrpt), pr = g(mtasts), cr = g(caa);
   const ptr_r = g(ptr), bimi_r = g(bimi), rpki_r = g(rpki), aspa_r = getASPARating(rpki), stxt_r = g(securityTxt), whois_r = g(whois);
+  const mtastsSkipped = skipped(mtasts);
 
   // Weights: DKIM 20%, SPF 15%, DMARC 15%, MTA-STS 15%, DNSSEC 10%, MX 10%, DANE 10%, TLS-RPT 3%, CAA 2%
   // PTR, BIMI, RPKI, Security.txt, WHOIS are informational — shown but do not affect grade.
-  const score = ratingScore(dr) * 0.10 + ratingScore(mr) * 0.10
-              + ratingScore(nr) * 0.10 + ratingScore(sr) * 0.15
-              + ratingScore(kr) * 0.20 + ratingScore(dmr) * 0.15
-              + ratingScore(tr) * 0.03 + ratingScore(pr) * 0.15
-              + ratingScore(cr) * 0.02;
+  // If MTA-STS is skipped, its 15% weight is excluded and the score is normalised to 100.
+  const rawScore = ratingScore(dr) * 0.10 + ratingScore(mr) * 0.10
+                 + ratingScore(nr) * 0.10 + ratingScore(sr) * 0.15
+                 + ratingScore(kr) * 0.20 + ratingScore(dmr) * 0.15
+                 + ratingScore(tr) * 0.03
+                 + (mtastsSkipped ? 0 : ratingScore(pr) * 0.15)
+                 + ratingScore(cr) * 0.02;
+  const score = mtastsSkipped ? rawScore / 0.85 : rawScore;
 
   let grade, gradeClass, descKey;
   if (score >= 85)      { grade = 'A'; gradeClass = 'grade-A'; descKey = 'GRADE_A_DESC'; }
@@ -4396,22 +4429,24 @@ function renderSummary({ dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, 
   clearNode(barsEl);
 
   function addBar(label, rating, weight) {
+    const isSkip = (rating === 'skip');
     const row = el('div', 'score-bar-row');
     row.appendChild(el('span', 'score-bar-label', label));
     const track = el('div', 'score-bar-track');
     const fill = el('div', 'score-bar-fill');
-    fill.style.width = ratingScore(rating) + '%';
-    fill.style.background = ratingColor(rating);
+    fill.style.width = isSkip ? '100%' : ratingScore(rating) + '%';
+    fill.style.background = isSkip ? 'var(--border)' : ratingColor(rating);
+    fill.style.opacity = isSkip ? '0.4' : '';
     track.appendChild(fill);
     row.appendChild(track);
-    const rlbl = el('span', null, rating);
-    rlbl.style.cssText = 'color:' + ratingColor(rating) + ';font-size:0.75rem;width:70px;text-align:right';
+    const rlbl = el('span', null, isSkip ? ts('RATING_SKIP') : rating);
+    rlbl.style.cssText = 'color:var(--text-muted);font-size:0.75rem;width:70px;text-align:right' + (isSkip ? '' : ';color:' + ratingColor(rating));
     row.appendChild(rlbl);
     barsEl.appendChild(row);
   }
 
   [['DNSSEC', dr, 10], ['MX', mr, 10], ['DANE', nr, 10], ['SPF', sr, 15], ['DKIM', kr, 20],
-   ['DMARC', dmr, 15], ['MTA-STS', pr, 15], ['TLS-RPT', tr, 3], ['CAA', cr, 2]
+   ['DMARC', dmr, 15], ['MTA-STS', mtastsSkipped ? 'skip' : pr, 15], ['TLS-RPT', tr, 3], ['CAA', cr, 2]
   ].forEach(([label, rating, wt]) => addBar(label, rating, wt));
 
   // Separator for informational tabs
@@ -4440,8 +4475,10 @@ function rerenderAll(r) {
   renderRecommendations(r);
 }
 
-async function runChecks(domain, customSelectors) {
+async function runChecks(domain, customSelectors, opts = {}) {
   currentDomain = domain;
+  const { skipMTASTS = false, skipSecTxt = false } = opts;
+  const SKIPPED = { skipped: true, rating: 'skip' };
 
   document.getElementById('tab-bar').classList.add('visible');
 
@@ -4459,12 +4496,16 @@ async function runChecks(domain, customSelectors) {
   ph.appendChild(loadRow);
   document.getElementById('overview-content').style.display = 'none';
 
-  ['recs','dnssec','mx','ptr','dane','spf','dkim','dmarc','bimi','tlsrpt','mtasts','caa','rpki','aspa','security-txt','whois'].forEach(setTabLoading);
+  const tabsToLoad = ['recs','dnssec','mx','ptr','dane','spf','dkim','dmarc','bimi','tlsrpt','caa','rpki','aspa','whois'];
+  if (!skipMTASTS) tabsToLoad.push('mtasts');
+  if (!skipSecTxt) tabsToLoad.push('security-txt');
+  tabsToLoad.forEach(setTabLoading);
 
   const [dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, securityTxt, whois] = await Promise.allSettled([
     checkDNSSEC(domain), checkMX(domain), checkPTR(domain), checkDANE(domain), checkSPF(domain),
-    checkDKIM(domain, customSelectors), checkDMARC(domain), checkBIMI(domain), checkTLSRPT(domain), checkMTASTS(domain), checkCAA(domain),
-    checkRPKI(domain), checkSecurityTxt(domain), checkWHOIS(domain),
+    checkDKIM(domain, customSelectors), checkDMARC(domain), checkBIMI(domain), checkTLSRPT(domain),
+    skipMTASTS ? Promise.resolve(SKIPPED) : checkMTASTS(domain), checkCAA(domain),
+    checkRPKI(domain), skipSecTxt ? Promise.resolve(SKIPPED) : checkSecurityTxt(domain), checkWHOIS(domain),
   ]);
 
   lastResults = { dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, securityTxt, whois };
@@ -4488,6 +4529,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const selectorInput = document.getElementById('selector-input');
   const checkBtn      = document.getElementById('check-btn');
   const errorEl       = document.getElementById('input-error');
+  const skipMTASTSCb  = document.getElementById('skip-mtasts-cb');
+  const skipStxtCb    = document.getElementById('skip-stxt-cb');
+
+  // Restore persisted skip preferences
+  skipMTASTSCb.checked = localStorage.getItem('mailcheck-skip-mtasts') === '1';
+  skipStxtCb.checked   = localStorage.getItem('mailcheck-skip-stxt')   === '1';
+  skipMTASTSCb.addEventListener('change', () => localStorage.setItem('mailcheck-skip-mtasts', skipMTASTSCb.checked ? '1' : '0'));
+  skipStxtCb.addEventListener('change',   () => localStorage.setItem('mailcheck-skip-stxt',   skipStxtCb.checked   ? '1' : '0'));
 
   async function doCheck() {
     const domain = normalizeDomain(domainInput.value);
@@ -4499,7 +4548,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const customSelectors = parseCustomSelectors(selectorInput.value);
     checkBtn.disabled = true;
     checkBtn.textContent = ts('BTN_CHECKING');
-    try { await runChecks(domain, customSelectors); }
+    try { await runChecks(domain, customSelectors, { skipMTASTS: skipMTASTSCb.checked, skipSecTxt: skipStxtCb.checked }); }
     finally { checkBtn.disabled = false; checkBtn.textContent = ts('BTN_CHECK'); }
   }
 
