@@ -8,7 +8,7 @@ Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-April-14-9**
+Current version: **2026-April-16-2**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -170,7 +170,7 @@ const resolvedText = iss.textKey
 
 **Contributor workflow**: external translators submit only `translations/<lang>.js` (copied from `translations/TEMPLATE.js`). The maintainer pastes it into the `STRINGS` block in `index.html` and adds the `<option>` tag on merge. See `translations/CONTRIBUTING.md`.
 
-**Current languages**: `en` (English, default), `eo` (Esperanto), `es` (Spanish), `no` (Norwegian Bokmål).
+**Current languages**: `en` (English, default), `ar` (Arabic, RTL), `eo` (Esperanto), `es` (Spanish), `fr` (French), `hi` (Hindi), `no` (Norwegian Bokmål).
 
 ### SPF redirect details
 - `analyzeSPF()` tracks `redirectDomain` when it encounters `redirect=<val>`. Does NOT push the old `SPF_REDIRECT` warning.

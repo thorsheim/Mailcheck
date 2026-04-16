@@ -124,14 +124,14 @@
   }
   .explanation {
     font-size: 0.84rem; color: var(--text-muted); line-height: 1.7;
-    background: rgba(255,255,255,.02); border-left: 3px solid var(--border);
-    padding: .6rem .9rem; border-radius: 0 6px 6px 0; margin-top: .5rem;
+    background: rgba(255,255,255,.02); border-inline-start: 3px solid var(--border);
+    padding: .6rem .9rem; border-start-start-radius: 0; border-end-start-radius: 0; border-start-end-radius: 6px; border-end-end-radius: 6px; margin-top: .5rem;
   }
 
   /* Provider table (DKIM) */
   .provider-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: .5rem; }
   .provider-table th {
-    text-align: left; color: var(--text-muted); font-weight: 600;
+    text-align: start; color: var(--text-muted); font-weight: 600;
     padding: .3rem .5rem; border-bottom: 1px solid var(--border);
   }
   .provider-table td {
@@ -252,7 +252,7 @@
   .stxt-field-val { font-family: monospace; word-break: break-all; }
 
   #settings-menu {
-    position: fixed; top: 1rem; right: 1rem; z-index: 100;
+    position: fixed; top: 1rem; inset-inline-end: 1rem; z-index: 100;
   }
   #settings-btn {
     background: var(--card); border: 1px solid var(--border); border-radius: 8px;
@@ -261,12 +261,12 @@
   }
   #settings-btn:hover { border-color: var(--accent); color: var(--text); }
   #settings-dropdown {
-    position: absolute; top: calc(100% + 0.4rem); right: 0;
+    position: absolute; top: calc(100% + 0.4rem); inset-inline-end: 0;
     background: var(--card); border: 1px solid var(--border); border-radius: 8px;
     min-width: 170px; padding: 0.3rem 0; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
   }
   .settings-item {
-    display: block; width: 100%; padding: 0.55rem 1rem; text-align: left;
+    display: block; width: 100%; padding: 0.55rem 1rem; text-align: start;
     background: none; border: none; color: var(--text); cursor: pointer;
     font-size: 0.85rem; transition: background 0.15s;
   }
@@ -319,8 +319,8 @@
   #ack-table-wrap { margin-top: 0.5rem; display: none; }
   #ack-section.open #ack-table-wrap { display: block; }
   #ack-table { border-collapse: collapse; margin: 0; font-size: 0.78rem; }
-  #ack-table th { color: var(--text-muted); font-weight: 600; padding: 0.2rem 1rem 0.2rem 0; text-align: left; border-bottom: 1px solid var(--border); }
-  #ack-table td { padding: 0.18rem 1rem 0.18rem 0; color: var(--text-muted); }
+  #ack-table th { color: var(--text-muted); font-weight: 600; padding-block: 0.2rem; padding-inline-start: 1rem; padding-inline-end: 0; text-align: start; border-bottom: 1px solid var(--border); }
+  #ack-table td { padding-block: 0.18rem; padding-inline-start: 1rem; padding-inline-end: 0; color: var(--text-muted); text-align: start; }
   .fw-particle { position: fixed; pointer-events: none; border-radius: 50%; z-index: 9999; }
   #stats-panel { margin-top: 1.2rem; font-size: 0.78rem; color: var(--text-muted); }
   #stats-panel > summary { cursor: pointer; font-weight: 600; list-style: none; user-select: none; padding: 0.2rem 0; }
@@ -334,7 +334,7 @@
   .stats-timing-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.1rem 0; }
   .stats-timing-name { width: 90px; color: var(--text-muted); font-size: 0.73rem; }
   .stats-timing-bar { display: inline-block; height: 6px; background: var(--accent); border-radius: 2px; opacity: 0.7; }
-  .stats-timing-ms { width: 60px; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; font-size: 0.73rem; }
+  .stats-timing-ms { width: 60px; text-align: end; color: var(--text); font-variant-numeric: tabular-nums; font-size: 0.73rem; }
   #changelog { display: inline; }
   #changelog summary {
     display: inline; cursor: pointer; list-style: none;
@@ -344,7 +344,7 @@
   #changelog summary::after { content: ' \25BE'; font-size: 0.7rem; }
   #changelog[open] summary::after { content: ' \25B4'; font-size: 0.7rem; }
   #changelog-content {
-    margin-top: 0.75rem; text-align: left;
+    margin-top: 0.75rem; text-align: start;
     display: inline-block; width: 100%; max-width: 640px;
   }
   .cl-entry { margin-bottom: 0.75rem; }
@@ -426,6 +426,9 @@
         <option value="eo">Esperanto</option>
         <option value="no">Norsk</option>
         <option value="es">Español</option>
+        <option value="fr">Français</option>
+        <option value="ar">العربية</option>
+        <option value="hi">हिन्दी</option>
       </select>
     </div>
     <div style="margin-top:0.45rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
@@ -610,8 +613,22 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-April-14-9 &mdash; click for changelog</summary>
+      <summary>Version 2026-April-16-2 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-April-16-2</span>
+          <ul class="cl-changes">
+            <li>Acknowledgements fireworks now trigger on click instead of hover</li>
+            <li>Acknowledgements table: Name and Contribution cells left-aligned</li>
+          </ul>
+        </div>
+        <div class="cl-entry">
+          <span class="cl-version">2026-April-16-1</span>
+          <ul class="cl-changes">
+            <li>Arabic (&lrm;&#x627;&#x644;&#x639;&#x631;&#x628;&#x64A;&#x629;) added as a UI language &mdash; full RTL layout support via CSS logical properties; all static strings, dynamic strings, and explanation texts translated</li>
+            <li>Hindi (&#x939;&#x93F;&#x928;&#x94D;&#x926;&#x940;) added as a UI language &mdash; full translation of all static strings, dynamic strings, and explanation texts across all 17 tabs</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-April-14-9</span>
           <ul class="cl-changes">
@@ -2590,6 +2607,1220 @@ const STRINGS = {
         'No afecta a la calificaci\u00f3n global.',
     },
   },
+
+  fr: {
+    // ── s: chaînes statiques ──────────────────────────────────────────────────
+    s: {
+      APP_TITLE:           'V\u00e9rificateur de s\u00e9curit\u00e9 DNS pour le courrier',
+      APP_SUBTITLE:        'V\u00e9rifiez DNSSEC, MX, SPF, DKIM et plus pour n\'importe quel domaine',
+      LABEL_DOMAIN:        'Domaine',
+      LABEL_SELECTORS:     'S\u00e9lecteurs DKIM suppl\u00e9mentaires (s\u00e9par\u00e9s par des virgules)',
+      BTN_CHECK:           'V\u00e9rifier',
+      BTN_CHECKING:        'V\u00e9rification\u2026',
+      BTN_COPY_LINK:       '\uD83D\uDD17 Copier le lien',
+      BTN_COPIED:          '\u2713 Copi\u00e9\u00a0!',
+      LANG_LABEL:          'Langue',
+      OVERVIEW_PLACEHOLDER:'Saisissez un nom de domaine comme google.com ou microsoft.com, puis cliquez sur V\u00e9rifier. Notez que les r\u00e9sultats peuvent ne pas \u00eatre exacts en raison des limitations de votre navigateur ou du r\u00e9seau depuis lequel vous effectuez le test. Les scores sont fournis \u00e0 titre indicatif uniquement et ne refl\u00e8tent pas n\u00e9cessairement la r\u00e9alit\u00e9 compl\u00e8te ni la conformit\u00e9 aux normes applicables.',
+      RUNNING_CHECKS:      'V\u00e9rifications en cours\u2026',
+      CHECKING:            'V\u00e9rification\u2026',
+
+      PANEL_DNSSEC:        'DNSSEC',
+      PANEL_MX:            'Enregistrements MX',
+      PANEL_PTR:           'PTR / FCrDNS',
+      PANEL_DANE:          'DANE / TLSA',
+      PANEL_SPF:           'SPF',
+      PANEL_DKIM:          'DKIM',
+      PANEL_DMARC:         'DMARC',
+      PANEL_BIMI:          'BIMI',
+      PANEL_TLSRPT:        'TLS-RPT',
+      PANEL_MTASTS:        'MTA-STS',
+      PANEL_CAA:           'CAA',
+      PANEL_RPKI:          'RPKI ROA',
+      PANEL_ASPA:          'ASPA',
+      PANEL_STXT:          'Security.txt',
+      PANEL_WHOIS:         'WHOIS / RDAP',
+      PANEL_RECS:          'Correctifs',
+
+      RECS_WHAT_TO_FIX:    'Quoi corriger',
+      RECS_INFORMATIONAL:  'Informatif',
+      RECS_ALL_GOOD:       'Toutes les v\u00e9rifications r\u00e9ussies',
+      RECS_ALL_EXCELLENT:  'Tout est configur\u00e9 de mani\u00e8re optimale.',
+
+      GRADE_TITLE:         'Note globale',
+      GRADE_A_DESC:        'Configuration de s\u00e9curit\u00e9 de messagerie solide.',
+      GRADE_B_DESC:        'Bonne configuration avec des probl\u00e8mes mineurs.',
+      GRADE_C_DESC:        'Probl\u00e8mes mod\u00e9r\u00e9s \u2014 v\u00e9rifiez les avertissements.',
+      GRADE_F_DESC:        'Probl\u00e8mes critiques \u2014 action imm\u00e9diate recommand\u00e9e.',
+
+      RATING_EXCELLENT:    'Excellent',
+      RATING_GOOD:         'Bon',
+      RATING_WARNING:      'Avertissement',
+      RATING_FAIL:         '\u00c9chec',
+      RATING_SKIP:         'Ignor\u00e9',
+
+      ERR_INVALID_DOMAIN:  'ne ressemble pas \u00e0 un domaine valide.',
+      ERR_CHECK_FAILED:    'V\u00e9rification \u00e9chou\u00e9e',
+      ERR_PREFIX:          'Erreur\u00a0: ',
+
+      THEME_LIGHT:         '\u2600 Clair',
+      THEME_DARK:          '\u263D Sombre',
+      THEME_TO_DARK:       'Passer au th\u00e8me sombre',
+      THEME_TO_LIGHT:      'Passer au th\u00e8me clair',
+      SETTINGS_THEME:      'Th\u00e8me',
+      SETTINGS_SCORING:    'Syst\u00e8me de notation',
+      SCORING_TITLE:       'Fonctionnement de la notation',
+      SCORING_CLOSE:       'Fermer',
+      SCORING_SCORED:      'V\u00e9rifications not\u00e9es',
+      SCORING_INFO:        'Informatif (non not\u00e9)',
+      SCORING_RATINGS:     'Points par \u00e9valuation',
+      SCORING_GRADES:      'Seuils de note',
+
+      OPT_SKIP_CORS:       'Ignorer les v\u00e9rifications MTA-STS et Security.txt pour \u00e9viter les probl\u00e8mes CORS',
+      CHECK_SKIPPED:       'Cette v\u00e9rification a \u00e9t\u00e9 ignor\u00e9e.',
+
+      STATS_TITLE:         '\uD83E\uDD13 Statistiques',
+      STATS_TOTAL_TIME:    'Dur\u00e9e totale de l\'analyse',
+      STATS_DOH_REQUESTS:  'Requ\u00eates DoH Cloudflare',
+      STATS_RIPE_REQUESTS: 'Appels API RIPE Stat',
+      STATS_RIPE_CACHE:    'depuis le cache',
+      STATS_HTTP_FETCHES:  'Requ\u00eates HTTP',
+      STATS_CHECK_TIMING:  'Dur\u00e9e par v\u00e9rification',
+      STATS_DKIM_SELECTORS:'S\u00e9lecteurs DKIM test\u00e9s / trouv\u00e9s',
+      STATS_IPS_RESOLVED:  'IPs r\u00e9solues (RPKI)',
+      STATS_MS:            'ms',
+
+      DNSSEC_VALIDATED:    '\u2713 DNSSEC valid\u00e9 (AD=true)',
+      DNSSEC_UNVALIDATED:  '\u26a0 Sign\u00e9 mais non valid\u00e9 par le r\u00e9solveur (AD=false)',
+      DNSSEC_RESOLVER_ONLY:'DNSSEC valid\u00e9 par le r\u00e9solveur, mais les enregistrements de cl\u00e9 n\'ont pu \u00eatre r\u00e9cup\u00e9r\u00e9s.',
+      DNSSEC_NOT_SIGNED:   'Aucun enregistrement DNSKEY trouv\u00e9 \u2014 le domaine n\'est pas sign\u00e9 DNSSEC.',
+      DNSSEC_ALG_DETAILS:  'D\u00e9tails de l\'algorithme',
+
+      MX_HOST_DETAILS:     'D\u00e9tails des serveurs MX',
+      MX_NO_DNSSEC:        'Sans DNSSEC',
+      MX_SIGNED_UNVAL:     '\u26a0 Sign\u00e9, non valid\u00e9',
+      MX_RRSET_WARN:       '\u26a0 Le RRset MX n\'est pas valid\u00e9 par DNSSEC \u2014 la liste des serveurs de messagerie n\'a pas pu \u00eatre v\u00e9rifi\u00e9e cryptographiquement.',
+      MX_NULL_SUGGEST:     'Aucun enregistrement MX \u2014 envisagez de publier un enregistrement MX nul (RFC 7505) accompagn\u00e9 de SPF \u201c-all\u201d et DMARC p=reject pour bloquer compl\u00e8tement les abus de messagerie',
+
+      DANE_NO_TLSA:        'Aucun enregistrement TLSA',
+      DANE_TLSA_UNVAL:     '\u26a0 TLSA trouv\u00e9, non valid\u00e9 par DNSSEC',
+      DANE_NO_VALIDATED:   'Aucun enregistrement TLSA valid\u00e9 par DNSSEC trouv\u00e9.',
+      DANE_TLSA_PER_MX:    'Enregistrements TLSA par serveur MX',
+
+      SPF_RECORD_ANALYSIS: 'Enregistrement et analyse',
+      SPF_RECORD:          'Enregistrement',
+      SPF_MECHANISMS:      'M\u00e9canismes SPF',
+      SPF_IP_ADDRESSES:    'Adresses IP',
+      SPF_IP_PREFIXES:     'Pr\u00e9fixes IP',
+      SPF_DNS_NAMES:       'Noms DNS',
+      SPF_IMPLICIT:        '(implicite)',
+      SPF_ORIGINAL_RECORD: 'Enregistrement SPF original',
+      SPF_PTR_DEPRECATED:  'le m\u00e9canisme ptr est d\u00e9pr\u00e9ci\u00e9',
+      SPF_MISSING_ALL:     'M\u00e9canisme \u201call\u201d manquant \u2014 la politique est incompl\u00e8te',
+      SPF_ALL_HARDFAIL:    '"-all" (\u00e9chec dur) \u2014 les exp\u00e9diteurs non autoris\u00e9s sont rejet\u00e9s',
+      SPF_ALL_SOFTFAIL:    '"~all" (\u00e9chec souple) \u2014 les exp\u00e9diteurs non autoris\u00e9s sont marqu\u00e9s mais peuvent \u00eatre livr\u00e9s',
+      SPF_ALL_NEUTRAL:     '"?all" (neutre) \u2014 n\'offre aucune protection',
+      SPF_NO_RECORD:       'Aucun enregistrement SPF trouv\u00e9',
+
+      DKIM_FOUND_SECTION:  'S\u00e9lecteurs trouv\u00e9s',
+      DKIM_DNS_KEY_DETAILS:'Nom DNS et d\u00e9tails de cl\u00e9',
+      DKIM_PROVIDER_REF:   'R\u00e9f\u00e9rence fournisseur',
+      DKIM_TH_PROVIDER:    'Fournisseur',
+      DKIM_TH_SELECTORS:   'S\u00e9lecteurs par d\u00e9faut',
+      DKIM_TH_INFRA:       'Infrastructure',
+      DKIM_AUTO_TESTED_LABEL: 's\u00e9lecteurs test\u00e9s automatiquement',
+      DKIM_REVOKED:        'Cl\u00e9 r\u00e9voqu\u00e9e (balise p= vide)',
+      DKIM_KEY_TYPE:       'Type de cl\u00e9',
+      DKIM_KEY_SIZE:       'Taille de cl\u00e9',
+      DKIM_BITS:           'bits',
+      DKIM_BITS_EQ:        ' (\u00e9quivalent 256 bits)',
+      DKIM_KEY_RATING:     '\u00c9valuation',
+      DKIM_HASH_ALGS:      'Algorithmes de hachage',
+      DKIM_SERVICE_TYPE:   'Type de service',
+      DKIM_NOTES_FIELD:    'Notes',
+      DKIM_DNSSEC:         'DNSSEC',
+      DKIM_DNSSEC_OK:      '\u2713 valid\u00e9',
+      DKIM_DNSSEC_FAIL:    '\u2717 non valid\u00e9',
+      DKIM_NONE_FOUND_NOTE:'Cela ne signifie pas que DKIM n\'est pas configur\u00e9 \u2014 cela signifie seulement qu\'aucun des noms de s\u00e9lecteur standard habituels n\'a \u00e9t\u00e9 trouv\u00e9.',
+
+      TLSRPT_FOUND:        'Enregistrement TLS-RPT trouv\u00e9.',
+      TLSRPT_NOT_FOUND:    'Aucun enregistrement TLS-RPT.',
+      TLSRPT_RECORD_ANALYSIS: 'Enregistrement et analyse',
+      TLSRPT_NO_RECORD_NXDOMAIN: 'Aucun enregistrement TLS-RPT \u2014 les rapports d\'\u00e9checs TLS SMTP ne seront pas re\u00e7us',
+      TLSRPT_NO_RECORD:    'Aucun enregistrement TLS-RPT trouv\u00e9',
+      TLSRPT_MULTI_RECORDS:'Plusieurs enregistrements TLS-RPT trouv\u00e9s \u2014 exactement un seul est requis',
+      TLSRPT_NO_RUA:       'Aucune URI de rapport rua= \u2014 les rapports ne peuvent pas \u00eatre livr\u00e9s',
+
+      MTASTS_FOUND:        'Enregistrement DNS MTA-STS trouv\u00e9.',
+      MTASTS_NOT_FOUND:    'Aucun enregistrement DNS MTA-STS.',
+      MTASTS_POLICY_ANALYSIS: 'Politique et analyse',
+      MTASTS_RECORD_NOTES: 'Enregistrement et notes',
+      MTASTS_NO_RECORD_NXDOMAIN: 'Aucun enregistrement DNS MTA-STS \u2014 TLS n\'est pas appliqu\u00e9 pour la livraison entrante',
+      MTASTS_NO_RECORD:    'Aucun enregistrement DNS MTA-STS trouv\u00e9',
+      MTASTS_MULTI_RECORDS:'Plusieurs enregistrements DNS MTA-STS trouv\u00e9s \u2014 exactement un seul est requis',
+      MTASTS_NO_ID:        'L\'enregistrement MTA-STS manque du champ id= obligatoire',
+      MTASTS_MODE_ENFORCE: 'Mode de politique\u00a0: enforce \u2014 TLS obligatoire, les livraisons sans TLS sont rejet\u00e9es',
+      MTASTS_MODE_TESTING: 'Mode de politique\u00a0: testing \u2014 surveillance des \u00e9checs TLS sans application',
+      MTASTS_MODE_NONE:    'Mode de politique\u00a0: none \u2014 MTA-STS est explicitement d\u00e9sactiv\u00e9',
+      MTASTS_MX_MATCH:     'Tous les serveurs MX correspondent aux mod\u00e8les mx: de la politique MTA-STS',
+      MTASTS_MX_MISMATCH:  'Un ou plusieurs serveurs MX ne sont couverts par aucun mod\u00e8le mx: de la politique',
+      MTASTS_MX_NO_PATTERNS: 'La politique MTA-STS ne contient aucune ligne mx:',
+
+      CAA_NO_RECORDS:      'Aucun enregistrement CAA.',
+      CAA_RECORDS_ANALYSIS:'Enregistrements et analyse',
+      CAA_CA_DNSSEC:       'DNSSEC du domaine CA',
+      CAA_DNSSEC_VALIDATED:'DNSSEC valid\u00e9',
+      CAA_DNSSEC_SIGNED:   'sign\u00e9 mais non valid\u00e9 par le r\u00e9solveur',
+      CAA_DNSSEC_NONE:     'non sign\u00e9 DNSSEC',
+      CAA_DNSSEC_ERROR:    'erreur\u00a0: ',
+      CAA_NO_RECORDS_ISSUE:'Aucun enregistrement CAA \u2014 n\'importe quelle autorit\u00e9 de certification peut \u00e9mettre des certificats pour ce domaine',
+      CAA_ISSUE_PROHIBITED:'\u00c9mission de certificats interdite pour toutes les CA (issue ";")',
+      CAA_NO_IODEF:        'Aucune balise iodef= \u2014 les violations de politique CA ne seront pas signal\u00e9es',
+
+      RPKI_HOST_DETAILS:   'D\u00e9tails de l\'h\u00f4te',
+      RPKI_NO_IPS:         'Aucune IP r\u00e9solue',
+      RPKI_ASPA_TITLE:     'ASPA (Autorisation de fournisseur AS)',
+      RPKI_ASPA_PROVIDERS: 'Fournisseurs\u00a0:',
+
+      ASPA_NO_DATA:        'Aucune donn\u00e9e ASPA disponible',
+
+      STXT_FOUND:          '\u2713 security.txt trouv\u00e9',
+      STXT_RAW:            'security.txt brut',
+      STXT_NOT_FOUND:      'Non trouv\u00e9.',
+      STXT_CORS_BLOCKED:   'Impossible de r\u00e9cup\u00e9rer security.txt \u2014 le serveur n\'autorise pas les requ\u00eates cross-origin (CORS). Le fichier peut exister\u00a0; v\u00e9rifiez manuellement\u00a0:',
+      STXT_CHECK_MANUALLY: 'URLs v\u00e9rifi\u00e9es\u00a0:',
+      CORS_SECURITY_NOTE:  'C\'est une bonne chose\u00a0! Le serveur dispose d\'une s\u00e9curit\u00e9 sup\u00e9rieure \u00e0 la normale. Cependant, c\'est pourquoi cette v\u00e9rification ne peut pas \u00eatre effectu\u00e9e automatiquement.',
+      STXT_NO_CONTACT:     'Champ Contact obligatoire manquant.',
+      STXT_NO_EXPIRES:     'Champ Expires manquant \u2014 obligatoire selon',
+      STXT_BAD_DATE:       'Le champ Expires a un format de date invalide.',
+      STXT_ENCRYPTION:     'Cl\u00e9 de chiffrement li\u00e9e.',
+      STXT_POLICY:         'Politique de divulgation des vuln\u00e9rabilit\u00e9s li\u00e9e.',
+
+      WHOIS_RDAP_OK:       '\u2713 Donn\u00e9es RDAP r\u00e9cup\u00e9r\u00e9es',
+      WHOIS_ROW_REGISTRAR: 'Registrar',
+      WHOIS_ROW_CREATED:   'Cr\u00e9\u00e9',
+      WHOIS_ROW_UPDATED:   'Mis \u00e0 jour',
+      WHOIS_ROW_EXPIRES:   'Expire',
+      WHOIS_ROW_HANDLE:    'Identifiant',
+      WHOIS_ROW_STATUS:    'Statut',
+      WHOIS_NS_TITLE:      'Serveurs de noms',
+      WHOIS_EXPIRED:       '\u26a0 L\'enregistrement du domaine a expir\u00e9\u00a0!',
+      WHOIS_FAILED:        '\u00c9chec de la recherche RDAP.',
+
+      DMARC_FOUND:         'Enregistrement DMARC trouv\u00e9.',
+      DMARC_NOT_FOUND:     'Aucun enregistrement DMARC.',
+      DMARC_RECORD_ANALYSIS: 'Enregistrement et analyse',
+      DMARC_POLICY_NONE:   'p=none \u2014 surveillance uniquement, pas d\'application',
+      DMARC_POLICY_QUARANTINE: 'p=quarantine \u2014 messages suspects envoy\u00e9s en spam',
+      DMARC_POLICY_REJECT: 'p=reject \u2014 messages non autoris\u00e9s rejet\u00e9s',
+      DMARC_SP_REJECT:     'sp=reject \u2014 sous-domaines\u00a0: messages non autoris\u00e9s rejet\u00e9s',
+      DMARC_SP_QUARANTINE: 'sp=quarantine \u2014 sous-domaines\u00a0: messages suspects envoy\u00e9s en spam',
+      DMARC_SP_NONE:       'sp=none \u2014 sous-domaines\u00a0: sans application',
+      DMARC_ADKIM_STRICT:  'adkim=s \u2014 alignement d\'identifiant DKIM\u00a0: strict',
+      DMARC_ASPF_STRICT:   'aspf=s \u2014 alignement d\'identifiant SPF\u00a0: strict',
+      DMARC_NO_RUA:        'Aucun rua= \u2014 aucun rapport DMARC agr\u00e9g\u00e9 ne sera re\u00e7u',
+      DMARC_NO_RECORD_NXDOMAIN: 'Aucun enregistrement DMARC \u2014 les exp\u00e9diteurs non autoris\u00e9s ne peuvent pas \u00eatre rejet\u00e9s',
+      DMARC_NO_RECORD:     'Aucun enregistrement DMARC trouv\u00e9',
+      DMARC_MULTI_RECORDS: 'Plusieurs enregistrements DMARC \u2014 exactement un seul est requis',
+
+      BIMI_FOUND:          'Enregistrement BIMI trouv\u00e9.',
+      BIMI_NOT_FOUND:      'Aucun enregistrement BIMI.',
+      BIMI_RECORD_ANALYSIS:'Enregistrement et analyse',
+      BIMI_NO_RECORD:      'Aucun enregistrement BIMI \u2014 le logo de marque ne s\'affiche pas dans les clients de messagerie compatibles',
+      BIMI_NO_LOGO:        'l= (URL du logo) absent ou vide \u2014 n\u00e9cessaire pour que BIMI fonctionne',
+      BIMI_NO_AUTHORITY:   'a= (preuve d\'autorit\u00e9) absent \u2014 un certificat VMC est requis pour que Gmail et d\'autres affichent le logo',
+      BIMI_LOGO_OK:        'URL du logo pr\u00e9sente',
+      BIMI_AUTHORITY_OK:   'Preuve d\'autorit\u00e9 (VMC) pr\u00e9sente',
+
+      PTR_HOST_DETAILS:    'D\u00e9tails de l\'h\u00f4te',
+      PTR_NO_MX:           'Aucun serveur MX pour v\u00e9rifier les enregistrements PTR',
+      PTR_MATCH:           'FCrDNS confirm\u00e9 \u2014 PTR correspond au nom du serveur MX',
+      PTR_MISMATCH:        'PTR pr\u00e9sent mais ne correspond pas au nom du serveur MX',
+      PTR_MISSING:         'Aucun enregistrement PTR trouv\u00e9',
+    },
+
+    // ── d: chaînes dynamiques (fonctions fléchées) ────────────────────────────
+    d: {
+      MX_HOSTS_FOUND:        n => n + ' serveur' + (n !== 1 ? 's' : '') + ' MX trouv\u00e9' + (n !== 1 ? 's' : '') + '.',
+      DKIM_SELECTORS_FOUND:  n => n + ' s\u00e9lecteur' + (n !== 1 ? 's' : '') + ' trouv\u00e9' + (n !== 1 ? 's' : ''),
+      DKIM_ACROSS_PROVIDERS: n => 'sur ' + n + ' fournisseur' + (n !== 1 ? 's' : ''),
+      DKIM_SELECTORS_TESTED: n => n + ' s\u00e9lecteurs test\u00e9s.',
+      DKIM_NONE_FOUND:       n => 'Aucun s\u00e9lecteur DKIM trouv\u00e9. ' + n + ' s\u00e9lecteurs ont \u00e9t\u00e9 test\u00e9s.',
+      DKIM_AUTO_TESTED:      n => n + ' s\u00e9lecteurs test\u00e9s automatiquement',
+      SPF_FOUND_LOOKUPS:     n => 'Enregistrement SPF trouv\u00e9. ' + n + ' m\u00e9canisme' + (n !== 1 ? 's' : '') + ' de requ\u00eate DNS.',
+      SPF_MULTI_RECORDS:     n => 'Plusieurs enregistrements SPF trouv\u00e9s (' + n + ') \u2014 exactement un seul est requis',
+      SPF_MULTI_MESSAGE:     n => 'Plusieurs enregistrements SPF (' + n + ') \u2014 il s\'agit d\'une erreur de configuration.',
+      SPF_LOOKUP_EXCEED:     n => n + ' m\u00e9canismes de requ\u00eate DNS d\u00e9passent la limite RFC de 10 (peut provoquer un SPF PermError)',
+      SPF_LOOKUP_HIGH:       n => n + ' m\u00e9canismes de requ\u00eate DNS \u2014 approchant la limite RFC de 10',
+      SPF_REDIRECT:          v => 'redirect=' + v + ' pr\u00e9sent',
+      SPF_IP4_BROAD:         (v, p) => 'ip4:' + v + ' a une plage tr\u00e8s large (/' + p + ' \u2264 /16)',
+      SPF_IP6_BROAD:         (v, p) => 'ip6:' + v + ' a une plage tr\u00e8s large (/' + p + ' \u2264 /32)',
+      SPF_REDIRECT_FOLLOWED: d => '\u2713 redirect= suivi \u2014 politique effective charg\u00e9e depuis\u00a0: ' + d,
+      SPF_REDIRECT_FROM:     d => 'Politique effective (redirect \u2192 ' + d + ')',
+      SPF_REDIRECT_NO_RECORD:d => 'La cible de redirect= n\'a pas d\'enregistrement SPF\u00a0: ' + d,
+      SPF_REDIRECT_MULTI:    d => 'La cible de redirect= a plusieurs enregistrements SPF\u00a0: ' + d,
+      SPF_REDIRECT_ERROR:    d => '\u00c9chec de r\u00e9cup\u00e9ration de la cible redirect=\u00a0: ' + d,
+      CAA_RECORDS_FOUND:     n => n + ' enregistrement' + (n !== 1 ? 's' : '') + ' CAA trouv\u00e9' + (n !== 1 ? 's' : '') + '.',
+      CAA_AUTHORIZED_CA:     n => 'CA' + (n !== 1 ? 's' : '') + ' autoris\u00e9e' + (n !== 1 ? 's' : '') + '\u00a0: ',
+      CAA_CRITICAL_COUNT:    n => n + ' enregistrement' + (n !== 1 ? 's' : '') + ' avec indicateur critique \u2014 les CA ne comprenant pas la balise doivent refuser l\'\u00e9mission',
+      DANE_VALIDATED_OF:     (v, t) => v + ' sur ' + t + ' serveur' + (t !== 1 ? 's' : '') + ' MX ' + (t !== 1 ? 'ont' : 'a') + ' des enregistrements TLSA valid\u00e9s par DNSSEC.',
+      TLSA_RECORDS_COUNT:    n => n + ' enregistrement' + (n !== 1 ? 's' : '') + ' TLSA',
+      RPKI_SUMMARY:          (valid, total, inv, noRoa) => valid + '/' + total + ' IP' + (total !== 1 ? 's' : '') + ' couverte' + (total !== 1 ? 's' : '') + ' par un ROA valide' + (inv > 0 ? ' \u2014 ' + inv + ' invalide' + (inv !== 1 ? 's' : '') : '') + (noRoa > 0 ? ' \u2014 ' + noRoa + ' sans ROA' : ''),
+      ASPA_SUMMARY:          (pub, total) => pub + '/' + total + ' ASN' + (total !== 1 ? 's' : '') + ' avec ASPA publi\u00e9',
+      TLSRPT_ENDPOINT:       uri => 'Point de rapport\u00a0: ' + uri,
+      TLSRPT_BAD_URI:        uri => 'Sch\u00e9ma URI rua= inconnu\u00a0: ' + uri,
+      MTASTS_MAX_AGE_LOW:    age => 'max_age=' + age + 's est inf\u00e9rieur \u00e0 1 jour \u2014 envisagez 604800 (1 semaine) ou plus',
+      MTASTS_POLICY_UNKNOWN: mode => 'Mode de politique inconnu ou manquant\u00a0: ' + (mode || '(vide)'),
+      MTASTS_POLICY_ERROR:   (e, url) => e + ' \u2014 v\u00e9rifiez\u00a0: ' + url,
+      STXT_EXPIRES_WARN:     n => 'Expire dans ' + n + ' jours \u2014 renouvelez bient\u00f4t.',
+      STXT_EXPIRES_OK:       (d, n) => 'Expire\u00a0: ' + d + ' (' + n + ' jours).',
+      STXT_EXPIRED:          d => 'security.txt a expir\u00e9 (' + d + ').',
+      WHOIS_EXPIRES_SOON:    n => '\u26a0 Le domaine expire dans ' + n + ' jours \u2014 renouvelez bient\u00f4t.',
+      DOMAIN_INVALID:        d => '\u00ab\u00a0' + d + '\u00a0\u00bb ne ressemble pas \u00e0 un domaine valide.',
+      SPF_ALL_PASSALL:       q => '"' + q + 'all" (tout accepter) \u2014 autorise n\'importe quel serveur \u00e0 envoyer pour ce domaine',
+      CAA_IODEF:             v => 'Signalement d\'incident (iodef)\u00a0: ' + v,
+      STXT_CONTACT_OK:       v => 'Contact\u00a0: ' + v,
+      DMARC_POLICY_UNKNOWN:  p => 'Valeur p= inconnue\u00a0: ' + p,
+      DMARC_PCT_LOW:         pct => 'pct=' + pct + ' \u2014 politique appliqu\u00e9e sur seulement ' + pct + '% des messages',
+      DMARC_RUA_URI:         uri => 'Rapports agr\u00e9g\u00e9s (rua)\u00a0: ' + uri,
+      DMARC_RUF_URI:         uri => 'Rapports forensiques (ruf)\u00a0: ' + uri,
+      BIMI_LOGO_URL:         url => 'URL du logo\u00a0: ' + url,
+      BIMI_AUTHORITY_URL:    url => 'URL d\'autorit\u00e9\u00a0: ' + url,
+      PTR_VALUE:             v => 'PTR\u00a0: ' + v,
+    },
+
+    // ── x: textes d'explication (HTML) ────────────────────────────────────────
+    x: {
+      DMARC:
+        '<b>DMARC (Domain-based Message Authentication, Reporting and Conformance, <a href="https://www.rfc-editor.org/rfc/rfc7489">RFC 7489</a>)</b> ' +
+        'combine SPF et DKIM avec une politique indiquant aux destinataires quoi faire en cas d\'\u00e9chec d\'authentification.<br><br>' +
+        '<b>Politique (p=)\u00a0:</b> <b>reject</b> \u2014 si l\'authentification \u00e9choue, le message est supprim\u00e9 (le plus fort). ' +
+        '<b>quarantine</b> \u2014 envoyer en spam. <b>none</b> \u2014 surveillance uniquement, aucune action.<br><br>' +
+        '<b>Alignement des identifiants\u00a0:</b> DMARC exige que le domaine dans l\'en-t\u00eate <code>From:</code> s\'aligne avec le domaine authentifi\u00e9 par SPF ou DKIM. ' +
+        'Le mode <b>relax\u00e9</b> (par d\u00e9faut) autorise les correspondances de domaine organisationnel\u00a0; le mode <b>strict</b> (<code>adkim=s</code> / <code>aspf=s</code>) exige une correspondance exacte.<br><br>' +
+        '<b>Rapports\u00a0:</b> <code>rua=</code> re\u00e7oit des rapports JSON agr\u00e9g\u00e9s (recommand\u00e9). ' +
+        '<code>ruf=</code> re\u00e7oit des rapports forensiques par message (sensible \u2014 \u00e0 utiliser avec pr\u00e9caution).<br><br>' +
+        '<b>Politique de sous-domaine (sp=)\u00a0:</b> Si omis, les sous-domaines h\u00e9ritent de <code>p=</code>. ' +
+        'Utilisez <code>sp=reject</code> pour prot\u00e9ger explicitement tous les sous-domaines.<br><br>' +
+        '<b>pct=\u00a0:</b> Applique la politique au pourcentage indiqu\u00e9 des messages \u00e9chou\u00e9s. 100 (par d\u00e9faut) signifie une application compl\u00e8te.<br><br>' +
+        '<b>Exemples d\'enregistrements DNS\u00a0:</b><br>' +
+        '<code>_dmarc.example.com. TXT "v=DMARC1; p=none; rua=mailto:dmarc@example.com"</code> \u2014 surveillance uniquement<br>' +
+        '<code>_dmarc.example.com. TXT "v=DMARC1; p=quarantine; pct=100; rua=mailto:dmarc@example.com; sp=quarantine"</code> \u2014 quarantaine<br>' +
+        '<code>_dmarc.example.com. TXT "v=DMARC1; p=reject; adkim=r; aspf=r; pct=100; rua=mailto:dmarc@example.com; ruf=mailto:dmarc-forensic@example.com; sp=reject"</code> \u2014 application compl\u00e8te',
+      DNSSEC:
+        '<b>Qu\'est-ce que DNSSEC\u00a0?</b> DNSSEC (<a href="https://www.rfc-editor.org/rfc/rfc4033">RFC 4033</a>) ajoute des signatures cryptographiques aux enregistrements DNS, ' +
+        'emp\u00eachant l\'empoisonnement de cache et les attaques de l\'homme du milieu. ' +
+        'L\'<b>indicateur AD</b> (Authentic Data) du r\u00e9solveur Cloudflare confirme que toute la cha\u00eene depuis la racine jusqu\'à ce domaine est valid\u00e9e.<br><br>' +
+        '<b>\u00c9valuation des algorithmes</b> selon <a href="https://www.rfc-editor.org/rfc/rfc8624">RFC 8624</a>\u00a0: <b>Ed25519</b> (alg 15) et <b>ECDSA P-256</b> (alg 13) sont les plus forts. ' +
+        'RSA/SHA-256 (alg 8) est acceptable. RSA/SHA-1 (alg 5) et les variantes DSA sont faibles ou non s\u00e9curis\u00e9s.<br><br>' +
+        '<b>DNSSEC active DANE\u00a0:</b> Sans DNS valid\u00e9 par DNSSEC, les enregistrements TLSA ne sont pas fiables \u2014 ' +
+        'un attaquant pourrait substituer de faux enregistrements TLSA.',
+      MX:
+        '<b>Les enregistrements MX (Mail eXchange)</b> (<a href="https://www.rfc-editor.org/rfc/rfc5321">RFC 5321</a>) indiquent aux autres serveurs o\u00f9 livrer le courrier de votre domaine. ' +
+        'Les num\u00e9ros de priorit\u00e9 plus bas sont essay\u00e9s en premier (priorit\u00e9 10 avant 20).<br><br>' +
+        '<b>Pourquoi DNSSEC est important pour MX\u00a0:</b> Un attaquant capable de falsifier les enregistrements MX pourrait rediriger tous les courriers entrants. ' +
+        'Les enregistrements MX valid\u00e9s par DNSSEC emp\u00eachent cela. Le DNSSEC de chaque nom d\'h\u00f4te MX est v\u00e9rifi\u00e9 au sommet de sa zone.',
+      DANE:
+        '<b>DANE</b> (<a href="https://www.rfc-editor.org/rfc/rfc7672">RFC 7672</a>) utilise des enregistrements TLSA (<a href="https://www.rfc-editor.org/rfc/rfc6698">RFC 6698</a>) pour permettre aux serveurs de messagerie de v\u00e9rifier les certificats TLS ' +
+        'sans d\u00e9pendre des CA commerciales. Interrog\u00e9 \u00e0 <b>_25._tcp.&lt;mx-hostname&gt;</b>.<br><br>' +
+        '<b>Codes d\'utilisation TLSA\u00a0:</b> ' +
+        '<b>DANE-EE (3)</b> \u2014 ancrer au certificat d\'entit\u00e9 finale (le plus fort). ' +
+        '<b>DANE-TA (2)</b> \u2014 ancrer \u00e0 une ancre de confiance. ' +
+        '<b>PKIX-EE (1)</b> / <b>PKIX-TA (0)</b> \u2014 n\u00e9cessitent une validation CA plus une correspondance TLSA.<br><br>' +
+        '<b>Types de correspondance\u00a0:</b> SHA-256 (1) et SHA-512 (2) sont recommand\u00e9s. La correspondance exacte (0) est fragile lors de la rotation des certificats.<br><br>' +
+        '<b>DNSSEC obligatoire\u00a0:</b> Sans DNSSEC, les enregistrements TLSA peuvent \u00eatre falsifi\u00e9s et DANE n\'offre aucune s\u00e9curit\u00e9.',
+      SPF:
+        '<b>SPF (Sender Policy Framework, <a href="https://www.rfc-editor.org/rfc/rfc7208">RFC 7208</a>)</b> sp\u00e9cifie quels serveurs sont autoris\u00e9s \u00e0 envoyer du courrier pour votre domaine. ' +
+        'Les serveurs destinataires v\u00e9rifient si l\'IP d\'envoi correspond.<br><br>' +
+        '<b>Qualificateurs\u00a0:</b> <b>-all</b> (\u00e9chec dur) rejette les exp\u00e9diteurs non autoris\u00e9s \u2014 le plus fort. ' +
+        '<b>~all</b> (\u00e9chec souple) les marque comme suspects. <b>?all</b> (neutre) n\'offre aucune protection. ' +
+        '<b>+all</b> autorise tout le monde \u2014 ne jamais utiliser ceci.<br><br>' +
+        '<b>M\u00e9canismes\u00a0:</b> <b>include:</b> d\u00e9l\u00e8gue \u00e0 un autre domaine. ' +
+        '<b>ip4:</b>/<b>ip6:</b> autorisent des plages d\'IP. <b>mx</b> autorise vos serveurs MX.<br><br>' +
+        '<b>Limite de 10 requ\u00eates (<a href="https://www.rfc-editor.org/rfc/rfc7208#section-4.6.4">RFC 7208 \u00a74.6.4</a>)\u00a0:</b> D\u00e9passer 10 m\u00e9canismes de requ\u00eate DNS provoque un PermError.',
+      DKIM:
+        '<b>Qu\'est-ce qu\'un s\u00e9lecteur DKIM\u00a0?</b> DKIM (<a href="https://www.rfc-editor.org/rfc/rfc6376">RFC 6376</a>) utilise la cryptographie \u00e0 cl\u00e9 publique pour signer le courrier sortant. ' +
+        'Un s\u00e9lecteur (ex. <code>google</code>) est une \u00e9tiquette pointant vers une cl\u00e9 publique DKIM ' +
+        'publi\u00e9e \u00e0 <code>&lt;selector&gt;._domainkey.&lt;domain&gt;</code>. ' +
+        'Un domaine peut avoir plusieurs s\u00e9lecteurs \u2014 un par fournisseur de messagerie ou pour la rotation des cl\u00e9s.<br><br>' +
+        '<b>Trouver des s\u00e9lecteurs\u00a0:</b> Recherchez dans l\'en-t\u00eate <code>DKIM-Signature:</code> de tout courrier re\u00e7u. ' +
+        'La balise <code>s=</code> contient le s\u00e9lecteur. Les s\u00e9lecteurs personnalis\u00e9s ne peuvent pas \u00eatre d\u00e9couverts automatiquement.<br><br>' +
+        '<b>Balises d\'enregistrement de cl\u00e9 (<a href="https://www.rfc-editor.org/rfc/rfc6376">RFC 6376</a> \u00a73.6.1)\u00a0:</b><br>' +
+        '<b>k=</b> type de cl\u00e9\u00a0: <b>ed25519</b> est recommand\u00e9 (compact et fort). <b>rsa</b> est la valeur par d\u00e9faut si omis.<br>' +
+        '<b>h=</b> algorithmes de hachage autoris\u00e9s. <b>sha256</b> est la seule valeur recommand\u00e9e. ' +
+        '<b>sha1</b> a \u00e9t\u00e9 d\u00e9pr\u00e9ci\u00e9 dans <a href="https://www.rfc-editor.org/rfc/rfc8301">RFC 8301</a> (2018) et ne doit pas \u00eatre utilis\u00e9. ' +
+        'Si omis, tous les algorithmes sont implicitement autoris\u00e9s \u2014 ajoutez explicitement <code>h=sha256</code> pour restreindre \u00e0 l\'algorithme fort.<br>' +
+        '<b>s=</b> type de service\u00a0: <b>email</b> restreint la cl\u00e9 \u00e0 l\'usage pour la messagerie (recommand\u00e9). ' +
+        '<b>*</b> (par d\u00e9faut si omis) autorise l\'utilisation pour tout service.<br>' +
+        '<b>t=y</b> marque la cl\u00e9 en mode test \u2014 les v\u00e9rificateurs ne doivent pas rejeter les \u00e9checs. \u00c0 supprimer des cl\u00e9s en production.<br>' +
+        '<b>t=s</b> d\u00e9sactive l\'h\u00e9ritage de cl\u00e9 par les sous-domaines \u2014 les sous-domaines doivent publier leurs propres cl\u00e9s DKIM.<br>' +
+        '<b>p=</b> la cl\u00e9 publique (base64). Une valeur vide r\u00e9voque la cl\u00e9, ce qui est la m\u00e9thode recommand\u00e9e pour retirer un s\u00e9lecteur.<br>' +
+        '<b>v=</b> version\u00a0: <code>DKIM1</code> est optionnel mais recommand\u00e9 pour la clart\u00e9. Toute autre valeur invalide l\'enregistrement.<br>' +
+        '<b>n=</b> notes\u00a0: texte lisible par l\'humain ignor\u00e9 par les v\u00e9rificateurs.<br><br>' +
+        '<b>Tailles de cl\u00e9\u00a0:</b> <b>Ed25519</b> est le plus fort et le plus compact. ' +
+        '<b>RSA-2048</b> est la recommandation minimale. ' +
+        '<b>RSA-1024</b> est faible et doit \u00eatre remplac\u00e9 imm\u00e9diatement.<br><br>' +
+        '<b>DNSSEC sur les enregistrements DKIM</b> emp\u00eache un attaquant de substituer votre cl\u00e9 publique dans le DNS.',
+      TLSRPT:
+        '<b>TLS-RPT (<a href="https://www.rfc-editor.org/rfc/rfc8460">RFC 8460</a>)</b> permet de recevoir des rapports d\'\u00e9checs TLS des serveurs de messagerie exp\u00e9diteurs. ' +
+        'Publi\u00e9 comme enregistrement TXT \u00e0 <code>_smtp._tls.&lt;domaine&gt;</code>.<br><br>' +
+        '<b>Points de rapport rua=\u00a0:</b> Les rapports sont envoy\u00e9s aux adresses <code>mailto:</code> ou aux services d\'agr\u00e9gation <code>https:</code>. ' +
+        'Les points HTTPS sont excellents\u00a0; mailto est bon.<br><br>' +
+        '<b>Contenu des rapports\u00a0:</b> Donn\u00e9es JSON agr\u00e9g\u00e9es \u2014 connexions TLS r\u00e9ussies, \u00e9checs de handshake, ' +
+        'erreurs de certificat et violations de politique. Essentiel pour diagnostiquer les probl\u00e8mes MTA-STS et DANE.<br><br>' +
+        '<b>Exemples d\'enregistrements DNS\u00a0:</b><br>' +
+        '<code>_smtp._tls.example.com. TXT "v=TLSRPTv1; rua=mailto:tlsrpt@example.com"</code><br>' +
+        '<code>_smtp._tls.example.com. TXT "v=TLSRPTv1; rua=https://tlsrpt.example.com/v1"</code> \u2014 point d\'agr\u00e9gation HTTPS',
+      MTASTS:
+        '<b>MTA-STS (<a href="https://www.rfc-editor.org/rfc/rfc8461">RFC 8461</a>)</b> indique aux serveurs exp\u00e9diteurs d\'exiger TLS lors de la livraison \u00e0 votre domaine ' +
+        'et de valider le certificat de votre serveur de messagerie. ' +
+        'Enregistrement DNS \u00e0 <code>_mta-sts.&lt;domaine&gt;</code>\u00a0; ' +
+        'politique \u00e0 <code>https://mta-sts.&lt;domaine&gt;/.well-known/mta-sts.txt</code>.<br><br>' +
+        '<b>Modes de politique\u00a0:</b> <b>enforce</b> \u2014 TLS obligatoire avec certificat valide, ou livraison refus\u00e9e. ' +
+        '<b>testing</b> \u2014 collecter des donn\u00e9es TLS-RPT sans appliquer. ' +
+        '<b>none</b> \u2014 explicitement d\u00e9sactiv\u00e9.<br><br>' +
+        '<b>max_age\u00a0:</b> Secondes pendant lesquelles les exp\u00e9diteurs mettent la politique en cache. 604800 (1 semaine) ou 31557600 (1 an) sont des valeurs typiques.<br><br>' +
+        '<b>Exemple d\'enregistrement DNS\u00a0:</b><br>' +
+        '<code>_mta-sts.example.com. TXT "v=STSv1; id=20240101000000"</code><br><br>' +
+        '<b>Exemple de fichier de politique</b> \u00e0 <code>https://mta-sts.example.com/.well-known/mta-sts.txt</code>\u00a0:<br>' +
+        '<code>version: STSv1</code><br>' +
+        '<code>mode: enforce</code><br>' +
+        '<code>mx: mail.example.com</code><br>' +
+        '<code>max_age: 604800</code>',
+      CAA:
+        '<b>CAA (Certification Authority Authorization, <a href="https://www.rfc-editor.org/rfc/rfc8659">RFC 8659</a>)</b> restreint les CA pouvant \u00e9mettre des certificats TLS.<br><br>' +
+        '<b>Balises\u00a0:</b> <b>issue</b> \u2014 autorise une CA pour les certificats normaux (ex. <code>issue "letsencrypt.org"</code>). ' +
+        '<b>issuewild</b> \u2014 autorise une CA pour les certificats wildcard. ' +
+        '<b>iodef</b> \u2014 o\u00f9 les CA doivent signaler les violations de politique.<br><br>' +
+        '<b>Certificats S/MIME (issuemail, <a href="https://www.rfc-editor.org/rfc/rfc9495">RFC 9495</a>)\u00a0:</b> ' +
+        'La balise <b>issuemail</b> contr\u00f4le quelles CA peuvent \u00e9mettre des certificats S/MIME pour les adresses e-mail de votre domaine. ' +
+        'Si omise, la balise <b>issue</b> r\u00e9git \u00e9galement l\'\u00e9mission S/MIME. ' +
+        'Utilisez <code>issuemail ";"</code> pour interdire toute \u00e9mission S/MIME depuis votre domaine.<br><br>' +
+        '<b>Certificats VMC pour BIMI\u00a0:</b> Les Verified Mark Certificates (VMC) utilis\u00e9s pour les enregistrements d\'autorit\u00e9 BIMI sont r\u00e9gis par la balise standard <b>issue</b> \u2014 il n\'existe pas de balise sp\u00e9cifique aux VMC. ' +
+        'Seul un petit nombre de CA \u00e9met actuellement des VMC (DigiCert, Entrust). ' +
+        'Si vous utilisez BIMI avec VMC (balise <code>a=</code>), assurez-vous que vos enregistrements <b>issue</b> incluent votre fournisseur VMC.<br><br>' +
+        '<b>Indicateur critique\u00a0:</b> Les CA ne comprenant pas une balise avec indicateur critique doivent refuser l\'\u00e9mission. ' +
+        '\u00c0 utiliser avec pr\u00e9caution \u2014 les balises critiques inconnues peuvent bloquer toute \u00e9mission de certificats.<br><br>' +
+        '<b>Sans enregistrements CAA,</b> toute CA r\u00e9ussissant la validation de domaine peut \u00e9mettre des certificats.<br><br>' +
+        '<b>Exemples d\'enregistrements DNS\u00a0:</b><br>' +
+        '<code>example.com. CAA 0 issue "letsencrypt.org"</code><br>' +
+        '<code>example.com. CAA 0 issue "sectigo.com"</code><br>' +
+        '<code>example.com. CAA 0 issuewild "letsencrypt.org"</code><br>' +
+        '<code>example.com. CAA 0 issuemail "sectigo.com"</code><br>' +
+        '<code>example.com. CAA 0 iodef "mailto:caa-violations@example.com"</code>',
+      RPKI:
+        '<b>RPKI (Resource Public Key Infrastructure)</b> permet aux d\u00e9tenteurs d\'adresses IP de publier des Autorisations d\'Origine de Route (ROA) ' +
+        'sp\u00e9cifiant quel ASN est autoris\u00e9 \u00e0 annoncer leurs pr\u00e9fixes.<br><br>' +
+        '<b>Valide</b> \u2014 une ROA correspondante existe\u00a0: le pr\u00e9fixe est prot\u00e9g\u00e9 contre le d\u00e9tournement BGP. ' +
+        '<b>Invalide</b> \u2014 une ROA existe mais n\'autorise PAS l\'annonce actuelle\u00a0: les routeurs avec validation RPKI peuvent filtrer la route. ' +
+        '<b>Sans ROA</b> \u2014 aucune ROA trouv\u00e9e\u00a0: le pr\u00e9fixe n\'est pas prot\u00e9g\u00e9 mais peut \u00eatre rout\u00e9.<br><br>' +
+        'Cette v\u00e9rification r\u00e9sout les IPs pour tous les h\u00f4tes NS et MX, puis interroge RIPE Stat pour valider chaque pr\u00e9fixe par rapport \u00e0 son ASN d\'origine. ' +
+        'RPKI prot\u00e8ge l\'infrastructure de messagerie contre le d\u00e9tournement de routes BGP qui pourrait rediriger ou intercepter le trafic de messagerie.',
+      ASPA:
+        '<b>ASPA (Autonomous System Provider Authorization, <a href="https://www.rfc-editor.org/rfc/rfc9582">RFC 9582</a>)</b> permet \u00e0 un AS de d\u00e9clarer quels fournisseurs upstream il est autoris\u00e9 \u00e0 utiliser. ' +
+        'Les enregistrements ASPA publi\u00e9s permettent de d\u00e9tecter les fuites de routes\u00a0: si le trafic arrive via un fournisseur non autoris\u00e9, les routeurs compatibles ASPA peuvent le rejeter.<br><br>' +
+        '<b>Publi\u00e9</b> \u2014 un enregistrement ASPA avec des fournisseurs d\u00e9clar\u00e9s existe. ' +
+        '<b>Sans ASPA</b> \u2014 aucun enregistrement publi\u00e9\u00a0; les fuites de routes impliquant cet AS ne peuvent pas \u00eatre d\u00e9tect\u00e9es par les routeurs compatibles ASPA.<br><br>' +
+        'Cette v\u00e9rification lit les donn\u00e9es ASPA obtenues lors de la v\u00e9rification RPKI, affichant les enregistrements d\'autorisation de fournisseur pour tous les ASN associ\u00e9s aux h\u00f4tes NS et MX du domaine.<br><br>' +
+        '<b>Note\u00a0:</b> RFC 9582 est encore une norme propos\u00e9e et le d\u00e9ploiement r\u00e9el est actuellement tr\u00e8s limit\u00e9. ' +
+        'C\'est pourquoi l\'absence d\'enregistrements ASPA n\'affecte pas votre score \u2014 cette v\u00e9rification est purement informative pour l\'instant. ' +
+        'Cependant, il vaut la peine de demander \u00e0 votre h\u00e9bergeur ou FAI s\'il suit le d\u00e9veloppement d\'ASPA et envisage son impl\u00e9mentation.',
+      STXT:
+        '<b>security.txt (<a href="https://www.rfc-editor.org/rfc/rfc9116">RFC 9116</a>)</b> est une norme pour publier des informations de divulgation des vuln\u00e9rabilit\u00e9s.<br><br>' +
+        'Placez le fichier \u00e0 <code>/.well-known/security.txt</code> (pr\u00e9f\u00e9r\u00e9) ou <code>/security.txt</code>.<br><br>' +
+        '<b>Champs obligatoires\u00a0:</b> <code>Contact</code> \u2014 o\u00f9 signaler des vuln\u00e9rabilit\u00e9s (e-mail, URL ou t\u00e9l\u00e9phone). ' +
+        '<code>Expires</code> \u2014 date ISO 8601 \u00e0 partir de laquelle le fichier ne doit plus \u00eatre fiable.<br><br>' +
+        '<b>Champs optionnels\u00a0:</b> <code>Encryption</code> (URL de cl\u00e9 GPG), <code>Policy</code> (URL de politique de divulgation), ' +
+        '<code>Acknowledgments</code>, <code>Preferred-Languages</code>, <code>Canonical</code>, <code>Hiring</code>.<br><br>' +
+        '<b>Exemple de fichier\u00a0:</b><br>' +
+        '<code>Contact: mailto:security@example.com</code><br>' +
+        '<code>Contact: https://example.com/security/report</code><br>' +
+        '<code>Expires: 2027-01-01T00:00:00Z</code><br>' +
+        '<code>Encryption: https://example.com/pgp-key.asc</code><br>' +
+        '<code>Policy: https://example.com/security/policy</code><br>' +
+        '<code>Preferred-Languages: fr, en</code><br>' +
+        '<code>Canonical: https://example.com/.well-known/security.txt</code><br><br>' +
+        'Utilisez <a href="https://securitytxt.org/">securitytxt.org</a> pour g\u00e9n\u00e9rer et signer votre fichier.',
+      WHOIS:
+        '<b>WHOIS / RDAP</b> fournit des donn\u00e9es d\'enregistrement de domaine via le protocole d\'acc\u00e8s aux donn\u00e9es d\'enregistrement (<a href="https://www.rfc-editor.org/rfc/rfc7480">RFC 7480</a>).<br><br>' +
+        'Les donn\u00e9es sont r\u00e9cup\u00e9r\u00e9es depuis le serveur RDAP faisant autorit\u00e9 pour le TLD du domaine via <code>rdap.org</code>.<br><br>' +
+        '<b>Champs principaux\u00a0:</b> <b>Registrar</b> \u2014 qui g\u00e8re l\'enregistrement. ' +
+        '<b>Expire</b> \u2014 quand l\'enregistrement doit \u00eatre renouvel\u00e9. ' +
+        '<b>Statut</b> \u2014 verrous du domaine (ex. <code>clientTransferProhibited</code> emp\u00eache les transferts non autoris\u00e9s).<br><br>' +
+        'RDAP remplace l\'ancien protocole WHOIS en texte brut (<a href="https://www.rfc-editor.org/rfc/rfc3912">RFC 3912</a>) par une API structur\u00e9e bas\u00e9e sur JSON.<br><br>' +
+        '<b>Note\u00a0:</b> Un domaine r\u00e9cemment cr\u00e9\u00e9 est un indicateur reconnu de moindre confiance et de risque accru d\'\u00eatre utilis\u00e9 pour la distribution de logiciels malveillants, le phishing ou la fraude. ' +
+        'Si vous v\u00e9rifiez un domaine que vous ne poss\u00e9dez ni ne contr\u00f4lez, traitez une date de cr\u00e9ation tr\u00e8s r\u00e9cente comme un signal d\'avertissement et appliquez une pr\u00e9caution et une v\u00e9rification suppl\u00e9mentaires avant d\'interagir avec tout courrier ou service de ce domaine.',
+      BIMI:
+        '<b>BIMI est g\u00e9n\u00e9ralement consid\u00e9r\u00e9 comme un outil marketing qui n\'apporte aucune valeur de s\u00e9curit\u00e9 suppl\u00e9mentaire. Afficher un logo dans une bo\u00eete aux lettres pour \u00ab prouver \u00bb que c\'est le vrai exp\u00e9diteur revient \u00e0 afficher un GIF disant \u00ab 100\u00a0% garanti \u00bb. Si vous souhaitez quand m\u00eame payer des CA pour cela, libre \u00e0 vous.</b><br><br>' +
+        '<b>BIMI (Brand Indicators for Message Identification)</b> permet aux organisations d\'afficher leur logo dans les clients de messagerie compatibles (ex. Gmail, Apple Mail, Yahoo).<br><br>' +
+        '<b>Enregistrement DNS\u00a0:</b> Publi\u00e9 comme enregistrement TXT \u00e0 <code>default._bimi.&lt;domaine&gt;</code>.<br><br>' +
+        '<b>l= (URL du logo)\u00a0:</b> Une URL pointant vers un fichier SVG du logo. N\u00e9cessaire pour que BIMI fonctionne. ' +
+        'Le SVG doit \u00eatre une image carr\u00e9e et s\u00e9curis\u00e9e pour les profils, h\u00e9berg\u00e9e sur HTTPS.<br><br>' +
+        '<b>a= (preuve d\'autorit\u00e9)\u00a0:</b> Une URL pointant vers un Verified Mark Certificate (VMC) \u00e9mis par une CA autoris\u00e9e (ex. DigiCert, Entrust). ' +
+        'La plupart des grands clients (dont Gmail) l\'exigent pour afficher le logo. Sans VMC, l\'enregistrement est purement informatif.<br><br>' +
+        '<b>Pr\u00e9requis\u00a0:</b> DMARC doit \u00eatre en mode d\'application <code>p=quarantine</code> ou <code>p=reject</code>. ' +
+        'BIMI n\'affecte pas directement la s\u00e9curit\u00e9 de la messagerie \u2014 c\'est une fonctionnalit\u00e9 de visibilit\u00e9 de marque qui r\u00e9compense une application rigoureuse de DMARC.',
+      PTR:
+        '<b>Les enregistrements PTR</b> (enregistrements pointeur) mappent les adresses IP vers des noms d\'h\u00f4te \u2014 l\'inverse des enregistrements A/AAAA.<br><br>' +
+        '<b>FCrDNS (Forward-Confirmed reverse DNS)\u00a0:</b> Un enregistrement PTR est \u00ab confirm\u00e9 en avant \u00bb lorsque la valeur PTR r\u00e9sout en avant vers l\'IP d\'origine. ' +
+        'De nombreux filtres anti-spam et MTA destinataires v\u00e9rifient FCrDNS pour les h\u00f4tes MX. Une correspondance renforce la confiance\u00a0; un PTR absent ou non correspondant peut augmenter les scores de spam.<br><br>' +
+        '<b>IPv4\u00a0:</b> Invers\u00e9 comme <code>d.c.b.a.in-addr.arpa</code>. ' +
+        '<b>IPv6\u00a0:</b> \u00c9tendu \u00e0 32 chiffres hexad\u00e9cimaux, invers\u00e9 et suivi de <code>.ip6.arpa</code>.<br><br>' +
+        '<b>Cette v\u00e9rification</b> r\u00e9sout les enregistrements A et AAAA pour chaque h\u00f4te MX, interroge le PTR pour chaque IP et v\u00e9rifie si la valeur PTR correspond au nom d\'h\u00f4te MX (v\u00e9rification FCrDNS relax\u00e9e). ' +
+        'N\'affecte pas la note globale.',
+    },
+  },
+
+  ar: {
+    s: {
+      APP_TITLE:           'مدقق أمان DNS للبريد الإلكتروني',
+      APP_SUBTITLE:        'تحقق من DNSSEC وMX وSPF وDKIM والمزيد لأي نطاق',
+      LABEL_DOMAIN:        'النطاق',
+      LABEL_SELECTORS:     'محددات DKIM إضافية (مفصولة بفاصلة)',
+      BTN_CHECK:           'فحص',
+      BTN_CHECKING:        'جارٍ الفحص\u2026',
+      BTN_COPY_LINK:       '\uD83D\uDD17 نسخ الرابط',
+      BTN_COPIED:          '\u2713 تم النسخ!',
+      LANG_LABEL:          'اللغة',
+      OVERVIEW_PLACEHOLDER:'أدخل اسم نطاق مثل google.com أو microsoft.com ثم انقر على فحص. يُرجى العلم بأن النتائج قد لا تكون دقيقة بسبب قيود متصفحك أو الشبكة التي تجري منها الاختبار. الدرجات لأغراض إرشادية فحسب ولا تعكس بالضرورة الحقيقة الكاملة أو الامتثال للمعايير ذات الصلة.',
+      RUNNING_CHECKS:      'جارٍ إجراء الفحوصات\u2026',
+      CHECKING:            'جارٍ الفحص\u2026',
+
+      PANEL_DNSSEC:        'DNSSEC',
+      PANEL_MX:            'سجلات MX',
+      PANEL_PTR:           'PTR / FCrDNS',
+      PANEL_DANE:          'DANE / TLSA',
+      PANEL_SPF:           'SPF',
+      PANEL_DKIM:          'DKIM',
+      PANEL_DMARC:         'DMARC',
+      PANEL_BIMI:          'BIMI',
+      PANEL_TLSRPT:        'TLS-RPT',
+      PANEL_MTASTS:        'MTA-STS',
+      PANEL_CAA:           'CAA',
+      PANEL_RPKI:          'RPKI ROA',
+      PANEL_ASPA:          'ASPA',
+      PANEL_STXT:          'Security.txt',
+      PANEL_WHOIS:         'WHOIS / RDAP',
+      PANEL_RECS:          'الإصلاحات',
+
+      RECS_WHAT_TO_FIX:    'ما يجب إصلاحه',
+      RECS_INFORMATIONAL:  'معلوماتي',
+      RECS_ALL_GOOD:       'جميع الفحوصات ناجحة',
+      RECS_ALL_EXCELLENT:  'كل شيء مُهيَّأ بشكل مثالي.',
+
+      GRADE_TITLE:         'التقييم الإجمالي',
+      GRADE_A_DESC:        'إعداد أمان بريد إلكتروني قوي.',
+      GRADE_B_DESC:        'إعداد جيد مع مشكلات طفيفة.',
+      GRADE_C_DESC:        'مشكلات متوسطة \u2014 راجع التحذيرات.',
+      GRADE_F_DESC:        'مشكلات حرجة \u2014 يُنصح باتخاذ إجراء فوري.',
+
+      RATING_EXCELLENT:    'ممتاز',
+      RATING_GOOD:         'جيد',
+      RATING_WARNING:      'تحذير',
+      RATING_FAIL:         'فشل',
+      RATING_SKIP:         'تم التخطي',
+
+      ERR_INVALID_DOMAIN:  'لا يبدو أنه نطاق صالح.',
+      ERR_CHECK_FAILED:    'فشل الفحص',
+      ERR_PREFIX:          'خطأ: ',
+
+      THEME_LIGHT:         '\u2600 فاتح',
+      THEME_DARK:          '\u263D داكن',
+      THEME_TO_DARK:       'التبديل إلى السمة الداكنة',
+      THEME_TO_LIGHT:      'التبديل إلى السمة الفاتحة',
+      SETTINGS_THEME:      'السمة',
+      SETTINGS_SCORING:    'نظام التقييم',
+      SCORING_TITLE:       'كيف يعمل التقييم',
+      SCORING_CLOSE:       'إغلاق',
+      SCORING_SCORED:      'الفحوصات المقيّمة',
+      SCORING_INFO:        'معلوماتي (غير مقيّم)',
+      SCORING_RATINGS:     'نقاط التقييم',
+      SCORING_GRADES:      'عتبات الدرجات',
+
+      OPT_SKIP_CORS:       'تخطي فحوصات MTA-STS وSecurity.txt لتجنب مشكلات CORS',
+      CHECK_SKIPPED:       'تم تخطي هذا الفحص.',
+
+      STATS_TITLE:         '\uD83E\uDD13 إحصائيات',
+      STATS_TOTAL_TIME:    'إجمالي وقت الفحص',
+      STATS_DOH_REQUESTS:  'استعلامات DoH لـ Cloudflare',
+      STATS_RIPE_REQUESTS: 'طلبات RIPE Stat API',
+      STATS_RIPE_CACHE:    'من التخزين المؤقت',
+      STATS_HTTP_FETCHES:  'طلبات HTTP',
+      STATS_CHECK_TIMING:  'توقيت كل فحص',
+      STATS_DKIM_SELECTORS:'محددات DKIM المُختبرة / المُكتشفة',
+      STATS_IPS_RESOLVED:  'عناوين IP المحلولة (RPKI)',
+      STATS_MS:            'ms',
+
+      DNSSEC_VALIDATED:    '\u2713 تم التحقق من DNSSEC (AD=true)',
+      DNSSEC_UNVALIDATED:  '\u26a0 موقَّع لكن غير مُتحقَّق منه بواسطة المحلل (AD=false)',
+      DNSSEC_RESOLVER_ONLY:'تم التحقق من DNSSEC بواسطة المحلل، لكن تعذّر استرداد سجلات المفاتيح.',
+      DNSSEC_NOT_SIGNED:   'لم يتم العثور على سجلات DNSKEY \u2014 النطاق غير موقَّع بـ DNSSEC.',
+      DNSSEC_ALG_DETAILS:  'تفاصيل الخوارزمية',
+
+      MX_HOST_DETAILS:     'تفاصيل خوادم MX',
+      MX_NO_DNSSEC:        'بدون DNSSEC',
+      MX_SIGNED_UNVAL:     '\u26a0 موقَّع، غير مُتحقَّق منه',
+      MX_RRSET_WARN:       '\u26a0 مجموعة سجلات MX غير مُتحقَّق منها بـ DNSSEC \u2014 تعذّر التحقق الكريبتوغرافي من قائمة خوادم البريد.',
+      MX_NULL_SUGGEST:     'لا توجد سجلات MX \u2014 يُنصح بنشر سجل MX فارغ (RFC 7505) مع SPF "-all" وDMARC p=reject لمنع إساءة استخدام البريد بالكامل',
+
+      DANE_NO_TLSA:        'لا يوجد سجل TLSA',
+      DANE_TLSA_UNVAL:     '\u26a0 تم العثور على TLSA، غير مُتحقَّق منه بـ DNSSEC',
+      DANE_NO_VALIDATED:   'لم يتم العثور على سجلات TLSA مُتحقَّق منها بـ DNSSEC.',
+      DANE_TLSA_PER_MX:    'سجلات TLSA لكل خادم MX',
+
+      SPF_RECORD_ANALYSIS: 'السجل والتحليل',
+      SPF_RECORD:          'السجل',
+      SPF_MECHANISMS:      'آليات SPF',
+      SPF_IP_ADDRESSES:    'عناوين IP',
+      SPF_IP_PREFIXES:     'بوادئ IP',
+      SPF_DNS_NAMES:       'أسماء DNS',
+      SPF_IMPLICIT:        '(ضمني)',
+      SPF_ORIGINAL_RECORD: 'سجل SPF الأصلي',
+      SPF_PTR_DEPRECATED:  'آلية ptr مُهمَلة',
+      SPF_MISSING_ALL:     'آلية "all" مفقودة \u2014 السياسة غير مكتملة',
+      SPF_ALL_HARDFAIL:    '"-all" (فشل صارم) \u2014 يتم رفض المرسلين غير المصرح لهم',
+      SPF_ALL_SOFTFAIL:    '"~all" (فشل ناعم) \u2014 يتم تمييز المرسلين غير المصرح لهم لكن قد يتم تسليمهم',
+      SPF_ALL_NEUTRAL:     '"?all" (محايد) \u2014 لا يوفر أي حماية',
+      SPF_NO_RECORD:       'لم يتم العثور على سجل SPF',
+
+      DKIM_FOUND_SECTION:  'المحددات المُكتشفة',
+      DKIM_DNS_KEY_DETAILS:'اسم DNS وتفاصيل المفتاح',
+      DKIM_PROVIDER_REF:   'مرجع المزود',
+      DKIM_TH_PROVIDER:    'المزود',
+      DKIM_TH_SELECTORS:   'المحددات الافتراضية',
+      DKIM_TH_INFRA:       'البنية التحتية',
+      DKIM_AUTO_TESTED_LABEL: 'محددات تم اختبارها تلقائياً',
+      DKIM_REVOKED:        'تم إلغاء المفتاح (وسم p= فارغ)',
+      DKIM_KEY_TYPE:       'نوع المفتاح',
+      DKIM_KEY_SIZE:       'حجم المفتاح',
+      DKIM_BITS:           'بت',
+      DKIM_BITS_EQ:        ' (ما يعادل 256 بت)',
+      DKIM_KEY_RATING:     'التقييم',
+      DKIM_HASH_ALGS:      'خوارزميات التجزئة',
+      DKIM_SERVICE_TYPE:   'نوع الخدمة',
+      DKIM_NOTES_FIELD:    'ملاحظات',
+      DKIM_DNSSEC:         'DNSSEC',
+      DKIM_DNSSEC_OK:      '\u2713 مُتحقَّق منه',
+      DKIM_DNSSEC_FAIL:    '\u2717 غير مُتحقَّق منه',
+      DKIM_NONE_FOUND_NOTE:'هذا لا يعني أن DKIM غير مُهيَّأ \u2014 يعني فقط أنه لم يتم العثور على أيٍّ من أسماء المحددات القياسية الشائعة.',
+
+      TLSRPT_FOUND:        'تم العثور على سجل TLS-RPT.',
+      TLSRPT_NOT_FOUND:    'لا يوجد سجل TLS-RPT.',
+      TLSRPT_RECORD_ANALYSIS: 'السجل والتحليل',
+      TLSRPT_NO_RECORD_NXDOMAIN: 'لا يوجد سجل TLS-RPT \u2014 لن يتم استقبال تقارير فشل TLS في SMTP',
+      TLSRPT_NO_RECORD:    'لم يتم العثور على سجل TLS-RPT',
+      TLSRPT_MULTI_RECORDS:'تم العثور على سجلات TLS-RPT متعددة \u2014 يجب وجود سجل واحد فقط',
+      TLSRPT_NO_RUA:       'لا يوجد URI للإبلاغ rua= \u2014 لا يمكن تسليم التقارير',
+
+      MTASTS_FOUND:        'تم العثور على سجل DNS لـ MTA-STS.',
+      MTASTS_NOT_FOUND:    'لا يوجد سجل DNS لـ MTA-STS.',
+      MTASTS_POLICY_ANALYSIS: 'السياسة والتحليل',
+      MTASTS_RECORD_NOTES: 'السجل والملاحظات',
+      MTASTS_NO_RECORD_NXDOMAIN: 'لا يوجد سجل DNS لـ MTA-STS \u2014 TLS غير مفروض للتسليم الوارد',
+      MTASTS_NO_RECORD:    'لم يتم العثور على سجل DNS لـ MTA-STS',
+      MTASTS_MULTI_RECORDS:'تم العثور على سجلات DNS متعددة لـ MTA-STS \u2014 يجب وجود سجل واحد فقط',
+      MTASTS_NO_ID:        'سجل MTA-STS يفتقر إلى حقل id= الإلزامي',
+      MTASTS_MODE_ENFORCE: 'وضع السياسة: enforce \u2014 TLS إلزامي، يتم رفض التسليم بدون TLS',
+      MTASTS_MODE_TESTING: 'وضع السياسة: testing \u2014 مراقبة فشل TLS دون تطبيق',
+      MTASTS_MODE_NONE:    'وضع السياسة: none \u2014 MTA-STS معطَّل صراحةً',
+      MTASTS_MX_MATCH:     'جميع خوادم MX تطابق أنماط mx: في سياسة MTA-STS',
+      MTASTS_MX_MISMATCH:  'خادم MX واحد أو أكثر غير مُغطَّى بأي نمط mx: في السياسة',
+      MTASTS_MX_NO_PATTERNS: 'سياسة MTA-STS لا تحتوي على أسطر mx:',
+
+      CAA_NO_RECORDS:      'لا توجد سجلات CAA.',
+      CAA_RECORDS_ANALYSIS:'السجلات والتحليل',
+      CAA_CA_DNSSEC:       'DNSSEC لنطاق CA',
+      CAA_DNSSEC_VALIDATED:'تم التحقق من DNSSEC',
+      CAA_DNSSEC_SIGNED:   'موقَّع لكن غير مُتحقَّق منه بواسطة المحلل',
+      CAA_DNSSEC_NONE:     'غير موقَّع بـ DNSSEC',
+      CAA_DNSSEC_ERROR:    'خطأ: ',
+      CAA_NO_RECORDS_ISSUE:'لا توجد سجلات CAA \u2014 يمكن لأي جهة إصدار شهادات إصدار شهادات لهذا النطاق',
+      CAA_ISSUE_PROHIBITED:'إصدار الشهادات محظور لجميع جهات الإصدار (issue ";")',
+      CAA_NO_IODEF:        'لا يوجد وسم iodef= \u2014 لن يتم الإبلاغ عن انتهاكات سياسة CA',
+
+      RPKI_HOST_DETAILS:   'تفاصيل المضيف',
+      RPKI_NO_IPS:         'لم يتم حل أي عناوين IP',
+      RPKI_ASPA_TITLE:     'ASPA (تفويض مزود AS)',
+      RPKI_ASPA_PROVIDERS: 'المزودون:',
+
+      ASPA_NO_DATA:        'لا تتوفر بيانات ASPA',
+
+      STXT_FOUND:          '\u2713 تم العثور على security.txt',
+      STXT_RAW:            'security.txt الخام',
+      STXT_NOT_FOUND:      'غير موجود.',
+      STXT_CORS_BLOCKED:   'تعذّر جلب security.txt \u2014 الخادم لا يسمح بالطلبات عبر الأصول (CORS). قد يكون الملف موجوداً؛ تحقق يدوياً:',
+      STXT_CHECK_MANUALLY: 'عناوين URL التي تم فحصها:',
+      CORS_SECURITY_NOTE:  'هذا أمر جيد! الخادم يتمتع بأمان أعلى من المعتاد. ومع ذلك، لهذا السبب لا يمكن إتمام هذا الفحص تلقائياً.',
+      STXT_NO_CONTACT:     'حقل Contact الإلزامي مفقود.',
+      STXT_NO_EXPIRES:     'حقل Expires مفقود \u2014 إلزامي وفقاً لـ',
+      STXT_BAD_DATE:       'حقل Expires يحتوي على تنسيق تاريخ غير صالح.',
+      STXT_ENCRYPTION:     'مفتاح التشفير مرتبط.',
+      STXT_POLICY:         'سياسة الإفصاح عن الثغرات مرتبطة.',
+
+      WHOIS_RDAP_OK:       '\u2713 تم استرداد بيانات RDAP',
+      WHOIS_ROW_REGISTRAR: 'المسجّل',
+      WHOIS_ROW_CREATED:   'تاريخ الإنشاء',
+      WHOIS_ROW_UPDATED:   'آخر تحديث',
+      WHOIS_ROW_EXPIRES:   'تاريخ الانتهاء',
+      WHOIS_ROW_HANDLE:    'المعرف',
+      WHOIS_ROW_STATUS:    'الحالة',
+      WHOIS_NS_TITLE:      'خوادم الأسماء',
+      WHOIS_EXPIRED:       '\u26a0 انتهت صلاحية تسجيل النطاق!',
+      WHOIS_FAILED:        'فشل البحث في RDAP.',
+
+      DMARC_FOUND:         'تم العثور على سجل DMARC.',
+      DMARC_NOT_FOUND:     'لا يوجد سجل DMARC.',
+      DMARC_RECORD_ANALYSIS: 'السجل والتحليل',
+      DMARC_POLICY_NONE:   'p=none \u2014 مراقبة فقط، لا تطبيق',
+      DMARC_POLICY_QUARANTINE: 'p=quarantine \u2014 الرسائل المشبوهة تُرسَل إلى البريد المزعج',
+      DMARC_POLICY_REJECT: 'p=reject \u2014 يتم رفض الرسائل غير المصرح بها',
+      DMARC_SP_REJECT:     'sp=reject \u2014 النطاقات الفرعية: يتم رفض الرسائل غير المصرح بها',
+      DMARC_SP_QUARANTINE: 'sp=quarantine \u2014 النطاقات الفرعية: الرسائل المشبوهة تُرسَل إلى البريد المزعج',
+      DMARC_SP_NONE:       'sp=none \u2014 النطاقات الفرعية: بدون تطبيق',
+      DMARC_ADKIM_STRICT:  'adkim=s \u2014 محاذاة معرّف DKIM: صارمة',
+      DMARC_ASPF_STRICT:   'aspf=s \u2014 محاذاة معرّف SPF: صارمة',
+      DMARC_NO_RUA:        'لا يوجد rua= \u2014 لن يتم استقبال تقارير DMARC المجمّعة',
+      DMARC_NO_RECORD_NXDOMAIN: 'لا يوجد سجل DMARC \u2014 لا يمكن رفض المرسلين غير المصرح لهم',
+      DMARC_NO_RECORD:     'لم يتم العثور على سجل DMARC',
+      DMARC_MULTI_RECORDS: 'سجلات DMARC متعددة \u2014 يجب وجود سجل واحد فقط',
+
+      BIMI_FOUND:          'تم العثور على سجل BIMI.',
+      BIMI_NOT_FOUND:      'لا يوجد سجل BIMI.',
+      BIMI_RECORD_ANALYSIS:'السجل والتحليل',
+      BIMI_NO_RECORD:      'لا يوجد سجل BIMI \u2014 لن يظهر شعار العلامة التجارية في عملاء البريد المدعومين',
+      BIMI_NO_LOGO:        'l= (رابط الشعار) غائب أو فارغ \u2014 ضروري لعمل BIMI',
+      BIMI_NO_AUTHORITY:   'a= (دليل السلطة) غائب \u2014 شهادة VMC مطلوبة لكي تعرض Gmail وغيرها الشعار',
+      BIMI_LOGO_OK:        'رابط الشعار موجود',
+      BIMI_AUTHORITY_OK:   'دليل السلطة (VMC) موجود',
+
+      PTR_HOST_DETAILS:    'تفاصيل المضيف',
+      PTR_NO_MX:           'لا توجد خوادم MX للتحقق من سجلات PTR',
+      PTR_MATCH:           'FCrDNS مؤكَّد \u2014 PTR يطابق اسم مضيف MX',
+      PTR_MISMATCH:        'PTR موجود لكنه لا يطابق اسم مضيف MX',
+      PTR_MISSING:         'لم يتم العثور على سجل PTR',
+    },
+
+    d: {
+      MX_HOSTS_FOUND:        n => 'تم العثور على ' + n + ' خادم' + (n === 1 ? '' : ' MX') + (n === 1 ? ' MX' : '') + '.',
+      DKIM_SELECTORS_FOUND:  n => 'تم العثور على ' + n + ' محدد',
+      DKIM_ACROSS_PROVIDERS: n => 'عبر ' + n + ' مزود',
+      DKIM_SELECTORS_TESTED: n => 'تم اختبار ' + n + ' محدد.',
+      DKIM_NONE_FOUND:       n => 'لم يتم العثور على محددات DKIM. تم اختبار ' + n + ' محدداً.',
+      DKIM_AUTO_TESTED:      n => n + ' محدد تم اختباره تلقائياً',
+      SPF_FOUND_LOOKUPS:     n => 'تم العثور على سجل SPF. ' + n + ' آلية استعلام DNS.',
+      SPF_MULTI_RECORDS:     n => 'تم العثور على سجلات SPF متعددة (' + n + ') \u2014 يجب وجود سجل واحد فقط',
+      SPF_MULTI_MESSAGE:     n => 'سجلات SPF متعددة (' + n + ') \u2014 هذا خطأ في التهيئة.',
+      SPF_LOOKUP_EXCEED:     n => n + ' آلية استعلام DNS تتجاوز حد RFC البالغ 10 (قد يسبب SPF PermError)',
+      SPF_LOOKUP_HIGH:       n => n + ' آليات استعلام DNS \u2014 يقترب من حد RFC البالغ 10',
+      SPF_REDIRECT:          v => 'redirect=' + v + ' موجود',
+      SPF_IP4_BROAD:         (v, p) => 'ip4:' + v + ' له نطاق واسع جداً (/' + p + ' \u2264 /16)',
+      SPF_IP6_BROAD:         (v, p) => 'ip6:' + v + ' له نطاق واسع جداً (/' + p + ' \u2264 /32)',
+      SPF_REDIRECT_FOLLOWED: d => '\u2713 تم اتباع redirect= \u2014 السياسة الفعلية محمّلة من: ' + d,
+      SPF_REDIRECT_FROM:     d => 'السياسة الفعلية (redirect \u2192 ' + d + ')',
+      SPF_REDIRECT_NO_RECORD:d => 'هدف redirect= لا يحتوي على سجل SPF: ' + d,
+      SPF_REDIRECT_MULTI:    d => 'هدف redirect= يحتوي على سجلات SPF متعددة: ' + d,
+      SPF_REDIRECT_ERROR:    d => 'فشل جلب هدف redirect=: ' + d,
+      CAA_RECORDS_FOUND:     n => 'تم العثور على ' + n + ' سجل CAA.',
+      CAA_AUTHORIZED_CA:     n => 'جهة' + (n === 1 ? '' : ' إصدار') + ' مصرح لها: ',
+      CAA_CRITICAL_COUNT:    n => n + ' سجل' + (n === 1 ? '' : 'ات') + ' بعلامة حرجة',
+      DANE_VALIDATED_OF:     (v, t) => v + ' من ' + t + ' خادم MX لديها سجلات TLSA مُتحقَّق منها بـ DNSSEC.',
+      TLSA_RECORDS_COUNT:    n => n + ' سجل TLSA',
+      RPKI_SUMMARY:          (valid, total, inv, noRoa) => valid + '/' + total + ' عنوان IP مُغطَّى بـ ROA صالح' + (inv > 0 ? ' \u2014 ' + inv + ' غير صالح' : '') + (noRoa > 0 ? ' \u2014 ' + noRoa + ' بدون ROA' : ''),
+      ASPA_SUMMARY:          (pub, total) => pub + '/' + total + ' ASN مع ASPA منشور',
+      TLSRPT_ENDPOINT:       uri => 'نقطة الإبلاغ: ' + uri,
+      TLSRPT_BAD_URI:        uri => 'مخطط URI rua= غير معروف: ' + uri,
+      MTASTS_MAX_AGE_LOW:    age => 'max_age=' + age + 's أقل من يوم واحد \u2014 يُنصح باستخدام 604800 (أسبوع) أو أكثر',
+      MTASTS_POLICY_UNKNOWN: mode => 'وضع السياسة غير معروف أو مفقود: ' + (mode || '(فارغ)'),
+      MTASTS_POLICY_ERROR:   (e, url) => e + ' \u2014 تحقق من: ' + url,
+      STXT_EXPIRES_WARN:     n => 'ينتهي خلال ' + n + ' يوم \u2014 جدّده قريباً.',
+      STXT_EXPIRES_OK:       (d, n) => 'ينتهي: ' + d + ' (' + n + ' يوم).',
+      STXT_EXPIRED:          d => 'انتهت صلاحية security.txt (' + d + ').',
+      WHOIS_EXPIRES_SOON:    n => '\u26a0 ينتهي النطاق خلال ' + n + ' يوم \u2014 جدّده قريباً.',
+      DOMAIN_INVALID:        d => '"' + d + '" لا يبدو أنه نطاق صالح.',
+      SPF_ALL_PASSALL:       q => '"' + q + 'all" (قبول الكل) \u2014 يسمح لأي خادم بالإرسال كهذا النطاق',
+      CAA_IODEF:             v => 'الإبلاغ عن الحوادث (iodef): ' + v,
+      STXT_CONTACT_OK:       v => 'التواصل: ' + v,
+      DMARC_POLICY_UNKNOWN:  p => 'قيمة p= غير معروفة: ' + p,
+      DMARC_PCT_LOW:         pct => 'pct=' + pct + ' \u2014 السياسة مطبَّقة على ' + pct + '% فقط من الرسائل',
+      DMARC_RUA_URI:         uri => 'التقارير المجمّعة (rua): ' + uri,
+      DMARC_RUF_URI:         uri => 'التقارير الجنائية (ruf): ' + uri,
+      BIMI_LOGO_URL:         url => 'رابط الشعار: ' + url,
+      BIMI_AUTHORITY_URL:    url => 'رابط السلطة: ' + url,
+      PTR_VALUE:             v => 'PTR: ' + v,
+    },
+
+    x: {
+      DMARC:
+        '<b>DMARC (Domain-based Message Authentication, Reporting and Conformance, <a href="https://www.rfc-editor.org/rfc/rfc7489">RFC 7489</a>)</b> ' +
+        'يجمع SPF وDKIM مع سياسة تخبر المستقبلين بما يجب فعله عند فشل المصادقة.<br><br>' +
+        '<b>السياسة (p=):</b> <b>reject</b> \u2014 إذا فشلت المصادقة يتم تجاهل الرسالة (الأقوى). ' +
+        '<b>quarantine</b> \u2014 إرسالها إلى البريد المزعج. <b>none</b> \u2014 مراقبة فقط دون أي إجراء.<br><br>' +
+        '<b>محاذاة المعرّف:</b> يشترط DMARC أن يتوافق النطاق في ترويسة <code>From:</code> مع النطاق المُصادَق عليه بواسطة SPF أو DKIM. ' +
+        'المحاذاة <b>المتساهلة</b> (الافتراضية) تسمح بمطابقات نطاق المؤسسة؛ <b>الصارمة</b> (<code>adkim=s</code> / <code>aspf=s</code>) تشترط المطابقة التامة.<br><br>' +
+        '<b>التقارير:</b> <code>rua=</code> يستقبل تقارير JSON مجمّعة (مُوصى به). ' +
+        '<code>ruf=</code> يستقبل تقارير جنائية لكل رسالة (حساسة \u2014 استخدم بحذر).<br><br>' +
+        '<b>سياسة النطاق الفرعي (sp=):</b> إذا حُذف، ترث النطاقات الفرعية <code>p=</code>. ' +
+        'استخدم <code>sp=reject</code> لحماية جميع النطاقات الفرعية صراحةً.<br><br>' +
+        '<b>pct=:</b> يطبّق السياسة على نسبة مئوية من الرسائل الفاشلة. 100 (الافتراضي) يعني التطبيق الكامل.',
+      DNSSEC:
+        '<b>ما هو DNSSEC؟</b> DNSSEC (<a href="https://www.rfc-editor.org/rfc/rfc4033">RFC 4033</a>) يضيف توقيعات تشفيرية لسجلات DNS، ' +
+        'مما يمنع تسمم ذاكرة التخزين المؤقت وهجمات الوسيط. ' +
+        '<b>علامة AD</b> (البيانات الأصيلة) من محلل Cloudflare تؤكد أن السلسلة بأكملها من الجذر إلى هذا النطاق مُتحقَّق منها.<br><br>' +
+        '<b>تقييم الخوارزميات</b> وفقاً لـ <a href="https://www.rfc-editor.org/rfc/rfc8624">RFC 8624</a>: <b>Ed25519</b> (alg 15) و<b>ECDSA P-256</b> (alg 13) هما الأقوى. ' +
+        'RSA/SHA-256 (alg 8) مقبول. RSA/SHA-1 (alg 5) وبدائل DSA ضعيفة أو غير آمنة.<br><br>' +
+        '<b>DNSSEC يُمكّن DANE:</b> بدون DNS مُتحقَّق منه بـ DNSSEC، لا يمكن الوثوق بسجلات TLSA.',
+      MX:
+        '<b>سجلات MX (Mail eXchange)</b> (<a href="https://www.rfc-editor.org/rfc/rfc5321">RFC 5321</a>) تخبر الخوادم الأخرى بمكان تسليم البريد لنطاقك. ' +
+        'الأرقام ذات الأولوية الأقل تُجرَّب أولاً (الأولوية 10 قبل 20).<br><br>' +
+        '<b>لماذا DNSSEC مهم لـ MX:</b> المهاجم القادر على تزوير سجلات MX يمكنه إعادة توجيه جميع البريد الوارد. ' +
+        'سجلات MX المُتحقَّق منها بـ DNSSEC تمنع ذلك.',
+      DANE:
+        '<b>DANE</b> (<a href="https://www.rfc-editor.org/rfc/rfc7672">RFC 7672</a>) يستخدم سجلات TLSA (<a href="https://www.rfc-editor.org/rfc/rfc6698">RFC 6698</a>) للسماح لخوادم البريد بالتحقق من شهادات TLS ' +
+        'دون الاعتماد على جهات إصدار الشهادات التجارية. يُستعلم عنه في <b>_25._tcp.&lt;mx-hostname&gt;</b>.<br><br>' +
+        '<b>أكواد استخدام TLSA:</b> ' +
+        '<b>DANE-EE (3)</b> \u2014 تثبيت على شهادة الكيان النهائي (الأقوى). ' +
+        '<b>DANE-TA (2)</b> \u2014 تثبيت على مرساة الثقة. ' +
+        '<b>PKIX-EE (1)</b> / <b>PKIX-TA (0)</b> \u2014 تتطلب التحقق من CA بالإضافة إلى مطابقة TLSA.<br><br>' +
+        '<b>DNSSEC إلزامي:</b> بدون DNSSEC، يمكن تزوير سجلات TLSA ولا يوفر DANE أي أمان.',
+      SPF:
+        '<b>SPF (Sender Policy Framework, <a href="https://www.rfc-editor.org/rfc/rfc7208">RFC 7208</a>)</b> يحدد الخوادم المصرح لها بإرسال البريد من نطاقك. ' +
+        'تتحقق خوادم الاستقبال مما إذا كانت IP المُرسِلة تتطابق.<br><br>' +
+        '<b>المحدِّدات:</b> <b>-all</b> (فشل صارم) يرفض المرسلين غير المصرح لهم \u2014 الأقوى. ' +
+        '<b>~all</b> (فشل ناعم) يضع علامة عليهم. <b>?all</b> (محايد) لا يوفر أي حماية. ' +
+        '<b>+all</b> يسمح للجميع \u2014 لا تستخدم هذا أبداً.<br><br>' +
+        '<b>الآليات:</b> <b>include:</b> يفوّض لنطاق آخر. ' +
+        '<b>ip4:</b>/<b>ip6:</b> يصرح بنطاقات IP. <b>mx</b> يصرح بخوادم MX الخاصة بك.',
+      DKIM:
+        '<b>ما هو محدد DKIM؟</b> DKIM (<a href="https://www.rfc-editor.org/rfc/rfc6376">RFC 6376</a>) يستخدم تشفير المفتاح العام لتوقيع البريد الصادر. ' +
+        'المحدِّد (مثلاً <code>google</code>) هو تسمية تشير إلى مفتاح DKIM العام ' +
+        'المنشور في <code>&lt;selector&gt;._domainkey.&lt;domain&gt;</code>. ' +
+        'يمكن للنطاق أن يمتلك محددات متعددة \u2014 واحد لكل مزود بريد أو لتدوير المفاتيح.<br><br>' +
+        '<b>البحث عن المحددات:</b> ابحث في ترويسة <code>DKIM-Signature:</code> في أي بريد مستلَم. ' +
+        'الوسم <code>s=</code> يحتوي على المحدِّد. المحددات المخصصة لا يمكن اكتشافها تلقائياً.',
+      TLSRPT:
+        '<b>TLS-RPT (<a href="https://www.rfc-editor.org/rfc/rfc8460">RFC 8460</a>)</b> يسمح باستقبال تقارير فشل TLS من خوادم البريد المُرسِلة. ' +
+        'يُنشر كسجل TXT في <code>_smtp._tls.&lt;domain&gt;</code>.<br><br>' +
+        '<b>نقاط الإبلاغ rua=:</b> ترسَل التقارير إلى عناوين <code>mailto:</code> أو خدمات تجميع <code>https:</code>. ' +
+        'نقاط HTTPS ممتازة؛ mailto جيد.<br><br>' +
+        '<b>محتوى التقارير:</b> بيانات JSON مجمّعة \u2014 اتصالات TLS الناجحة، وفشل المصافحة، ' +
+        'وأخطاء الشهادات، وانتهاكات السياسة. ضروري لتشخيص مشكلات MTA-STS وDANE.',
+      MTASTS:
+        '<b>MTA-STS (<a href="https://www.rfc-editor.org/rfc/rfc8461">RFC 8461</a>)</b> يوجّه خوادم الإرسال لاشتراط TLS عند التسليم لنطاقك ' +
+        'والتحقق من صحة شهادة خادم البريد الخاص بك. ' +
+        'سجل DNS في <code>_mta-sts.&lt;domain&gt;</code>؛ ' +
+        'السياسة في <code>https://mta-sts.&lt;domain&gt;/.well-known/mta-sts.txt</code>.<br><br>' +
+        '<b>أوضاع السياسة:</b> <b>enforce</b> \u2014 TLS إلزامي مع شهادة صالحة، وإلا يُرفض التسليم. ' +
+        '<b>testing</b> \u2014 جمع بيانات TLS-RPT دون تطبيق. ' +
+        '<b>none</b> \u2014 معطَّل صراحةً.',
+      CAA:
+        '<b>CAA (Certification Authority Authorization, <a href="https://www.rfc-editor.org/rfc/rfc8659">RFC 8659</a>)</b> يقيّد جهات إصدار الشهادات التي يمكنها إصدار شهادات TLS.<br><br>' +
+        '<b>الوسوم:</b> <b>issue</b> \u2014 يصرح لجهة إصدار شهادات عادية (مثلاً <code>issue "letsencrypt.org"</code>). ' +
+        '<b>issuewild</b> \u2014 يصرح لشهادات wildcard. ' +
+        '<b>iodef</b> \u2014 أين تبلّغ جهات الإصدار عن انتهاكات السياسة.<br><br>' +
+        '<b>بدون سجلات CAA،</b> يمكن لأي جهة إصدار اجتياز التحقق من النطاق إصدار شهادات.',
+      RPKI:
+        '<b>RPKI (Resource Public Key Infrastructure)</b> يتيح لأصحاب عناوين IP نشر تفويضات أصل المسار (ROA) ' +
+        'التي تحدد ASN المصرح له بالإعلان عن بوادئهم.<br><br>' +
+        '<b>صالح</b> \u2014 يوجد ROA مطابق: البادئة محمية من اختطاف BGP. ' +
+        '<b>غير صالح</b> \u2014 يوجد ROA لكنه لا يصرح بالإعلان الحالي: قد تُرشَّح المسارات. ' +
+        '<b>بدون ROA</b> \u2014 لا يوجد ROA: البادئة غير محمية لكن قابلة للتوجيه.',
+      ASPA:
+        '<b>ASPA (Autonomous System Provider Authorization, <a href="https://www.rfc-editor.org/rfc/rfc9582">RFC 9582</a>)</b> يتيح لـ AS الإعلان عن مزودي المنبع المصرح لهم. ' +
+        'سجلات ASPA المنشورة تمكّن من اكتشاف تسربات المسارات.<br><br>' +
+        '<b>منشور</b> \u2014 يوجد سجل ASPA مع مزودين معلنين. ' +
+        '<b>بدون ASPA</b> \u2014 لا يوجد سجل منشور.<br><br>' +
+        '<b>ملاحظة:</b> RFC 9582 لا يزال معياراً مقترحاً والانتشار الفعلي محدود حالياً \u2014 غياب ASPA لا يؤثر على درجتك.',
+      STXT:
+        '<b>security.txt (<a href="https://www.rfc-editor.org/rfc/rfc9116">RFC 9116</a>)</b> معيار لنشر معلومات الإفصاح عن الثغرات الأمنية.<br><br>' +
+        'ضع الملف في <code>/.well-known/security.txt</code> (المُفضَّل) أو <code>/security.txt</code>.<br><br>' +
+        '<b>الحقول الإلزامية:</b> <code>Contact</code> \u2014 أين تبلّغ عن الثغرات. ' +
+        '<code>Expires</code> \u2014 تاريخ ISO 8601 بعده لا يُوثَد بالملف.<br><br>' +
+        '<b>الحقول الاختيارية:</b> <code>Encryption</code>، <code>Policy</code>، ' +
+        '<code>Acknowledgments</code>، <code>Preferred-Languages</code>، <code>Canonical</code>، <code>Hiring</code>.',
+      WHOIS:
+        '<b>WHOIS / RDAP</b> يوفر بيانات تسجيل النطاق عبر بروتوكول الوصول إلى بيانات التسجيل (<a href="https://www.rfc-editor.org/rfc/rfc7480">RFC 7480</a>).<br><br>' +
+        'تُسترد البيانات من خادم RDAP المرجعي للـ TLD الخاص بالنطاق عبر <code>rdap.org</code>.<br><br>' +
+        '<b>ملاحظة:</b> النطاق المُنشأ حديثاً مؤشر معترف به على انخفاض الثقة وزيادة مخاطر استخدامه في توزيع البرمجيات الخبيثة أو التصيد الاحتيالي. ' +
+        'إذا كنت تتحقق من نطاق لا تملكه، عامل تاريخ الإنشاء الحديث جداً كإشارة تحذير.',
+      BIMI:
+        '<b>يُعتبَر BIMI على نطاق واسع أداةً تسويقية لا تضيف أي قيمة أمنية. عرض شعار في صندوق بريد "لإثبات" أنه المرسل الحقيقي لا يختلف عن أي صورة GIF تقول "100% مضمون". إذا كنت لا تزال ترغب في الدفع لجهات إصدار الشهادات مقابل ذلك، فهذا شأنك.</b><br><br>' +
+        '<b>BIMI (Brand Indicators for Message Identification)</b> يتيح للمنظمات عرض شعارها في عملاء البريد المدعومين (مثل Gmail وApple Mail وYahoo).<br><br>' +
+        '<b>المتطلبات:</b> يجب أن يكون DMARC في وضع التطبيق <code>p=quarantine</code> أو <code>p=reject</code>. ' +
+        'BIMI لا يؤثر مباشرةً على أمان البريد \u2014 هو ميزة ظهور العلامة التجارية.',
+      PTR:
+        '<b>سجلات PTR</b> تربط عناوين IP بأسماء المضيفين \u2014 عكس سجلات A/AAAA.<br><br>' +
+        '<b>FCrDNS (Forward-Confirmed reverse DNS):</b> سجل PTR "مؤكَّد للأمام" عندما تحل قيمة PTR للأمام إلى IP الأصلية. ' +
+        'كثير من فلاتر البريد المزعج وMTA المستقبِلة تتحقق من FCrDNS لخوادم MX. المطابقة تبني الثقة؛ PTR المفقود أو غير المطابق قد يرفع درجات البريد المزعج.<br><br>' +
+        '<b>هذا الفحص</b> يحل سجلات A وAAAA لكل مضيف MX، يستعلم عن PTR لكل IP ويتحقق من تطابق قيمة PTR مع اسم مضيف MX. ' +
+        'لا يؤثر على التقييم الإجمالي.',
+    },
+  },
+
+  hi: {
+    s: {
+      APP_TITLE:           'DNS ईमेल सुरक्षा जाँचकर्ता',
+      APP_SUBTITLE:        'किसी भी डोमेन के लिए DNSSEC, MX, SPF, DKIM और अधिक जाँचें',
+      LABEL_DOMAIN:        'डोमेन',
+      LABEL_SELECTORS:     'अतिरिक्त DKIM सिलेक्टर (अल्पविराम से अलग)',
+      BTN_CHECK:           'जाँचें',
+      BTN_CHECKING:        'जाँच जारी है\u2026',
+      BTN_COPY_LINK:       '\uD83D\uDD17 लिंक कॉपी करें',
+      BTN_COPIED:          '\u2713 कॉपी हो गया!',
+      LANG_LABEL:          'भाषा',
+      OVERVIEW_PLACEHOLDER:'google.com या microsoft.com जैसा कोई डोमेन नाम टाइप करें और जाँचें पर क्लिक करें। कृपया ध्यान दें कि आपके ब्राउज़र या नेटवर्क की सीमाओं के कारण परिणाम सटीक नहीं हो सकते। स्कोर केवल संकेतक उद्देश्यों के लिए हैं और ये अनिवार्य रूप से पूरी सच्चाई या मानकों के अनुपालन को नहीं दर्शाते।',
+      RUNNING_CHECKS:      'जाँचें चल रही हैं\u2026',
+      CHECKING:            'जाँच जारी है\u2026',
+
+      PANEL_DNSSEC:        'DNSSEC',
+      PANEL_MX:            'MX रिकॉर्ड',
+      PANEL_PTR:           'PTR / FCrDNS',
+      PANEL_DANE:          'DANE / TLSA',
+      PANEL_SPF:           'SPF',
+      PANEL_DKIM:          'DKIM',
+      PANEL_DMARC:         'DMARC',
+      PANEL_BIMI:          'BIMI',
+      PANEL_TLSRPT:        'TLS-RPT',
+      PANEL_MTASTS:        'MTA-STS',
+      PANEL_CAA:           'CAA',
+      PANEL_RPKI:          'RPKI ROA',
+      PANEL_ASPA:          'ASPA',
+      PANEL_STXT:          'Security.txt',
+      PANEL_WHOIS:         'WHOIS / RDAP',
+      PANEL_RECS:          'सुधार',
+
+      RECS_WHAT_TO_FIX:    'क्या ठीक करें',
+      RECS_INFORMATIONAL:  'सूचनात्मक',
+      RECS_ALL_GOOD:       'सभी जाँचें सफल',
+      RECS_ALL_EXCELLENT:  'सब कुछ इष्टतम रूप से कॉन्फ़िगर है।',
+
+      GRADE_TITLE:         'समग्र ग्रेड',
+      GRADE_A_DESC:        'मजबूत ईमेल सुरक्षा कॉन्फ़िगरेशन।',
+      GRADE_B_DESC:        'मामूली समस्याओं के साथ अच्छा कॉन्फ़िगरेशन।',
+      GRADE_C_DESC:        'मध्यम समस्याएं \u2014 चेतावनियाँ जाँचें।',
+      GRADE_F_DESC:        'गंभीर समस्याएं \u2014 तत्काल कार्रवाई की सिफारिश।',
+
+      RATING_EXCELLENT:    'उत्कृष्ट',
+      RATING_GOOD:         'अच्छा',
+      RATING_WARNING:      'चेतावनी',
+      RATING_FAIL:         'विफल',
+      RATING_SKIP:         'छोड़ा गया',
+
+      ERR_INVALID_DOMAIN:  'वैध डोमेन नहीं लगता।',
+      ERR_CHECK_FAILED:    'जाँच विफल',
+      ERR_PREFIX:          'त्रुटि: ',
+
+      THEME_LIGHT:         '\u2600 हल्का',
+      THEME_DARK:          '\u263D गहरा',
+      THEME_TO_DARK:       'गहरी थीम पर स्विच करें',
+      THEME_TO_LIGHT:      'हल्की थीम पर स्विच करें',
+      SETTINGS_THEME:      'थीम',
+      SETTINGS_SCORING:    'स्कोरिंग सिस्टम',
+      SCORING_TITLE:       'स्कोरिंग कैसे काम करती है',
+      SCORING_CLOSE:       'बंद करें',
+      SCORING_SCORED:      'स्कोर की गई जाँचें',
+      SCORING_INFO:        'सूचनात्मक (स्कोर नहीं)',
+      SCORING_RATINGS:     'रेटिंग अंक',
+      SCORING_GRADES:      'ग्रेड सीमाएं',
+
+      OPT_SKIP_CORS:       'CORS समस्याओं से बचने के लिए MTA-STS और Security.txt जाँच छोड़ें',
+      CHECK_SKIPPED:       'यह जाँच छोड़ दी गई।',
+
+      STATS_TITLE:         '\uD83E\uDD13 आँकड़े',
+      STATS_TOTAL_TIME:    'कुल स्कैन समय',
+      STATS_DOH_REQUESTS:  'Cloudflare DoH क्वेरी',
+      STATS_RIPE_REQUESTS: 'RIPE Stat API कॉल',
+      STATS_RIPE_CACHE:    'कैश से',
+      STATS_HTTP_FETCHES:  'HTTP अनुरोध',
+      STATS_CHECK_TIMING:  'प्रति जाँच समय',
+      STATS_DKIM_SELECTORS:'DKIM सिलेक्टर परीक्षित / पाए गए',
+      STATS_IPS_RESOLVED:  'IP पते हल किए गए (RPKI)',
+      STATS_MS:            'ms',
+
+      DNSSEC_VALIDATED:    '\u2713 DNSSEC सत्यापित (AD=true)',
+      DNSSEC_UNVALIDATED:  '\u26a0 हस्ताक्षरित लेकिन रिज़ॉल्वर द्वारा सत्यापित नहीं (AD=false)',
+      DNSSEC_RESOLVER_ONLY:'रिज़ॉल्वर द्वारा DNSSEC सत्यापित, लेकिन की रिकॉर्ड नहीं मिले।',
+      DNSSEC_NOT_SIGNED:   'कोई DNSKEY रिकॉर्ड नहीं मिला \u2014 डोमेन DNSSEC-हस्ताक्षरित नहीं है।',
+      DNSSEC_ALG_DETAILS:  'एल्गोरिदम विवरण',
+
+      MX_HOST_DETAILS:     'MX सर्वर विवरण',
+      MX_NO_DNSSEC:        'DNSSEC नहीं',
+      MX_SIGNED_UNVAL:     '\u26a0 हस्ताक्षरित, सत्यापित नहीं',
+      MX_RRSET_WARN:       '\u26a0 MX RRset DNSSEC से सत्यापित नहीं \u2014 मेल सर्वरों की सूची क्रिप्टोग्राफिक रूप से सत्यापित नहीं हो सकी।',
+      MX_NULL_SUGGEST:     'कोई MX रिकॉर्ड नहीं \u2014 null MX रिकॉर्ड (RFC 7505) प्रकाशित करने पर विचार करें साथ में SPF "-all" और DMARC p=reject से ईमेल दुरुपयोग पूरी तरह रोकें',
+
+      DANE_NO_TLSA:        'कोई TLSA रिकॉर्ड नहीं',
+      DANE_TLSA_UNVAL:     '\u26a0 TLSA मिला, DNSSEC से सत्यापित नहीं',
+      DANE_NO_VALIDATED:   'DNSSEC-सत्यापित कोई TLSA रिकॉर्ड नहीं मिला।',
+      DANE_TLSA_PER_MX:    'प्रति MX सर्वर TLSA रिकॉर्ड',
+
+      SPF_RECORD_ANALYSIS: 'रिकॉर्ड और विश्लेषण',
+      SPF_RECORD:          'रिकॉर्ड',
+      SPF_MECHANISMS:      'SPF तंत्र',
+      SPF_IP_ADDRESSES:    'IP पते',
+      SPF_IP_PREFIXES:     'IP उपसर्ग',
+      SPF_DNS_NAMES:       'DNS नाम',
+      SPF_IMPLICIT:        '(अंतर्निहित)',
+      SPF_ORIGINAL_RECORD: 'मूल SPF रिकॉर्ड',
+      SPF_PTR_DEPRECATED:  'ptr तंत्र पुराना हो गया है',
+      SPF_MISSING_ALL:     '"all" तंत्र गायब \u2014 नीति अधूरी है',
+      SPF_ALL_HARDFAIL:    '"-all" (हार्ड फेल) \u2014 अनधिकृत प्रेषक अस्वीकार किए जाते हैं',
+      SPF_ALL_SOFTFAIL:    '"~all" (सॉफ्ट फेल) \u2014 अनधिकृत प्रेषक चिह्नित किए जाते हैं पर डिलीवर हो सकते हैं',
+      SPF_ALL_NEUTRAL:     '"?all" (तटस्थ) \u2014 कोई सुरक्षा प्रदान नहीं करता',
+      SPF_NO_RECORD:       'कोई SPF रिकॉर्ड नहीं मिला',
+
+      DKIM_FOUND_SECTION:  'पाए गए सिलेक्टर',
+      DKIM_DNS_KEY_DETAILS:'DNS नाम और की विवरण',
+      DKIM_PROVIDER_REF:   'प्रदाता संदर्भ',
+      DKIM_TH_PROVIDER:    'प्रदाता',
+      DKIM_TH_SELECTORS:   'डिफ़ॉल्ट सिलेक्टर',
+      DKIM_TH_INFRA:       'बुनियादी ढांचा',
+      DKIM_AUTO_TESTED_LABEL: 'सिलेक्टर स्वचालित रूप से परीक्षित',
+      DKIM_REVOKED:        'की निरस्त (खाली p= टैग)',
+      DKIM_KEY_TYPE:       'की प्रकार',
+      DKIM_KEY_SIZE:       'की आकार',
+      DKIM_BITS:           'बिट',
+      DKIM_BITS_EQ:        ' (256-बिट समकक्ष)',
+      DKIM_KEY_RATING:     'रेटिंग',
+      DKIM_HASH_ALGS:      'हैश एल्गोरिदम',
+      DKIM_SERVICE_TYPE:   'सेवा प्रकार',
+      DKIM_NOTES_FIELD:    'नोट्स',
+      DKIM_DNSSEC:         'DNSSEC',
+      DKIM_DNSSEC_OK:      '\u2713 सत्यापित',
+      DKIM_DNSSEC_FAIL:    '\u2717 सत्यापित नहीं',
+      DKIM_NONE_FOUND_NOTE:'इसका मतलब यह नहीं कि DKIM कॉन्फ़िगर नहीं है \u2014 इसका मतलब केवल यह है कि सामान्य मानक सिलेक्टर नामों में से कोई नहीं मिला।',
+
+      TLSRPT_FOUND:        'TLS-RPT रिकॉर्ड मिला।',
+      TLSRPT_NOT_FOUND:    'कोई TLS-RPT रिकॉर्ड नहीं।',
+      TLSRPT_RECORD_ANALYSIS: 'रिकॉर्ड और विश्लेषण',
+      TLSRPT_NO_RECORD_NXDOMAIN: 'कोई TLS-RPT रिकॉर्ड नहीं \u2014 SMTP TLS विफलता रिपोर्ट प्राप्त नहीं होगी',
+      TLSRPT_NO_RECORD:    'कोई TLS-RPT रिकॉर्ड नहीं मिला',
+      TLSRPT_MULTI_RECORDS:'कई TLS-RPT रिकॉर्ड मिले \u2014 केवल एक होना चाहिए',
+      TLSRPT_NO_RUA:       'कोई rua= रिपोर्टिंग URI नहीं \u2014 रिपोर्ट डिलीवर नहीं हो सकती',
+
+      MTASTS_FOUND:        'MTA-STS DNS रिकॉर्ड मिला।',
+      MTASTS_NOT_FOUND:    'कोई MTA-STS DNS रिकॉर्ड नहीं।',
+      MTASTS_POLICY_ANALYSIS: 'नीति और विश्लेषण',
+      MTASTS_RECORD_NOTES: 'रिकॉर्ड और नोट्स',
+      MTASTS_NO_RECORD_NXDOMAIN: 'कोई MTA-STS DNS रिकॉर्ड नहीं \u2014 इनकमिंग डिलीवरी के लिए TLS लागू नहीं',
+      MTASTS_NO_RECORD:    'कोई MTA-STS DNS रिकॉर्ड नहीं मिला',
+      MTASTS_MULTI_RECORDS:'कई MTA-STS DNS रिकॉर्ड मिले \u2014 केवल एक होना चाहिए',
+      MTASTS_NO_ID:        'MTA-STS रिकॉर्ड में अनिवार्य id= फ़ील्ड नहीं है',
+      MTASTS_MODE_ENFORCE: 'नीति मोड: enforce \u2014 TLS अनिवार्य, बिना TLS डिलीवरी अस्वीकार',
+      MTASTS_MODE_TESTING: 'नीति मोड: testing \u2014 TLS विफलताओं की निगरानी बिना लागू किए',
+      MTASTS_MODE_NONE:    'नीति मोड: none \u2014 MTA-STS स्पष्ट रूप से अक्षम',
+      MTASTS_MX_MATCH:     'सभी MX सर्वर MTA-STS नीति के mx: पैटर्न से मेल खाते हैं',
+      MTASTS_MX_MISMATCH:  'एक या अधिक MX सर्वर किसी mx: पैटर्न से कवर नहीं',
+      MTASTS_MX_NO_PATTERNS: 'MTA-STS नीति में कोई mx: लाइन नहीं',
+
+      CAA_NO_RECORDS:      'कोई CAA रिकॉर्ड नहीं।',
+      CAA_RECORDS_ANALYSIS:'रिकॉर्ड और विश्लेषण',
+      CAA_CA_DNSSEC:       'CA डोमेन DNSSEC',
+      CAA_DNSSEC_VALIDATED:'DNSSEC सत्यापित',
+      CAA_DNSSEC_SIGNED:   'हस्ताक्षरित लेकिन रिज़ॉल्वर द्वारा सत्यापित नहीं',
+      CAA_DNSSEC_NONE:     'DNSSEC हस्ताक्षरित नहीं',
+      CAA_DNSSEC_ERROR:    'त्रुटि: ',
+      CAA_NO_RECORDS_ISSUE:'कोई CAA रिकॉर्ड नहीं \u2014 कोई भी CA इस डोमेन के लिए प्रमाणपत्र जारी कर सकता है',
+      CAA_ISSUE_PROHIBITED:'सभी CA के लिए प्रमाणपत्र जारी करना प्रतिबंधित (issue ";")',
+      CAA_NO_IODEF:        'कोई iodef= टैग नहीं \u2014 CA नीति उल्लंघनों की रिपोर्ट नहीं होगी',
+
+      RPKI_HOST_DETAILS:   'होस्ट विवरण',
+      RPKI_NO_IPS:         'कोई IP हल नहीं हुआ',
+      RPKI_ASPA_TITLE:     'ASPA (AS प्रदाता प्राधिकरण)',
+      RPKI_ASPA_PROVIDERS: 'प्रदाता:',
+
+      ASPA_NO_DATA:        'कोई ASPA डेटा उपलब्ध नहीं',
+
+      STXT_FOUND:          '\u2713 security.txt मिला',
+      STXT_RAW:            'कच्चा security.txt',
+      STXT_NOT_FOUND:      'नहीं मिला।',
+      STXT_CORS_BLOCKED:   'security.txt प्राप्त नहीं हो सका \u2014 सर्वर cross-origin अनुरोध (CORS) की अनुमति नहीं देता। फ़ाइल मौजूद हो सकती है; मैन्युअल जाँच करें:',
+      STXT_CHECK_MANUALLY: 'जाँचे गए URL:',
+      CORS_SECURITY_NOTE:  'यह अच्छी बात है! सर्वर की सुरक्षा सामान्य से बेहतर है। इसीलिए यह जाँच स्वचालित रूप से पूरी नहीं हो सकती।',
+      STXT_NO_CONTACT:     'अनिवार्य Contact फ़ील्ड गायब है।',
+      STXT_NO_EXPIRES:     'Expires फ़ील्ड गायब है \u2014 आवश्यक है',
+      STXT_BAD_DATE:       'Expires फ़ील्ड में अमान्य दिनांक प्रारूप।',
+      STXT_ENCRYPTION:     'एन्क्रिप्शन की लिंक है।',
+      STXT_POLICY:         'भेद्यता प्रकटीकरण नीति लिंक है।',
+
+      WHOIS_RDAP_OK:       '\u2713 RDAP डेटा प्राप्त हुआ',
+      WHOIS_ROW_REGISTRAR: 'रजिस्ट्रार',
+      WHOIS_ROW_CREATED:   'बनाया गया',
+      WHOIS_ROW_UPDATED:   'अपडेट किया गया',
+      WHOIS_ROW_EXPIRES:   'समाप्ति',
+      WHOIS_ROW_HANDLE:    'हैंडल',
+      WHOIS_ROW_STATUS:    'स्थिति',
+      WHOIS_NS_TITLE:      'नाम सर्वर',
+      WHOIS_EXPIRED:       '\u26a0 डोमेन पंजीकरण समाप्त हो गया है!',
+      WHOIS_FAILED:        'RDAP लुकअप विफल।',
+
+      DMARC_FOUND:         'DMARC रिकॉर्ड मिला।',
+      DMARC_NOT_FOUND:     'कोई DMARC रिकॉर्ड नहीं।',
+      DMARC_RECORD_ANALYSIS: 'रिकॉर्ड और विश्लेषण',
+      DMARC_POLICY_NONE:   'p=none \u2014 केवल निगरानी, कोई प्रवर्तन नहीं',
+      DMARC_POLICY_QUARANTINE: 'p=quarantine \u2014 संदिग्ध संदेश स्पैम में भेजे जाते हैं',
+      DMARC_POLICY_REJECT: 'p=reject \u2014 अनधिकृत संदेश अस्वीकार किए जाते हैं',
+      DMARC_SP_REJECT:     'sp=reject \u2014 उपडोमेन: अनधिकृत संदेश अस्वीकार',
+      DMARC_SP_QUARANTINE: 'sp=quarantine \u2014 उपडोमेन: संदिग्ध संदेश स्पैम में',
+      DMARC_SP_NONE:       'sp=none \u2014 उपडोमेन: कोई प्रवर्तन नहीं',
+      DMARC_ADKIM_STRICT:  'adkim=s \u2014 DKIM पहचानकर्ता संरेखण: सख्त',
+      DMARC_ASPF_STRICT:   'aspf=s \u2014 SPF पहचानकर्ता संरेखण: सख्त',
+      DMARC_NO_RUA:        'कोई rua= नहीं \u2014 कोई DMARC एग्रीगेट रिपोर्ट प्राप्त नहीं होगी',
+      DMARC_NO_RECORD_NXDOMAIN: 'कोई DMARC रिकॉर्ड नहीं \u2014 अनधिकृत प्रेषकों को अस्वीकार नहीं किया जा सकता',
+      DMARC_NO_RECORD:     'कोई DMARC रिकॉर्ड नहीं मिला',
+      DMARC_MULTI_RECORDS: 'कई DMARC रिकॉर्ड \u2014 केवल एक होना चाहिए',
+
+      BIMI_FOUND:          'BIMI रिकॉर्ड मिला।',
+      BIMI_NOT_FOUND:      'कोई BIMI रिकॉर्ड नहीं।',
+      BIMI_RECORD_ANALYSIS:'रिकॉर्ड और विश्लेषण',
+      BIMI_NO_RECORD:      'कोई BIMI रिकॉर्ड नहीं \u2014 समर्थित मेल क्लाइंट में ब्रांड लोगो नहीं दिखेगा',
+      BIMI_NO_LOGO:        'l= (लोगो URL) अनुपस्थित या खाली \u2014 BIMI के काम करने के लिए आवश्यक',
+      BIMI_NO_AUTHORITY:   'a= (प्राधिकरण साक्ष्य) अनुपस्थित \u2014 Gmail आदि के लिए VMC प्रमाणपत्र आवश्यक',
+      BIMI_LOGO_OK:        'लोगो URL मौजूद',
+      BIMI_AUTHORITY_OK:   'प्राधिकरण साक्ष्य (VMC) मौजूद',
+
+      PTR_HOST_DETAILS:    'होस्ट विवरण',
+      PTR_NO_MX:           'PTR रिकॉर्ड जाँचने के लिए कोई MX होस्ट नहीं',
+      PTR_MATCH:           'FCrDNS पुष्टि \u2014 PTR MX होस्टनाम से मेल खाता है',
+      PTR_MISMATCH:        'PTR मौजूद लेकिन MX होस्टनाम से मेल नहीं खाता',
+      PTR_MISSING:         'कोई PTR रिकॉर्ड नहीं मिला',
+    },
+
+    d: {
+      MX_HOSTS_FOUND:        n => n + ' MX सर्वर मिले।',
+      DKIM_SELECTORS_FOUND:  n => n + ' सिलेक्टर मिले',
+      DKIM_ACROSS_PROVIDERS: n => n + ' प्रदाता पर',
+      DKIM_SELECTORS_TESTED: n => n + ' सिलेक्टर परीक्षित।',
+      DKIM_NONE_FOUND:       n => 'कोई DKIM सिलेक्टर नहीं मिला। ' + n + ' सिलेक्टर परीक्षित किए गए।',
+      DKIM_AUTO_TESTED:      n => n + ' सिलेक्टर स्वचालित रूप से परीक्षित',
+      SPF_FOUND_LOOKUPS:     n => 'SPF रिकॉर्ड मिला। ' + n + ' DNS लुकअप तंत्र।',
+      SPF_MULTI_RECORDS:     n => 'कई SPF रिकॉर्ड मिले (' + n + ') \u2014 केवल एक होना चाहिए',
+      SPF_MULTI_MESSAGE:     n => 'कई SPF रिकॉर्ड (' + n + ') \u2014 यह कॉन्फ़िगरेशन त्रुटि है।',
+      SPF_LOOKUP_EXCEED:     n => n + ' DNS-लुकअप तंत्र RFC सीमा 10 से अधिक (SPF PermError हो सकता है)',
+      SPF_LOOKUP_HIGH:       n => n + ' DNS-लुकअप तंत्र \u2014 RFC सीमा 10 के करीब',
+      SPF_REDIRECT:          v => 'redirect=' + v + ' मौजूद',
+      SPF_IP4_BROAD:         (v, p) => 'ip4:' + v + ' की बहुत व्यापक रेंज है (/' + p + ' \u2264 /16)',
+      SPF_IP6_BROAD:         (v, p) => 'ip6:' + v + ' की बहुत व्यापक रेंज है (/' + p + ' \u2264 /32)',
+      SPF_REDIRECT_FOLLOWED: d => '\u2713 redirect= का अनुसरण किया \u2014 प्रभावी नीति यहाँ से लोड: ' + d,
+      SPF_REDIRECT_FROM:     d => 'प्रभावी नीति (redirect \u2192 ' + d + ')',
+      SPF_REDIRECT_NO_RECORD:d => 'redirect= लक्ष्य का कोई SPF रिकॉर्ड नहीं: ' + d,
+      SPF_REDIRECT_MULTI:    d => 'redirect= लक्ष्य के कई SPF रिकॉर्ड हैं: ' + d,
+      SPF_REDIRECT_ERROR:    d => 'redirect= लक्ष्य प्राप्त करने में विफल: ' + d,
+      CAA_RECORDS_FOUND:     n => n + ' CAA रिकॉर्ड मिले।',
+      CAA_AUTHORIZED_CA:     n => 'अधिकृत CA: ',
+      CAA_CRITICAL_COUNT:    n => n + ' रिकॉर्ड में क्रिटिकल फ्लैग है',
+      DANE_VALIDATED_OF:     (v, t) => t + ' में से ' + v + ' MX सर्वर के DNSSEC-सत्यापित TLSA रिकॉर्ड हैं।',
+      TLSA_RECORDS_COUNT:    n => n + ' TLSA रिकॉर्ड',
+      RPKI_SUMMARY:          (valid, total, inv, noRoa) => total + ' में से ' + valid + ' IP वैध ROA से कवर' + (inv > 0 ? ' \u2014 ' + inv + ' अमान्य' : '') + (noRoa > 0 ? ' \u2014 ' + noRoa + ' बिना ROA' : ''),
+      ASPA_SUMMARY:          (pub, total) => total + ' में से ' + pub + ' ASN का ASPA प्रकाशित',
+      TLSRPT_ENDPOINT:       uri => 'रिपोर्टिंग endpoint: ' + uri,
+      TLSRPT_BAD_URI:        uri => 'अज्ञात rua= URI स्कीम: ' + uri,
+      MTASTS_MAX_AGE_LOW:    age => 'max_age=' + age + 's एक दिन से कम \u2014 604800 (1 सप्ताह) या अधिक उपयोग करें',
+      MTASTS_POLICY_UNKNOWN: mode => 'अज्ञात या गायब नीति मोड: ' + (mode || '(खाली)'),
+      MTASTS_POLICY_ERROR:   (e, url) => e + ' \u2014 जाँचें: ' + url,
+      STXT_EXPIRES_WARN:     n => n + ' दिन में समाप्त \u2014 जल्द नवीनीकृत करें।',
+      STXT_EXPIRES_OK:       (d, n) => 'समाप्ति: ' + d + ' (' + n + ' दिन)।',
+      STXT_EXPIRED:          d => 'security.txt की समय-सीमा समाप्त (' + d + ')।',
+      WHOIS_EXPIRES_SOON:    n => '\u26a0 डोमेन ' + n + ' दिन में समाप्त \u2014 जल्द नवीनीकृत करें।',
+      DOMAIN_INVALID:        d => '"' + d + '" वैध डोमेन नहीं लगता।',
+      SPF_ALL_PASSALL:       q => '"' + q + 'all" (सब पास) \u2014 किसी भी सर्वर को इस डोमेन से भेजने की अनुमति',
+      CAA_IODEF:             v => 'घटना रिपोर्टिंग (iodef): ' + v,
+      STXT_CONTACT_OK:       v => 'संपर्क: ' + v,
+      DMARC_POLICY_UNKNOWN:  p => 'अज्ञात p= मान: ' + p,
+      DMARC_PCT_LOW:         pct => 'pct=' + pct + ' \u2014 नीति केवल ' + pct + '% संदेशों पर लागू',
+      DMARC_RUA_URI:         uri => 'एग्रीगेट रिपोर्ट (rua): ' + uri,
+      DMARC_RUF_URI:         uri => 'फोरेंसिक रिपोर्ट (ruf): ' + uri,
+      BIMI_LOGO_URL:         url => 'लोगो URL: ' + url,
+      BIMI_AUTHORITY_URL:    url => 'प्राधिकरण URL: ' + url,
+      PTR_VALUE:             v => 'PTR: ' + v,
+    },
+
+    x: {
+      DMARC:
+        '<b>DMARC (Domain-based Message Authentication, Reporting and Conformance, <a href="https://www.rfc-editor.org/rfc/rfc7489">RFC 7489</a>)</b> ' +
+        'SPF और DKIM को एक नीति के साथ जोड़ता है जो प्राप्तकर्ताओं को बताती है कि प्रमाणीकरण विफल होने पर क्या करना है।<br><br>' +
+        '<b>नीति (p=):</b> <b>reject</b> \u2014 प्रमाणीकरण विफल होने पर संदेश हटाया जाता है (सबसे मजबूत)। ' +
+        '<b>quarantine</b> \u2014 स्पैम में भेजें। <b>none</b> \u2014 केवल निगरानी, कोई कार्रवाई नहीं।<br><br>' +
+        '<b>पहचानकर्ता संरेखण:</b> DMARC के लिए <code>From:</code> हेडर का डोमेन SPF या DKIM द्वारा प्रमाणित डोमेन से मेल खाना चाहिए। ' +
+        '<b>लचीला</b> (डिफ़ॉल्ट) संगठनात्मक डोमेन मिलान की अनुमति देता है; <b>सख्त</b> (<code>adkim=s</code> / <code>aspf=s</code>) सटीक मिलान की आवश्यकता है।<br><br>' +
+        '<b>रिपोर्ट:</b> <code>rua=</code> एग्रीगेट JSON रिपोर्ट प्राप्त करता है (अनुशंसित)। ' +
+        '<code>ruf=</code> प्रति-संदेश फोरेंसिक रिपोर्ट प्राप्त करता है (संवेदनशील \u2014 सावधानी से उपयोग करें)।',
+      DNSSEC:
+        '<b>DNSSEC क्या है?</b> DNSSEC (<a href="https://www.rfc-editor.org/rfc/rfc4033">RFC 4033</a>) DNS रिकॉर्ड में क्रिप्टोग्राफिक हस्ताक्षर जोड़ता है, ' +
+        'कैश पॉइज़निंग और मैन-इन-द-मिडिल हमलों को रोकता है। ' +
+        'Cloudflare रिज़ॉल्वर का <b>AD फ्लैग</b> (Authentic Data) पुष्टि करता है कि रूट से इस डोमेन तक पूरी चेन सत्यापित है।<br><br>' +
+        '<b>एल्गोरिदम रेटिंग</b> <a href="https://www.rfc-editor.org/rfc/rfc8624">RFC 8624</a> के अनुसार: <b>Ed25519</b> (alg 15) और <b>ECDSA P-256</b> (alg 13) सबसे मजबूत हैं। ' +
+        'RSA/SHA-256 (alg 8) स्वीकार्य है। RSA/SHA-1 (alg 5) और DSA वेरिएंट कमज़ोर या असुरक्षित हैं।',
+      MX:
+        '<b>MX (Mail eXchange) रिकॉर्ड</b> (<a href="https://www.rfc-editor.org/rfc/rfc5321">RFC 5321</a>) अन्य सर्वरों को बताते हैं कि आपके डोमेन का मेल कहाँ डिलीवर करना है। ' +
+        'कम प्राथमिकता संख्याएं पहले आज़माई जाती हैं (प्राथमिकता 10 पहले 20 से)।<br><br>' +
+        '<b>MX के लिए DNSSEC क्यों महत्वपूर्ण:</b> MX रिकॉर्ड जाली बनाने में सक्षम हमलावर सभी इनकमिंग मेल को रीडायरेक्ट कर सकता है। ' +
+        'DNSSEC-सत्यापित MX रिकॉर्ड इसे रोकते हैं।',
+      DANE:
+        '<b>DANE</b> (<a href="https://www.rfc-editor.org/rfc/rfc7672">RFC 7672</a>) TLSA रिकॉर्ड (<a href="https://www.rfc-editor.org/rfc/rfc6698">RFC 6698</a>) का उपयोग करके मेल सर्वरों को TLS प्रमाणपत्र सत्यापित करने देता है ' +
+        'बिना व्यावसायिक CA पर निर्भर हुए। <b>_25._tcp.&lt;mx-hostname&gt;</b> पर क्वेरी की जाती है।<br><br>' +
+        '<b>DNSSEC अनिवार्य:</b> DNSSEC के बिना TLSA रिकॉर्ड जाली बनाए जा सकते हैं और DANE कोई सुरक्षा नहीं देता।',
+      SPF:
+        '<b>SPF (Sender Policy Framework, <a href="https://www.rfc-editor.org/rfc/rfc7208">RFC 7208</a>)</b> निर्दिष्ट करता है कि कौन से सर्वर आपके डोमेन के लिए मेल भेजने के अधिकृत हैं। ' +
+        'प्राप्त करने वाले सर्वर जाँचते हैं कि भेजने वाला IP मेल खाता है या नहीं।<br><br>' +
+        '<b>क्वालिफायर:</b> <b>-all</b> (हार्ड फेल) अनधिकृत प्रेषकों को अस्वीकार करता है \u2014 सबसे मजबूत। ' +
+        '<b>~all</b> (सॉफ्ट फेल) उन्हें संदिग्ध चिह्नित करता है। <b>?all</b> (तटस्थ) कोई सुरक्षा नहीं देता। ' +
+        '<b>+all</b> सभी को अनुमति देता है \u2014 इसे कभी उपयोग न करें।',
+      DKIM:
+        '<b>DKIM सिलेक्टर क्या है?</b> DKIM (<a href="https://www.rfc-editor.org/rfc/rfc6376">RFC 6376</a>) आउटगोइंग मेल पर हस्ताक्षर करने के लिए पब्लिक-की क्रिप्टोग्राफी का उपयोग करता है। ' +
+        'एक सिलेक्टर (जैसे <code>google</code>) एक लेबल है जो <code>&lt;selector&gt;._domainkey.&lt;domain&gt;</code> पर प्रकाशित DKIM पब्लिक की की ओर इंगित करता है।<br><br>' +
+        '<b>सिलेक्टर खोजना:</b> किसी भी प्राप्त मेल के <code>DKIM-Signature:</code> हेडर में देखें। ' +
+        '<code>s=</code> टैग में सिलेक्टर होता है। कस्टम सिलेक्टर स्वचालित रूप से खोजे नहीं जा सकते।',
+      TLSRPT:
+        '<b>TLS-RPT (<a href="https://www.rfc-editor.org/rfc/rfc8460">RFC 8460</a>)</b> भेजने वाले मेल सर्वरों से TLS विफलता रिपोर्ट प्राप्त करने देता है। ' +
+        '<code>_smtp._tls.&lt;domain&gt;</code> पर TXT रिकॉर्ड के रूप में प्रकाशित।<br><br>' +
+        '<b>रिपोर्टिंग endpoints rua=:</b> रिपोर्ट <code>mailto:</code> पतों या <code>https:</code> एग्रीगेशन सेवाओं को भेजी जाती हैं। ' +
+        'HTTPS endpoints उत्कृष्ट हैं; mailto अच्छा है।',
+      MTASTS:
+        '<b>MTA-STS (<a href="https://www.rfc-editor.org/rfc/rfc8461">RFC 8461</a>)</b> भेजने वाले सर्वरों को आपके डोमेन पर डिलीवरी के समय TLS की आवश्यकता करने और ' +
+        'आपके मेल सर्वर के प्रमाणपत्र को सत्यापित करने का निर्देश देता है।<br><br>' +
+        '<b>नीति मोड:</b> <b>enforce</b> \u2014 वैध प्रमाणपत्र के साथ TLS अनिवार्य, अन्यथा डिलीवरी अस्वीकार। ' +
+        '<b>testing</b> \u2014 TLS-RPT डेटा एकत्र करें बिना लागू किए। ' +
+        '<b>none</b> \u2014 स्पष्ट रूप से अक्षम।',
+      CAA:
+        '<b>CAA (Certification Authority Authorization, <a href="https://www.rfc-editor.org/rfc/rfc8659">RFC 8659</a>)</b> प्रतिबंधित करता है कि कौन से CA TLS प्रमाणपत्र जारी कर सकते हैं।<br><br>' +
+        '<b>टैग:</b> <b>issue</b> \u2014 सामान्य प्रमाणपत्रों के लिए CA अधिकृत करता है। ' +
+        '<b>issuewild</b> \u2014 wildcard प्रमाणपत्रों के लिए। ' +
+        '<b>iodef</b> \u2014 नीति उल्लंघनों की रिपोर्ट कहाँ करें।<br><br>' +
+        '<b>CAA रिकॉर्ड के बिना</b>, डोमेन सत्यापन पास करने वाला कोई भी CA प्रमाणपत्र जारी कर सकता है।',
+      RPKI:
+        '<b>RPKI (Resource Public Key Infrastructure)</b> IP पते के मालिकों को Route Origin Authorizations (ROA) प्रकाशित करने देता है ' +
+        'जो बताते हैं कि कौन सा ASN उनके prefixes की घोषणा करने के लिए अधिकृत है।<br><br>' +
+        '<b>वैध</b> \u2014 मिलान करने वाला ROA मौजूद: prefix BGP हाईजैक से सुरक्षित। ' +
+        '<b>अमान्य</b> \u2014 ROA मौजूद लेकिन वर्तमान घोषणा अधिकृत नहीं। ' +
+        '<b>बिना ROA</b> \u2014 कोई ROA नहीं: prefix असुरक्षित लेकिन routable।',
+      ASPA:
+        '<b>ASPA (Autonomous System Provider Authorization, <a href="https://www.rfc-editor.org/rfc/rfc9582">RFC 9582</a>)</b> एक AS को उन upstream प्रदाताओं की घोषणा करने देता है जिन्हें वह उपयोग करने के लिए अधिकृत है।<br><br>' +
+        '<b>प्रकाशित</b> \u2014 घोषित प्रदाताओं के साथ ASPA रिकॉर्ड मौजूद। ' +
+        '<b>ASPA के बिना</b> \u2014 कोई प्रकाशित रिकॉर्ड नहीं।<br><br>' +
+        '<b>नोट:</b> RFC 9582 अभी भी एक प्रस्तावित मानक है और वास्तविक तैनाती सीमित है \u2014 ASPA रिकॉर्ड की अनुपस्थिति आपके स्कोर को प्रभावित नहीं करती।',
+      STXT:
+        '<b>security.txt (<a href="https://www.rfc-editor.org/rfc/rfc9116">RFC 9116</a>)</b> भेद्यता प्रकटीकरण जानकारी प्रकाशित करने का मानक है।<br><br>' +
+        'फ़ाइल को <code>/.well-known/security.txt</code> (पसंदीदा) या <code>/security.txt</code> पर रखें।<br><br>' +
+        '<b>अनिवार्य फ़ील्ड:</b> <code>Contact</code> \u2014 भेद्यताएं कहाँ रिपोर्ट करें। ' +
+        '<code>Expires</code> \u2014 ISO 8601 दिनांक जिसके बाद फ़ाइल पर भरोसा नहीं करना चाहिए।<br><br>' +
+        '<b>वैकल्पिक फ़ील्ड:</b> <code>Encryption</code>, <code>Policy</code>, ' +
+        '<code>Acknowledgments</code>, <code>Preferred-Languages</code>, <code>Canonical</code>, <code>Hiring</code>।',
+      WHOIS:
+        '<b>WHOIS / RDAP</b> Registration Data Access Protocol (<a href="https://www.rfc-editor.org/rfc/rfc7480">RFC 7480</a>) के माध्यम से डोमेन पंजीकरण डेटा प्रदान करता है।<br><br>' +
+        '<b>नोट:</b> हाल ही में बनाया गया डोमेन कम विश्वास और मैलवेयर वितरण, फ़िशिंग या धोखाधड़ी के लिए उपयोग के बढ़ते जोखिम का संकेत है। ' +
+        'यदि आप ऐसा डोमेन जाँच रहे हैं जो आपका नहीं है, तो बहुत हाल की निर्माण तिथि को चेतावनी संकेत मानें।',
+      BIMI:
+        '<b>BIMI को व्यापक रूप से एक मार्केटिंग टूल माना जाता है जो किसी को कोई अतिरिक्त सुरक्षा मूल्य नहीं देता। मेलबॉक्स में लोगो दिखाकर "साबित" करना कि यह असली प्रेषक है, वैसा ही है जैसे कोई GIF छवि जो कहे "100% गारंटीड"। अगर आप फिर भी CA को इसके लिए भुगतान करना चाहते हैं, तो आगे बढ़ें।</b><br><br>' +
+        '<b>BIMI (Brand Indicators for Message Identification)</b> संगठनों को समर्थित मेल क्लाइंट (जैसे Gmail, Apple Mail, Yahoo) में अपना लोगो दिखाने देता है।<br><br>' +
+        '<b>आवश्यकताएं:</b> DMARC <code>p=quarantine</code> या <code>p=reject</code> प्रवर्तन मोड में होना चाहिए। ' +
+        'BIMI मेल सुरक्षा को सीधे प्रभावित नहीं करता \u2014 यह ब्रांड दृश्यता सुविधा है।',
+      PTR:
+        '<b>PTR रिकॉर्ड</b> IP पतों को होस्टनामों से मैप करते हैं \u2014 A/AAAA रिकॉर्ड के विपरीत।<br><br>' +
+        '<b>FCrDNS (Forward-Confirmed reverse DNS):</b> PTR रिकॉर्ड "फॉरवर्ड-कन्फर्म्ड" होता है जब PTR मूल्य आगे मूल IP पर resolve होता है। ' +
+        'कई स्पैम फ़िल्टर और प्राप्तकर्ता MTA MX होस्ट के लिए FCrDNS जाँचते हैं।<br><br>' +
+        '<b>यह जाँच</b> प्रत्येक MX होस्ट के लिए A और AAAA रिकॉर्ड resolve करती है, प्रत्येक IP के लिए PTR क्वेरी करती है और जाँचती है कि PTR मूल्य MX होस्टनाम से मेल खाता है या नहीं। ' +
+        'समग्र ग्रेड को प्रभावित नहीं करती।',
+    },
+  },
 };
 </script>
 
@@ -2615,6 +3846,7 @@ function applyI18n() {
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = ts(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = ts(el.dataset.i18nPlaceholder); });
   document.documentElement.lang = currentLang === 'no' ? 'nb' : currentLang;
+  document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
@@ -5013,7 +6245,7 @@ function renderRPKI(result) {
         // IP rows
         if (h.ipResults.length === 0) {
           const noIp = el('div');
-          noIp.style.cssText = 'font-size:0.78rem;color:var(--text-muted);padding-left:0.3rem';
+          noIp.style.cssText = 'font-size:0.78rem;color:var(--text-muted);padding-inline-start:0.3rem';
           noIp.textContent = ts('RPKI_NO_IPS');
           row.appendChild(noIp);
         }
@@ -5490,7 +6722,7 @@ function renderSummary({ dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, 
     track.appendChild(fill);
     row.appendChild(track);
     const rlbl = el('span', null, isSkip ? ts('RATING_SKIP') : rating);
-    rlbl.style.cssText = 'color:var(--text-muted);font-size:0.75rem;width:70px;text-align:right' + (isSkip ? '' : ';color:' + ratingColor(rating));
+    rlbl.style.cssText = 'color:var(--text-muted);font-size:0.75rem;width:70px;text-align:end' + (isSkip ? '' : ';color:' + ratingColor(rating));
     row.appendChild(rlbl);
     barsEl.appendChild(row);
   }
@@ -5783,7 +7015,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Acknowledgements fireworks ───────────────────────────────────────────────
   const ackSection = document.getElementById('ack-section');
   const ackToggle  = document.getElementById('ack-toggle');
-  ackToggle.addEventListener('click', () => { ackSection.classList.toggle('open'); });
+  ackToggle.addEventListener('click', () => {
+    ackSection.classList.toggle('open');
+    startFireworks();
+  });
 
   let fwTimer = null;
   let fwInterval = null;
@@ -5829,7 +7064,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 5000);
   }
 
-  ackSection.addEventListener('mouseenter', startFireworks);
+  // (fireworks triggered by click on ackToggle above)
 });
 </script>
 </body>

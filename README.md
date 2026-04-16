@@ -104,6 +104,8 @@ Missing keys fall back to English automatically, so partial translations are wel
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-April-16-2 | 2026-04-16 | Acknowledgements fireworks on click (not hover); acknowledgements table cells left-aligned |
+| 2026-April-16-1 | 2026-04-16 | Arabic (العربية) + Hindi (हिन्दी) UI languages — RTL layout via CSS logical properties for Arabic; full translations for both |
 | 2026-April-14-9 | 2026-04-14 | Español (es) UI language — full translation of all strings and explanations |
 | 2026-April-14-8 | 2026-04-14 | "Statistics" collapsible panel on Overview tab: total scan time, DoH queries, RIPE Stat API calls (with cache hits), HTTP fetches, DKIM selectors tested/found, IPs resolved, per-check timing bars |
 | 2026-April-14-7 | 2026-04-14 | BIMI removed from score bars and Fixes tab; tab dot always grey; explanation opens with editorial note |
