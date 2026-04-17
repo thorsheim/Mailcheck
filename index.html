@@ -457,6 +457,7 @@
     <button class="tab-btn" data-tab="caa">CAA <span class="tab-dot"></span></button>
     <button class="tab-btn" data-tab="rpki">RPKI <span class="tab-dot"></span></button>
     <button class="tab-btn" data-tab="aspa">ASPA <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="ipv6">IPv6 <span class="tab-dot"></span></button>
     <button class="tab-btn" data-tab="security-txt">Security.txt <span class="tab-dot"></span></button>
     <button class="tab-btn" data-tab="whois">WHOIS <span class="tab-dot"></span></button>
     <button class="tab-btn" data-tab="recs">Fixes <span class="tab-dot"></span></button>
@@ -583,6 +584,14 @@
       <div class="panel-body"></div>
     </div>
 
+    <div class="tab-panel" id="panel-ipv6">
+      <div class="panel-header">
+        <span class="panel-icon">&#127760;</span>
+        <span class="panel-title" data-i18n="PANEL_IPV6">IPv6</span>
+      </div>
+      <div class="panel-body"></div>
+    </div>
+
     <div class="tab-panel" id="panel-security-txt">
       <div class="panel-header">
         <span class="panel-icon">&#128220;</span>
@@ -613,8 +622,17 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-April-16-2 &mdash; click for changelog</summary>
+      <summary>Version 2026-April-17-1 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-April-17-1</span>
+          <ul class="cl-changes">
+            <li>New IPv6 tab: checks AAAA records for the domain, all MX hosts, and all NS hosts &mdash; informational only (not scored)</li>
+            <li>MX tab: each MX host row now shows an IPv6 availability badge</li>
+            <li>IPv6 tab includes mandatory government requirements (Norway §12, USA, EU, India, China) and country regulation links</li>
+            <li>English and Norwegian translations added; other languages fall back to English</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-April-16-2</span>
           <ul class="cl-changes">
@@ -833,6 +851,7 @@ const STRINGS = {
       PANEL_CAA:           'CAA',
       PANEL_RPKI:          'RPKI ROA',
       PANEL_ASPA:          'ASPA',
+      PANEL_IPV6:          'IPv6',
       PANEL_STXT:          'Security.txt',
       PANEL_WHOIS:         'WHOIS / RDAP',
       PANEL_RECS:          'Fixes',
@@ -951,6 +970,25 @@ const STRINGS = {
       RPKI_ASPA_PROVIDERS: 'Providers:',
       // ASPA
       ASPA_NO_DATA:        'No ASPA data available',
+      // IPv6
+      PANEL_IPV6:             'IPv6',
+      IPV6_HOST_DETAILS:      'Per-host address details',
+      IPV6_NO_AAAA:           'No AAAA record',
+      IPV6_NO_MX:             'No MX hosts found',
+      IPV6_NO_NS:             'No NS hosts found',
+      IPV6_MANDATORY_TITLE:   'Mandatory IPv6 requirements',
+      IPV6_MANDATORY_NOTE:    'IPv6 is required by government regulation in the following countries:',
+      IPV6_DOMAIN_HAS_IPV6:   '\u2713 Domain has IPv6 address(es)',
+      IPV6_DOMAIN_NO_IPV6:    'Domain has no IPv6 address \u2014 only reachable over IPv4',
+      IPV6_ALL_MX_HAVE_IPV6:  '\u2713 All MX hosts have IPv6 addresses',
+      IPV6_SOME_MX_HAVE_IPV6: 'Some MX hosts have IPv6 \u2014 not all',
+      IPV6_NO_MX_HAVE_IPV6:   'No MX hosts have IPv6 addresses',
+      IPV6_ALL_NS_HAVE_IPV6:  '\u2713 All NS hosts have IPv6 addresses',
+      IPV6_SOME_NS_HAVE_IPV6: 'Some NS hosts have IPv6 \u2014 not all',
+      IPV6_NO_NS_HAVE_IPV6:   'No NS hosts have IPv6 addresses',
+      IPV6_MX_BADGE_YES:      'IPv6',
+      IPV6_MX_BADGE_NO:       'No IPv6',
+      SPF_NO_IP6_MECHS:       'MX/NS hosts support IPv6, but no ip6: entries found in SPF record \u2014 if this domain sends mail over IPv6, add ip6: mechanisms to authorize those addresses',
       // Security.txt
       STXT_FOUND:          '\u2713 security.txt found',
       STXT_RAW:            'Raw security.txt',
@@ -1090,6 +1128,9 @@ const STRINGS = {
       BIMI_LOGO_URL:         url => 'Logo URL: ' + url,
       BIMI_AUTHORITY_URL:    url => 'Authority URL: ' + url,
       PTR_VALUE:             v => 'PTR: ' + v,
+      IPV6_DOMAIN_SUMMARY:   n => n + ' IPv6 address' + (n !== 1 ? 'es' : '') + ' found for domain.',
+      IPV6_MX_SUMMARY:       (n, t) => n + '/' + t + ' MX host' + (t !== 1 ? 's' : '') + ' have IPv6.',
+      IPV6_NS_SUMMARY:       (n, t) => n + '/' + t + ' NS host' + (t !== 1 ? 's' : '') + ' have IPv6.',
     },
     // ── x: explanation strings (HTML) ────────────────────────────────────────
     // Each value is an HTML string rendered in the expandable "What is this?"
@@ -1273,6 +1314,20 @@ const STRINGS = {
         '<b>IPv6:</b> Expanded to 32 hex nibbles, reversed, and appended with <code>.ip6.arpa</code>.<br><br>' +
         '<b>This check</b> resolves A and AAAA records for each MX host, queries the PTR for each IP, and verifies whether the PTR value matches the MX hostname (relaxed FCrDNS check). ' +
         'Does not affect the overall grade.',
+      IPV6:
+        '<b>IPv6 (Internet Protocol version 6)</b> is the successor to IPv4, using 128-bit addresses to solve the exhaustion of the 32-bit IPv4 address space. ' +
+        'Email infrastructure without IPv6 cannot receive mail from IPv6-only senders and may become unreachable as IPv6-only access grows.<br><br>' +
+        '<b>Why it matters for email:</b> MX hosts without AAAA records cannot accept mail from IPv6-only sending servers. ' +
+        'NS hosts without IPv6 cannot answer DNS queries from IPv6-only resolvers. ' +
+        'Both create silent delivery failures that are difficult to diagnose.<br><br>' +
+        '<b>Mandatory government requirements \u2014 selected countries:</b><br>' +
+        '<b>Norway:</b> <a href="https://lovdata.no/dokument/SF/forskrift/2013-04-05-959">Forskrift om IT-standarder i offentlig forvaltning \u00a712</a> \u2014 IPv6 mandatory for government services from 1 January 2023; maximum extension until 1 January 2025.<br>' +
+        '<b>USA:</b> OMB Memorandum M-21-07 \u2014 federal agencies must operate IPv6-only infrastructure by FY2025.<br>' +
+        '<b>EU:</b> European Interoperability Framework / NIS2 Directive \u2014 promotes IPv6 readiness for member-state public services.<br>' +
+        '<b>India:</b> DoT National Telecom Policy 2018 \u2014 IPv6 mandatory for ISPs, government, and public-sector entities.<br>' +
+        '<b>China:</b> MIIT IPv6 Scale Deployment Action Plan 2017 \u2014 full deployment across ISPs, government, and major platforms.<br><br>' +
+        'This check queries AAAA records for the domain itself, all MX hosts, and all NS hosts. ' +
+        'It does <b>not</b> affect the overall security score \u2014 informational only.',
     },
   },
   no: {
@@ -1301,6 +1356,7 @@ const STRINGS = {
       PANEL_CAA:           'CAA',
       PANEL_RPKI:          'RPKI ROA',
       PANEL_ASPA:          'ASPA',
+      PANEL_IPV6:          'IPv6',
       PANEL_STXT:          'Security.txt',
       PANEL_WHOIS:         'WHOIS / RDAP',
       PANEL_RECS:          'Rettinger',
@@ -1419,6 +1475,24 @@ const STRINGS = {
       RPKI_ASPA_PROVIDERS: 'Leverand\u00f8rer:',
       // ASPA
       ASPA_NO_DATA:        'Ingen ASPA-data tilgjengelig',
+      // IPv6
+      IPV6_HOST_DETAILS:      'Adressedetaljer per vert',
+      IPV6_NO_AAAA:           'Ingen AAAA-post',
+      IPV6_NO_MX:             'Ingen MX-verter funnet',
+      IPV6_NO_NS:             'Ingen NS-verter funnet',
+      IPV6_MANDATORY_TITLE:   'Obligatoriske IPv6-krav',
+      IPV6_MANDATORY_NOTE:    'IPv6 er p\u00e5krevd ved forskrift i f\u00f8lgende land:',
+      IPV6_DOMAIN_HAS_IPV6:   '\u2713 Domenet har IPv6-adresse(r)',
+      IPV6_DOMAIN_NO_IPV6:    'Domenet har ingen IPv6-adresse \u2014 kun n\u00e5dd via IPv4',
+      IPV6_ALL_MX_HAVE_IPV6:  '\u2713 Alle MX-verter har IPv6-adresser',
+      IPV6_SOME_MX_HAVE_IPV6: 'Noen MX-verter har IPv6 \u2014 ikke alle',
+      IPV6_NO_MX_HAVE_IPV6:   'Ingen MX-verter har IPv6-adresser',
+      IPV6_ALL_NS_HAVE_IPV6:  '\u2713 Alle NS-verter har IPv6-adresser',
+      IPV6_SOME_NS_HAVE_IPV6: 'Noen NS-verter har IPv6 \u2014 ikke alle',
+      IPV6_NO_NS_HAVE_IPV6:   'Ingen NS-verter har IPv6-adresser',
+      IPV6_MX_BADGE_YES:      'IPv6',
+      IPV6_MX_BADGE_NO:       'Ingen IPv6',
+      SPF_NO_IP6_MECHS:       'MX/NS-verter st\u00f8tter IPv6, men ingen ip6:-oppf\u00f8ringer er funnet i SPF-posten \u2014 hvis dette domenet sender e-post over IPv6, legg til ip6:-mekanismer for \u00e5 autorisere disse adressene',
       // Security.txt
       STXT_FOUND:          '\u2713 security.txt funnet',
       STXT_RAW:            'R\u00e5 security.txt',
@@ -1555,6 +1629,9 @@ const STRINGS = {
       BIMI_LOGO_URL:         url => 'Logo-URL: ' + url,
       BIMI_AUTHORITY_URL:    url => 'Autoritets-URL: ' + url,
       PTR_VALUE:             v => 'PTR: ' + v,
+      IPV6_DOMAIN_SUMMARY:   n => n + ' IPv6-adresse' + (n !== 1 ? 'r' : '') + ' funnet for domenet.',
+      IPV6_MX_SUMMARY:       (n, t) => n + '/' + t + ' MX-vert' + (t !== 1 ? 'er' : '') + ' har IPv6.',
+      IPV6_NS_SUMMARY:       (n, t) => n + '/' + t + ' NS-vert' + (t !== 1 ? 'er' : '') + ' har IPv6.',
     },
     // ── x: explanation strings (HTML) ────────────────────────────────────────
     x: {
@@ -1735,6 +1812,22 @@ const STRINGS = {
         '<b>IPv6:</b> Utvidet til 32 hex-nibbler, reversert og lagt til <code>.ip6.arpa</code>.<br><br>' +
         '<b>Denne sjekken</b> l\u00f8ser A- og AAAA-poster for hver MX-vert, sp\u00f8r PTR for hver IP, og bekrefter om PTR-verdien samsvarer med MX-vertsnavnet. ' +
         'P\u00e5virker ikke den samlede karakteren.',
+      IPV6:
+        '<b>IPv6 (Internettprotokoll versjon 6)</b> er etterfølgeren til IPv4, og bruker 128-bits adresser for å løse uttømmingen av IPv4-adresserommet. ' +
+        'E-postinfrastruktur uten IPv6 kan ikke motta e-post fra IPv6-eksklusivt sendende servere og kan bli utilgjengelig etter hvert som IPv6-eksklusiv tilgang vokser.<br><br>' +
+        '<b>Obligatorisk krav i Norge:</b> <a href="https://lovdata.no/dokument/SF/forskrift/2013-04-05-959">Forskrift om IT-standarder i offentlig forvaltning §12</a> ' +
+        'stiller krav om at offentlige virksomheter skal støtte IPv6 for sine nettsteder og tjenester. Kravet ble obligatorisk fra 1. januar 2023, med mulighet for inntil 2 års utsettelse til 1. januar 2025.<br><br>' +
+        '<b>Relevans for e-post:</b> MX-verter uten AAAA-poster kan ikke ta imot e-post fra IPv6-eksklusivt sendende servere. ' +
+        'NS-verter uten IPv6 kan ikke svare på DNS-forespørsler fra IPv6-eksklusivt løsende klienter. ' +
+        'Begge deler kan forårsake lydløse leveringsfeil som er vanskelige å feilsøke.<br><br>' +
+        '<b>Obligatoriske myndighetskrav — utvalgte land:</b><br>' +
+        '<b>Norge:</b> <a href="https://lovdata.no/dokument/SF/forskrift/2013-04-05-959">Forskrift om IT-standarder i offentlig forvaltning §12</a> \u2014 IPv6 obligatorisk for offentlige tjenester fra 1. januar 2023; maksimal utsettelse til 1. januar 2025.<br>' +
+        '<b>USA:</b> OMB-memo M-21-07 \u2014 føderale etater skal drive IPv6-eksklusiv infrastruktur innen FY2025.<br>' +
+        '<b>EU:</b> Det europeiske interoperabilitetsrammeverket / NIS2-direktivet \u2014 fremmer IPv6-beredskap for offentlig sektor.<br>' +
+        '<b>India:</b> DoT nasjonal telekomspolicy 2018 \u2014 IPv6 obligatorisk for ISP-er, offentlige og statlige virksomheter.<br>' +
+        '<b>Kina:</b> MIITs handlingsplan for IPv6-skalering 2017 \u2014 full distribusjon hos ISP-er, offentlig sektor og store plattformer.<br><br>' +
+        'Denne sjekken spør etter AAAA-poster for selve domenet, alle MX-verter og alle NS-verter. ' +
+        'Det påvirker <b>ikke</b> den samlede sikkerhetsscoren \u2014 kun informativt.',
     },
   },
   eo: {
@@ -1776,6 +1869,7 @@ const STRINGS = {
       PANEL_CAA:           'CAA',
       PANEL_RPKI:          'RPKI ROA',
       PANEL_ASPA:          'ASPA',
+      PANEL_IPV6:          'IPv6',
       PANEL_STXT:          'Security.txt',
       PANEL_WHOIS:         'WHOIS / RDAP',
       PANEL_RECS:          'Riparoj',
@@ -2201,6 +2295,7 @@ const STRINGS = {
       PANEL_CAA:           'CAA',
       PANEL_RPKI:          'RPKI ROA',
       PANEL_ASPA:          'ASPA',
+      PANEL_IPV6:          'IPv6',
       PANEL_STXT:          'Security.txt',
       PANEL_WHOIS:         'WHOIS / RDAP',
       PANEL_RECS:          'Correcciones',
@@ -2637,6 +2732,7 @@ const STRINGS = {
       PANEL_CAA:           'CAA',
       PANEL_RPKI:          'RPKI ROA',
       PANEL_ASPA:          'ASPA',
+      PANEL_IPV6:          'IPv6',
       PANEL_STXT:          'Security.txt',
       PANEL_WHOIS:         'WHOIS / RDAP',
       PANEL_RECS:          'Correctifs',
@@ -3098,6 +3194,7 @@ const STRINGS = {
       PANEL_CAA:           'CAA',
       PANEL_RPKI:          'RPKI ROA',
       PANEL_ASPA:          'ASPA',
+      PANEL_IPV6:          'IPv6',
       PANEL_STXT:          'Security.txt',
       PANEL_WHOIS:         'WHOIS / RDAP',
       PANEL_RECS:          'الإصلاحات',
@@ -3483,6 +3580,7 @@ const STRINGS = {
       PANEL_CAA:           'CAA',
       PANEL_RPKI:          'RPKI ROA',
       PANEL_ASPA:          'ASPA',
+      PANEL_IPV6:          'IPv6',
       PANEL_STXT:          'Security.txt',
       PANEL_WHOIS:         'WHOIS / RDAP',
       PANEL_RECS:          'सुधार',
@@ -5340,6 +5438,91 @@ async function checkRPKI(domain) {
   }
 }
 
+// ── IPv6 ──────────────────────────────────────────────────────────────────────
+
+async function checkIPv6(domain) {
+  try {
+    const [nsResp, mxResp, domainAaaaResp, domainAResp] = await Promise.allSettled([
+      dohQuery(domain, 'NS'),
+      dohQuery(domain, 'MX'),
+      dohQuery(domain, 'AAAA'),
+      dohQuery(domain, 'A'),
+    ]);
+
+    const domainV6 = (domainAaaaResp.status === 'fulfilled'
+      ? (domainAaaaResp.value.Answer || []).filter(r => r.type === 28).map(r => r.data.trim())
+      : []);
+    const domainV4 = (domainAResp.status === 'fulfilled'
+      ? (domainAResp.value.Answer || []).filter(r => r.type === 1).map(r => r.data.trim())
+      : []);
+
+    const nsHosts = (nsResp.status === 'fulfilled' ? (nsResp.value.Answer || []) : [])
+      .filter(r => r.type === 2)
+      .map(r => r.data.trim().replace(/\.$/, '').toLowerCase());
+    const mxEntries = (mxResp.status === 'fulfilled' ? (mxResp.value.Answer || []) : [])
+      .filter(r => r.type === 15)
+      .map(r => { const p = r.data.trim().split(/\s+/); return (p[1] || '').replace(/\.$/, '').toLowerCase(); })
+      .filter(h => h && h !== '.');
+
+    const uniqueNS = [...new Set(nsHosts)];
+    const uniqueMX = [...new Set(mxEntries)];
+
+    const [nsIPResults, mxIPResults] = await Promise.all([
+      Promise.allSettled(uniqueNS.map(h => resolveHostIPs(h))),
+      Promise.allSettled(uniqueMX.map(h => resolveHostIPs(h))),
+    ]);
+
+    function splitIPs(ips) {
+      return { v4: ips.filter(ip => !ip.includes(':')), v6: ips.filter(ip => ip.includes(':')) };
+    }
+
+    const nsHostData = uniqueNS.map((hostname, i) => {
+      const ips = nsIPResults[i].status === 'fulfilled' ? nsIPResults[i].value : [];
+      return { hostname, ...splitIPs(ips) };
+    });
+    const mxHostData = uniqueMX.map((hostname, i) => {
+      const ips = mxIPResults[i].status === 'fulfilled' ? mxIPResults[i].value : [];
+      return { hostname, ...splitIPs(ips) };
+    });
+
+    const mxWithIPs = mxHostData.filter(h => h.v4.length > 0 || h.v6.length > 0);
+    const nsWithIPs = nsHostData.filter(h => h.v4.length > 0 || h.v6.length > 0);
+    const mxWithV6 = mxHostData.filter(h => h.v6.length > 0);
+    const nsWithV6 = nsHostData.filter(h => h.v6.length > 0);
+    const allMXHaveV6 = mxWithIPs.length > 0 && mxWithV6.length === mxWithIPs.length;
+    const allNSHaveV6 = nsWithIPs.length > 0 && nsWithV6.length === nsWithIPs.length;
+    const someMXHaveV6 = mxWithV6.length > 0 && !allMXHaveV6;
+    const someNSHaveV6 = nsWithV6.length > 0 && !allNSHaveV6;
+
+    let rating;
+    if (allMXHaveV6 && allNSHaveV6) rating = 'excellent';
+    else if (mxWithV6.length > 0 || nsWithV6.length > 0) rating = 'good';
+    else rating = 'warning';
+
+    const issues = [];
+    if (domainV6.length > 0) {
+      issues.push({ rating: 'excellent', textKey: 'IPV6_DOMAIN_HAS_IPV6' });
+    } else {
+      issues.push({ rating: 'warning', textKey: 'IPV6_DOMAIN_NO_IPV6' });
+    }
+    if (uniqueMX.length > 0) {
+      if (allMXHaveV6) issues.push({ rating: 'excellent', textKey: 'IPV6_ALL_MX_HAVE_IPV6' });
+      else if (someMXHaveV6) issues.push({ rating: 'good', textKey: 'IPV6_SOME_MX_HAVE_IPV6' });
+      else issues.push({ rating: 'warning', textKey: 'IPV6_NO_MX_HAVE_IPV6' });
+    }
+    if (uniqueNS.length > 0) {
+      if (allNSHaveV6) issues.push({ rating: 'excellent', textKey: 'IPV6_ALL_NS_HAVE_IPV6' });
+      else if (someNSHaveV6) issues.push({ rating: 'good', textKey: 'IPV6_SOME_NS_HAVE_IPV6' });
+      else issues.push({ rating: 'warning', textKey: 'IPV6_NO_NS_HAVE_IPV6' });
+    }
+
+    return { rating, issues, domainIPs: { v4: domainV4, v6: domainV6 }, mxHosts: mxHostData, nsHosts: nsHostData };
+  } catch (e) {
+    return { error: true, rating: 'fail', issues: [], domainIPs: { v4: [], v6: [] }, mxHosts: [], nsHosts: [],
+      message: e.message === 'Failed to fetch' ? 'Network error' : e.message };
+  }
+}
+
 // ── DOM helpers ───────────────────────────────────────────────────────────────
 
 function el(tag, cls, text) {
@@ -5604,6 +5787,8 @@ function renderMX(result) {
         body.appendChild(warn);
       }
 
+      const ipv6Val = lastResults && lastResults.ipv6 && lastResults.ipv6.status === 'fulfilled'
+        ? lastResults.ipv6.value : null;
       const listEl = el('div', 'mx-host-list');
       for (const h of d.hosts) {
         const row = el('div', 'mx-host-row');
@@ -5627,6 +5812,15 @@ function renderMX(result) {
         const hostBadge = makeBadge(ds.rating);
         hostBadge.textContent = hInfo;
         row.appendChild(hostBadge);
+        if (ipv6Val && !ipv6Val.error) {
+          const mxEntry = ipv6Val.mxHosts.find(m => m.hostname === h.hostname.toLowerCase().replace(/\.$/, ''));
+          if (mxEntry) {
+            const hasV6 = mxEntry.v6.length > 0;
+            const v6Badge = makeBadge(hasV6 ? 'excellent' : 'warning');
+            v6Badge.textContent = hasV6 ? ts('IPV6_MX_BADGE_YES') : ts('IPV6_MX_BADGE_NO');
+            row.appendChild(v6Badge);
+          }
+        }
         listEl.appendChild(row);
       }
       body.appendChild(makeDetails(ts('MX_HOST_DETAILS'), listEl));
@@ -5824,6 +6018,21 @@ function renderSPF(result) {
         });
 
         body.appendChild(makeDetails(ts('SPF_MECHANISMS'), listEl));
+      }
+
+      // Note if IPv6-capable MX/NS hosts exist but no ip6: mechanisms in SPF
+      if (!d.noRecord && !d.error) {
+        const ipv6Val = lastResults && lastResults.ipv6 && lastResults.ipv6.status === 'fulfilled'
+          ? lastResults.ipv6.value : null;
+        if (ipv6Val && !ipv6Val.error) {
+          const hasIPv6Hosts = ipv6Val.mxHosts.some(h => h.v6.length > 0) || ipv6Val.nsHosts.some(h => h.v6.length > 0);
+          const spfMechs = d.mechanisms || { ipAddresses: [], ipPrefixes: [] };
+          const hasIp6Mech = spfMechs.ipAddresses.some(m => m.mech === 'ip6') ||
+                             spfMechs.ipPrefixes.some(m => m.mech === 'ip6');
+          if (hasIPv6Hosts && !hasIp6Mech) {
+            body.appendChild(makeIssueList([{ rating: 'warning', textKey: 'SPF_NO_IP6_MECHS' }]));
+          }
+        }
       }
     }
 
@@ -6377,6 +6586,114 @@ function renderASPA(result) {
   });
 }
 
+function renderIPv6(result) {
+  const d = result && result.status === 'fulfilled'
+    ? result.value
+    : { error: true, rating: 'fail', message: 'Check failed', issues: [], domainIPs: { v4: [], v6: [] }, mxHosts: [], nsHosts: [] };
+  setTabResult('ipv6', d.rating, body => {
+    if (d.error) {
+      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + d.message));
+      addExplanation(body, tx('IPV6'));
+      return;
+    }
+
+    const mxWithV6 = d.mxHosts.filter(h => h.v6.length > 0).length;
+    const mxTotal  = d.mxHosts.length;
+    const nsWithV6 = d.nsHosts.filter(h => h.v6.length > 0).length;
+    const nsTotal  = d.nsHosts.length;
+
+    const sum = el('div', 'card-summary');
+    const parts = [];
+    if (mxTotal > 0) parts.push(td('IPV6_MX_SUMMARY', mxWithV6, mxTotal));
+    if (nsTotal > 0) parts.push(td('IPV6_NS_SUMMARY', nsWithV6, nsTotal));
+    const sumText = parts.length > 0 ? parts.join(' \u00b7 ') : ts('IPV6_NO_MX') + ' / ' + ts('IPV6_NO_NS');
+    sum.appendChild(el('b', null, sumText));
+    body.appendChild(sum);
+
+    if (d.issues && d.issues.length > 0) body.appendChild(makeIssueList(d.issues));
+
+    function buildHostSection(hosts, sectionTitle) {
+      if (hosts.length === 0) return null;
+      const sec = el('div', 'panel-section');
+      sec.appendChild(el('div', 'panel-section-title', sectionTitle));
+      const listEl = el('div', 'mx-host-list');
+      for (const h of hosts) {
+        const row = el('div', 'mx-host-row');
+        const nameLine = el('div', 'mx-host-line');
+        nameLine.appendChild(el('span', 'mx-hostname', h.hostname));
+        const hasV6 = h.v6.length > 0;
+        const badge = makeBadge(hasV6 ? 'excellent' : 'warning');
+        badge.textContent = hasV6 ? ts('IPV6_MX_BADGE_YES') : ts('IPV6_MX_BADGE_NO');
+        nameLine.appendChild(badge);
+        row.appendChild(nameLine);
+        const allAddrs = [...h.v4, ...h.v6];
+        if (allAddrs.length === 0) {
+          const noIp = el('div');
+          noIp.style.cssText = 'font-size:0.78rem;color:var(--text-muted);padding-inline-start:0.3rem';
+          noIp.textContent = ts('RPKI_NO_IPS');
+          row.appendChild(noIp);
+        } else {
+          for (const addr of allAddrs) {
+            const isV6 = addr.includes(':');
+            const addrLine = el('li', 'issue-item');
+            addrLine.appendChild(el('span', 'issue-dot dot-' + (isV6 ? 'excellent' : 'info')));
+            addrLine.appendChild(el('code', null, addr));
+            row.appendChild(addrLine);
+          }
+        }
+        listEl.appendChild(row);
+      }
+      sec.appendChild(listEl);
+      return sec;
+    }
+
+    if (d.mxHosts.length > 0 || d.nsHosts.length > 0) {
+      const frag = document.createDocumentFragment();
+      const mxSec = buildHostSection(d.mxHosts, 'MX');
+      const nsSec = buildHostSection(d.nsHosts, 'NS');
+      if (mxSec) frag.appendChild(mxSec);
+      if (nsSec) frag.appendChild(nsSec);
+      body.appendChild(makeDetails(ts('IPV6_HOST_DETAILS'), frag));
+    }
+
+    // Mandatory countries section
+    const mandSec = el('div', 'panel-section');
+    mandSec.appendChild(el('div', 'panel-section-title', ts('IPV6_MANDATORY_TITLE')));
+    const noteEl = el('div', 'card-summary');
+    noteEl.textContent = ts('IPV6_MANDATORY_NOTE');
+    mandSec.appendChild(noteEl);
+
+    const countryData = [
+      { name: 'Norway (mandatory from 2023-01-01, max. extension to 2025-01-01)', law: 'Forskrift om IT-standarder i offentlig forvaltning \u00a712', href: 'https://lovdata.no/dokument/SF/forskrift/2013-04-05-959' },
+      { name: 'USA (2020)',    law: 'OMB Memorandum M-21-07 (Federal IPv6 mandate)',              href: 'https://www.whitehouse.gov/wp-content/uploads/2020/11/M-21-07.pdf' },
+      { name: 'EU (2017)',     law: 'European Interoperability Framework / NIS2 Directive',        href: 'https://joinup.ec.europa.eu/collection/nifo-national-interoperability-framework-observatory/european-interoperability-framework-detail' },
+      { name: 'India (2018)',  law: 'DoT National Telecom Policy 2018 (IPv6 mandate)',             href: 'https://dot.gov.in/sites/default/files/National_Telecom_Policy-2018_0.pdf' },
+      { name: 'China (2017)',  law: 'MIIT IPv6 Scale Deployment Action Plan',                     href: 'https://www.miit.gov.cn/' },
+    ];
+    const tbl = document.createElement('table');
+    tbl.className = 'kv-table';
+    for (const c of countryData) {
+      const tr = document.createElement('tr');
+      const tdName = document.createElement('td');
+      tdName.textContent = c.name;
+      const tdLaw = document.createElement('td');
+      const a = document.createElement('a');
+      a.href = c.href;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.textContent = c.law;
+      tdLaw.appendChild(a);
+      tr.appendChild(tdName);
+      tr.appendChild(tdLaw);
+      tbl.appendChild(tr);
+    }
+    mandSec.appendChild(tbl);
+    body.appendChild(mandSec);
+
+    addExplanation(body, tx('IPV6'));
+  });
+}
+
 function renderSecurityTxt(result) {
   const d = result.status === 'fulfilled' ? result.value : { rating: 'warning', found: false, message: 'Check failed' };
   if (d.skipped) { setTabResult('security-txt', 'skip', body => { body.appendChild(el('div', 'card-summary', ts('CHECK_SKIPPED'))); }); return; }
@@ -6536,6 +6853,7 @@ function renderRecommendations(r) {
     { tabId: 'ptr',          label: 'PTR',          weight: 0, result: g(r.ptr)         },
     { tabId: 'rpki',         label: 'RPKI',         weight: 0, result: g(r.rpki)        },
     { tabId: 'aspa',         label: 'ASPA',         weight: 0, result: { rating: getASPARating(r.rpki), issues: [] } },
+    { tabId: 'ipv6',         label: 'IPv6',         weight: 0, result: g(r.ipv6)        },
     { tabId: 'security-txt', label: 'Security.txt', weight: 0, result: g(r.securityTxt) },
     { tabId: 'whois',        label: 'WHOIS',        weight: 0, result: g(r.whois)       },
   ].filter(c => !c.result.skipped);
@@ -6675,13 +6993,13 @@ function renderStatsPanel(dkim, rpki) {
   document.getElementById('overview-content').appendChild(panel);
 }
 
-function renderSummary({ dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, securityTxt, whois }) {
+function renderSummary({ dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois }) {
   const gv = r => (r && r.status === 'fulfilled' ? r.value : { rating: 'fail' });
   const g  = r => gv(r).rating;
   const skipped = r => gv(r).skipped === true;
   const dr = g(dnssec), mr = g(mx), nr = g(dane), sr = g(spf), kr = g(dkim);
   const dmr = g(dmarc), tr = g(tlsrpt), pr = g(mtasts), cr = g(caa);
-  const ptr_r = g(ptr), bimi_r = g(bimi), rpki_r = g(rpki), aspa_r = getASPARating(rpki), stxt_r = g(securityTxt), whois_r = g(whois);
+  const ptr_r = g(ptr), bimi_r = g(bimi), rpki_r = g(rpki), aspa_r = getASPARating(rpki), ipv6_r = g(ipv6), stxt_r = g(securityTxt), whois_r = g(whois);
   const mtastsSkipped = skipped(mtasts);
 
   // Weights: DKIM 20%, SPF 15%, DMARC 15%, MTA-STS 15%, DNSSEC 10%, MX 10%, DANE 10%, TLS-RPT 3%, CAA 2%
@@ -6737,7 +7055,7 @@ function renderSummary({ dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, 
   sep.textContent = ts('SCORING_INFO');
   barsEl.appendChild(sep);
 
-  [['PTR', ptr_r], ['RPKI', rpki_r], ['ASPA', aspa_r], ['Sec.txt', stxt_r], ['WHOIS', whois_r]
+  [['PTR', ptr_r], ['RPKI', rpki_r], ['ASPA', aspa_r], ['IPv6', ipv6_r], ['Sec.txt', stxt_r], ['WHOIS', whois_r]
   ].forEach(([label, rating]) => addBar(label, rating, 0));
 
   document.getElementById('overview-placeholder').style.display = 'none';
@@ -6762,7 +7080,7 @@ function timed(name, promise) {
 function rerenderAll(r) {
   renderDNSSEC(r.dnssec); renderMX(r.mx); renderPTR(r.ptr); renderDANE(r.dane); renderSPF(r.spf);
   renderDKIM(r.dkim); renderDMARC(r.dmarc); renderBIMI(r.bimi); renderTLSRPT(r.tlsrpt); renderMTASTS(r.mtasts); renderCAA(r.caa);
-  renderRPKI(r.rpki); renderASPA(r.rpki); renderSecurityTxt(r.securityTxt); renderWHOIS(r.whois);
+  renderRPKI(r.rpki); renderASPA(r.rpki); renderIPv6(r.ipv6); renderSecurityTxt(r.securityTxt); renderWHOIS(r.whois);
   renderSummary(r);
   renderRecommendations(r);
 }
@@ -6790,12 +7108,12 @@ async function runChecks(domain, customSelectors, opts = {}) {
   ph.appendChild(loadRow);
   document.getElementById('overview-content').style.display = 'none';
 
-  const tabsToLoad = ['recs','dnssec','mx','ptr','dane','spf','dkim','dmarc','bimi','tlsrpt','caa','rpki','aspa','whois'];
+  const tabsToLoad = ['recs','dnssec','mx','ptr','dane','spf','dkim','dmarc','bimi','tlsrpt','caa','rpki','aspa','ipv6','whois'];
   if (!skipMTASTS) tabsToLoad.push('mtasts');
   if (!skipSecTxt) tabsToLoad.push('security-txt');
   tabsToLoad.forEach(setTabLoading);
 
-  const [dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, securityTxt, whois] = await Promise.allSettled([
+  const [dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois] = await Promise.allSettled([
     timed('dnssec',  checkDNSSEC(domain)),
     timed('mx',      checkMX(domain)),
     timed('ptr',     checkPTR(domain)),
@@ -6808,12 +7126,13 @@ async function runChecks(domain, customSelectors, opts = {}) {
     timed('mtasts',  skipMTASTS ? Promise.resolve(SKIPPED) : checkMTASTS(domain)),
     timed('caa',     checkCAA(domain)),
     timed('rpki',    checkRPKI(domain)),
+    timed('ipv6',    checkIPv6(domain)),
     timed('stxt',    skipSecTxt ? Promise.resolve(SKIPPED) : checkSecurityTxt(domain)),
     timed('whois',   checkWHOIS(domain)),
   ]);
   if (scanStats) scanStats.totalMs = Date.now() - scanStats.startMs;
 
-  lastResults = { dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, securityTxt, whois };
+  lastResults = { dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois };
   rerenderAll(lastResults);
 }
 
@@ -6988,6 +7307,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ['BIMI',         '\u2014'],
       ['RPKI',         '\u2014'],
       ['ASPA',         '\u2014'],
+      ['IPv6',         '\u2014'],
       ['Security.txt', '\u2014'],
       ['WHOIS',        '\u2014'],
     ]);

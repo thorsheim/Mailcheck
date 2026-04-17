@@ -8,7 +8,7 @@ Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-April-16-2**
+Current version: **2026-April-17-1**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -19,8 +19,8 @@ The changelog is hardcoded HTML in the footer — not part of the i18n system.
 ## Architecture
 
 ### UI layout
-Tab-based: `#tab-bar` (17 `.tab-btn` elements) + `#tab-panels` (17 `.tab-panel` divs).
-Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**, TLS-RPT, MTA-STS, CAA, RPKI, **ASPA**, Security.txt, WHOIS, **Fixes**.
+Tab-based: `#tab-bar` (18 `.tab-btn` elements) + `#tab-panels` (18 `.tab-panel` divs).
+Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**, TLS-RPT, MTA-STS, CAA, RPKI, **ASPA**, **IPv6**, Security.txt, WHOIS, **Fixes**.
 - Tab bar hidden until first `runChecks()` call (`.visible` class).
 - Tab dots (`.tab-dot`) colored per rating after each check completes.
 - Each panel: `.panel-header` (icon + name + badge) + `.panel-body` (summary, issues, details, explanation).
@@ -56,6 +56,7 @@ Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**
 | MTA-STS | `_mta-sts.<domain>` TXT + HTTPS policy fetch | RFC 8461; collects all `mx:` lines as array; cross-checks against actual MX hosts |
 | CAA | `<domain>` CAA (type 257) | Hex format parsed by `parseCAAData()`; DNSSEC checked for each CA domain; values linkified |
 | RPKI | RIPE Stat `network-info` + `rpki-validation` + `as-overview` + `aspa` | Checks NS+MX host IPs; includes ASPA section |
+| IPv6 | `<domain>` A+AAAA, `<domain>` NS → AAAA per NS host, `<domain>` MX → AAAA per MX host | Informational only; does not affect grade |
 | Security.txt | `https://<domain>/.well-known/security.txt` (fallback `/security.txt`) | RFC 9116; parsed fields shown |
 | WHOIS | `https://rdap.org/domain/<domain>` | RDAP JSON; registrar, dates, nameservers, status |
 
@@ -103,6 +104,12 @@ aspaLookupASN()     RIPE Stat aspa endpoint; normalises provider list
 checkRPKI()         NS+MX hosts → IPs → ROA + ASPA; also fetches asnInfo and provider holder names
 getASPARating()     derives ASPA-specific rating from a checkRPKI() result (excellent/warning)
 renderASPA()        dedicated ASPA tab renderer; reuses r.rpki result
+checkIPv6()         queries A+AAAA for domain, NS hosts, MX hosts; returns mxHosts/nsHosts arrays
+                      with v4/v6 address splits; rating: excellent (all have AAAA), good (some),
+                      warning (none); informational only (weight=0)
+renderIPv6()        renders IPv6 tab: summary, issues, per-host address breakdown (collapsible),
+                      mandatory government requirements table (Norway §12 mandatory from 2023-01-01
+                      with max extension to 2025-01-01, USA, EU, India, China), explanation
 el()                DOM element factory
 clearNode()         safe DOM clearing (replaces innerHTML = '')
 makeSpinner()
@@ -125,18 +132,18 @@ renderRecommendations(r)
                       Tab dot color = worst rating across all scored checks.
 renderSummary()     Weighted grade: DKIM 20%, SPF 15%, DMARC 15%, MTA-STS 15%, DNSSEC 10%,
                       MX 10%, DANE 10%, TLS-RPT 3%, CAA 2%
-                      Shows all 17 tabs: 9 scored bars first, then a labeled separator
-                      "Informational (not scored)", then PTR, BIMI, RPKI, ASPA, Security.txt, WHOIS
-                      bars (weight=0). Grade calculation unchanged.
+                      Shows all 18 tabs: 9 scored bars first, then a labeled separator
+                      "Informational (not scored)", then PTR, BIMI, RPKI, ASPA, IPv6, Security.txt,
+                      WHOIS bars (weight=0). Grade calculation unchanged.
 currentDomain       module-level domain state (set in runChecks)
 lastResults         stores last Promise.allSettled results for language-switch re-render
 scanStats           module-level stats object (null before first scan); reset at top of runChecks();
                       fields: startMs, totalMs, checks{}, dohRequests, ripeStatRequests,
                       ripeStatCacheHits, httpRequests
 timed(name, p)      wraps a promise; records elapsed ms into scanStats.checks[name] on settle
-rerenderAll(r)      re-renders all 16 panels from stored results (no DNS re-query)
+rerenderAll(r)      re-renders all 17 panels from stored results (no DNS re-query)
 runChecks()         orchestrator; accepts opts={skipMTASTS,skipSecTxt}; resets scanStats; wraps all
-                      14 checks in timed(); saves lastResults; calls rerenderAll()
+                      15 checks in timed(); saves lastResults; calls rerenderAll()
 renderStatsPanel(dkim, rpki)
                     appends/replaces <details id="stats-panel"> to #overview-content; reads
                       scanStats for counts and check timings; called at end of renderSummary()
@@ -148,7 +155,7 @@ Three namespaces per language in the `STRINGS` object:
 
 - **`s` (static)** — plain string key→value. Access with `ts('KEY')`.
 - **`d` (dynamic)** — arrow functions for pluralised/interpolated strings. Access with `td('KEY', ...args)`.
-- **`x` (explanations)** — full explanation markup strings for `addExplanation()` (14 keys: DMARC, DNSSEC, MX, PTR, DANE, SPF, DKIM, TLSRPT, MTASTS, CAA, RPKI, BIMI, STXT, WHOIS). Access with `tx('KEY')`.
+- **`x` (explanations)** — full explanation markup strings for `addExplanation()` (15 keys: DMARC, DNSSEC, MX, PTR, DANE, SPF, DKIM, TLSRPT, MTASTS, CAA, RPKI, BIMI, STXT, WHOIS, IPV6). Access with `tx('KEY')`.
 
 Lookup order: current language → English fallback → key name as visible fallback.
 
@@ -171,6 +178,17 @@ const resolvedText = iss.textKey
 **Contributor workflow**: external translators submit only `translations/<lang>.js` (copied from `translations/TEMPLATE.js`). The maintainer pastes it into the `STRINGS` block in `index.html` and adds the `<option>` tag on merge. See `translations/CONTRIBUTING.md`.
 
 **Current languages**: `en` (English, default), `ar` (Arabic, RTL), `eo` (Esperanto), `es` (Spanish), `fr` (French), `hi` (Hindi), `no` (Norwegian Bokmål).
+
+### IPv6 tab details
+- `checkIPv6(domain)` queries NS, MX, domain A+AAAA in one parallel `Promise.allSettled`, then calls `resolveHostIPs()` for each unique NS/MX host.
+- Returns `{ rating, issues, domainIPs: {v4, v6}, mxHosts: [{hostname, v4, v6}], nsHosts: [{hostname, v4, v6}] }`.
+- Rating: `excellent` (all MX+NS hosts-with-IPs have AAAA), `good` (some have AAAA), `warning` (none have AAAA), `fail` (exception).
+- Informational only — weight 0; appears in informational score bars and scoring modal.
+- `renderIPv6` accesses `lastResults.ipv6` — same module-level pattern as `renderMX` accessing `lastResults.dmarc`.
+- MX tab: `renderMX` reads `lastResults.ipv6` to show a green "IPv6" or amber "No IPv6" badge on each MX host row.
+- SPF tab: `renderSPF` reads `lastResults.ipv6` to show a `SPF_NO_IP6_MECHS` warning when MX/NS hosts have AAAA but no `ip6:` mechanisms appear in the SPF record.
+- Norway regulation: §12 of Forskrift om IT-standarder i offentlig forvaltning — mandatory from **1 January 2023**, with a maximum 2-year extension to **1 January 2025**. Regulation enacted 2013-04-05, lovdata.no link in explanation.
+- Test: `cloudflare.com` and `gmail.com` → excellent; a domain with IPv6-capable MX but no `ip6:` in SPF → SPF tab shows warning note.
 
 ### SPF redirect details
 - `analyzeSPF()` tracks `redirectDomain` when it encounters `redirect=<val>`. Does NOT push the old `SPF_REDIRECT` warning.

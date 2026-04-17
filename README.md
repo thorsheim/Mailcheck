@@ -104,6 +104,7 @@ Missing keys fall back to English automatically, so partial translations are wel
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-April-17-1 | 2026-04-17 | New IPv6 tab (informational, not scored): AAAA checks for domain, MX hosts, NS hosts; IPv6 badge on MX tab per host; government mandate references (Norway, USA, EU, India, China); EN+NO translations |
 | 2026-April-16-2 | 2026-04-16 | Acknowledgements fireworks on click (not hover); acknowledgements table cells left-aligned |
 | 2026-April-16-1 | 2026-04-16 | Arabic (العربية) + Hindi (हिन्दी) UI languages — RTL layout via CSS logical properties for Arabic; full translations for both |
 | 2026-April-14-9 | 2026-04-14 | Español (es) UI language — full translation of all strings and explanations |
