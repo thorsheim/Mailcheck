@@ -104,6 +104,7 @@ Missing keys fall back to English automatically, so partial translations are wel
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-April-27-2 | 2026-04-27 | SPF recursive include-chain lookup counting; DKIM key rotation best-practice note; Cloudflare vs Google DNS propagation cross-check for SPF and DMARC; nameserver ASN diversity in RPKI tab; SPF legacy type-99 record detection; email provider detection on Overview tab; CAA issuemail tag (RFC 8657) support |
 | 2026-April-27-1 | 2026-04-27 | DKIM selector help popover: `?` button next to "Extra DKIM Selectors" input explains what a selector is, how to find it in email headers, and why to add custom ones; translations in all 7 languages |
 | 2026-April-17-1 | 2026-04-17 | New IPv6 tab (informational, not scored): AAAA checks for domain, MX hosts, NS hosts; IPv6 badge on MX tab per host; government mandate references (Norway, USA, EU, India, China); EN+NO translations |
 | 2026-April-16-2 | 2026-04-16 | Acknowledgements fireworks on click (not hover); acknowledgements table cells left-aligned |

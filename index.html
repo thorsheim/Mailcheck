@@ -641,8 +641,20 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-April-27-1 &mdash; click for changelog</summary>
+      <summary>Version 2026-April-27-2 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-April-27-2</span>
+          <ul class="cl-changes">
+            <li>SPF: recursive include-chain lookup counting &mdash; follows all <code>include:</code> and <code>redirect=</code> chains to count total DNS lookups across the full evaluation tree (RFC 7208 §4.6.4 limit of 10)</li>
+            <li>SPF: detects legacy DNS type-99 SPF records (deprecated since RFC 7208; should be removed)</li>
+            <li>SPF + DMARC: cross-checks records between Cloudflare and Google DNS resolvers &mdash; warns on propagation mismatch</li>
+            <li>DKIM: best-practice reminder to rotate keys at least annually</li>
+            <li>CAA: <code>issuemail</code> tag (RFC 8657) now parsed, linkified, and included in authorized-CA and DNSSEC checks</li>
+            <li>RPKI: nameserver ASN diversity section &mdash; warns when all NS hosts share a single ASN</li>
+            <li>Overview: detected email infrastructure chips (provider names derived from DKIM selectors, SPF includes, and MX hostnames)</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-April-27-1</span>
           <ul class="cl-changes">
@@ -1103,6 +1115,20 @@ const STRINGS = {
       MTASTS_MX_MATCH:     'All MX hosts matched by MTA-STS policy mx: patterns',
       MTASTS_MX_MISMATCH:  'One or more MX hosts not covered by any policy mx: pattern',
       MTASTS_MX_NO_PATTERNS: 'MTA-STS policy has no mx: lines',
+      // SPF propagation / legacy type
+      SPF_LEGACY_TYPE:         'Legacy SPF record type (DNS type 99) found — deprecated since RFC 7208 (2014); should be removed',
+      SPF_PROPAGATION_MISMATCH:'SPF record differs between Cloudflare and Google DNS resolvers — incomplete propagation or misconfiguration',
+      // DMARC propagation
+      DMARC_PROPAGATION_MISMATCH:'DMARC record differs between Cloudflare and Google DNS resolvers — incomplete propagation or misconfiguration',
+      // DKIM rotation
+      DKIM_ROTATION_NOTE:  'Best practice: rotate DKIM keys at least annually. Key age cannot be determined from DNS — verify rotation policy with your email provider.',
+      // CAA issuemail
+      CAA_ISSUEMAIL_NOTE:  'issuemail tag present — controls S/MIME certificate issuance for this domain (RFC 8657)',
+      // RPKI nameserver diversity
+      RPKI_NS_DIVERSITY:   'Nameserver ASN diversity',
+      RPKI_NS_NO_ASN_DATA: 'No ASN data available for nameservers',
+      // Overview provider detection
+      OVERVIEW_PROVIDERS:  'Detected email infrastructure',
     },
     // ── d: dynamic strings (arrow functions) ─────────────────────────────────
     // Each value is an arrow function.  Write the translated sentence as the
@@ -1158,6 +1184,13 @@ const STRINGS = {
       IPV6_DOMAIN_SUMMARY:   n => n + ' IPv6 address' + (n !== 1 ? 'es' : '') + ' found for domain.',
       IPV6_MX_SUMMARY:       (n, t) => n + '/' + t + ' MX host' + (t !== 1 ? 's' : '') + ' have IPv6.',
       IPV6_NS_SUMMARY:       (n, t) => n + '/' + t + ' NS host' + (t !== 1 ? 's' : '') + ' have IPv6.',
+      // SPF recursive lookup count
+      SPF_LOOKUP_TOTAL_EXCEED: n => n + ' total DNS lookups (including nested includes) exceed RFC 7208 limit of 10 — mail receivers will return SPF PermError',
+      SPF_LOOKUP_TOTAL_HIGH:   n => n + ' total DNS lookups (including nested includes) — approaching RFC 7208 limit of 10',
+      SPF_FOUND_LOOKUPS_TOTAL: (direct, total) => 'SPF record found. ' + direct + ' direct + ' + total + ' total DNS lookups (recursive).',
+      // RPKI nameserver diversity
+      RPKI_NS_SINGLE_ASN: (asn, holder) => 'All nameservers on a single ASN (' + asn + (holder ? ' — ' + holder : '') + ') — single point of failure for DNS routing',
+      RPKI_NS_MULTI_ASN:  n => 'Nameservers span ' + n + ' different ASNs — good routing resilience',
     },
     // ── x: explanation strings (HTML) ────────────────────────────────────────
     // Each value is an HTML string rendered in the expandable "What is this?"
@@ -4067,6 +4100,14 @@ async function dohQuery(name, type) {
   return resp.json();
 }
 
+async function dohQueryGoogle(name, type) {
+  if (scanStats) scanStats.dohRequests++;
+  const url = 'https://dns.google/resolve?name=' + encodeURIComponent(name) + '&type=' + encodeURIComponent(type);
+  const resp = await fetch(url, { headers: { Accept: 'application/dns-json' } });
+  if (!resp.ok) throw new Error('Google DoH HTTP ' + resp.status);
+  return resp.json();
+}
+
 function parseTxtData(data) {
   return data.replace(/^"|"$/g, '').replace(/"\s*"/g, '');
 }
@@ -4297,6 +4338,38 @@ async function checkDANE(domain) {
 
 // ── SPF ───────────────────────────────────────────────────────────────────────
 
+async function countSPFLookupsFull(record, domain, depth, visited) {
+  if (depth === undefined) depth = 0;
+  if (visited === undefined) visited = new Set();
+  if (depth > 5 || visited.has(domain)) return 0;
+  visited.add(domain);
+  const terms = record.split(/\s+/).slice(1);
+  let count = 0;
+  const subTargets = [];
+  for (const term of terms) {
+    const m = term.toLowerCase().match(/^([+\-~?]?)(\w+)(?:[:/=](.*))?$/);
+    if (!m) continue;
+    const [,, mech, val] = m;
+    if (['a', 'mx', 'ptr', 'exists', 'include'].includes(mech)) count++;
+    if (mech === 'include' && val) subTargets.push(val);
+    if (mech === 'redirect' && val) { count++; subTargets.push(val); }
+  }
+  const subResults = await Promise.allSettled(
+    subTargets.map(async target => {
+      try {
+        const resp = await dohQuery(target, 'TXT');
+        const spfRecs = (resp.Answer || []).filter(r => r.type === 16)
+          .map(r => parseTxtData(r.data)).filter(t => t.toLowerCase().startsWith('v=spf1'));
+        if (spfRecs.length === 1)
+          return countSPFLookupsFull(spfRecs[0], target, depth + 1, new Set(visited));
+      } catch (_) {}
+      return 0;
+    })
+  );
+  for (const r of subResults) if (r.status === 'fulfilled') count += r.value;
+  return count;
+}
+
 function analyzeSPF(record, domain) {
   const issues = [];
   let rating = 'excellent';
@@ -4381,8 +4454,17 @@ function analyzeSPF(record, domain) {
 
 async function checkSPF(domain) {
   try {
-    const resp = await dohQuery(domain, 'TXT');
-    if (resp.Status === 3) return { rating: 'fail', records: [], issues: [], message: 'NXDOMAIN \u2014 domain does not exist.' };
+    // Parallel: main TXT + legacy type-99 SPF record check
+    const [txtRes, spfTypeRes] = await Promise.allSettled([
+      dohQuery(domain, 'TXT'),
+      dohQuery(domain, 'SPF'),
+    ]);
+
+    const resp = txtRes.status === 'fulfilled' ? txtRes.value : { Status: -1, Answer: [] };
+    if (resp.Status === 3) return { rating: 'fail', records: [], issues: [], message: 'NXDOMAIN — domain does not exist.' };
+
+    const hasLegacySpf = spfTypeRes.status === 'fulfilled' &&
+      (spfTypeRes.value.Answer || []).some(r => r.type === 99);
 
     const spfRecords = (resp.Answer || [])
       .filter(r => r.type === 16)
@@ -4390,7 +4472,9 @@ async function checkSPF(domain) {
       .filter(t => t.toLowerCase().startsWith('v=spf1'));
 
     if (spfRecords.length === 0) {
-      return { rating: 'fail', records: [], issues: [{ rating: 'fail', textKey: 'SPF_NO_RECORD' }], message: null, noRecord: true };
+      const issues = [{ rating: 'fail', textKey: 'SPF_NO_RECORD' }];
+      if (hasLegacySpf) issues.push({ rating: 'warning', textKey: 'SPF_LEGACY_TYPE' });
+      return { rating: 'fail', records: [], issues, message: null, noRecord: true };
     }
     if (spfRecords.length > 1) {
       return {
@@ -4401,61 +4485,121 @@ async function checkSPF(domain) {
     }
 
     const analysis = analyzeSPF(spfRecords[0], domain);
+    if (hasLegacySpf) analysis.issues.push({ rating: 'warning', textKey: 'SPF_LEGACY_TYPE' });
 
     // Follow redirect= when present and no 'all' mechanism (RFC 7208 §6.1)
     if (analysis.redirectDomain) {
       const redirDomain = analysis.redirectDomain;
       try {
-        const redirResp = await dohQuery(redirDomain, 'TXT');
-        const redirSpf = (redirResp.Answer || [])
-          .filter(r => r.type === 16).map(r => parseTxtData(r.data))
-          .filter(t => t.toLowerCase().startsWith('v=spf1'));
-        if (redirSpf.length === 1) {
-          const redirAnalysis = analyzeSPF(redirSpf[0], redirDomain);
-          const redirDnsNames = redirAnalysis.mechanisms.dnsNames;
-          if (redirDnsNames.length > 0) {
-            const dnssecRes = await Promise.allSettled(redirDnsNames.map(m => checkDNSSEC(m.checkDomain)));
-            redirDnsNames.forEach((m, i) => {
-              m.dnssec = dnssecRes[i].status === 'fulfilled'
-                ? dnssecRes[i].value
-                : { error: true, rating: 'fail', message: String(dnssecRes[i].reason) };
-            });
+        const [redirTxtRes, googleTxtRes, totalCountRes] = await Promise.allSettled([
+          dohQuery(redirDomain, 'TXT'),
+          dohQueryGoogle(domain, 'TXT').catch(() => null),
+          countSPFLookupsFull(spfRecords[0], domain),
+        ]);
+        const redirResp = redirTxtRes.status === 'fulfilled' ? redirTxtRes.value : null;
+        const totalLookupCount = totalCountRes.status === 'fulfilled' ? totalCountRes.value : analysis.lookupCount;
+
+        if (redirResp) {
+          const redirSpf = (redirResp.Answer || [])
+            .filter(r => r.type === 16).map(r => parseTxtData(r.data))
+            .filter(t => t.toLowerCase().startsWith('v=spf1'));
+          if (redirSpf.length === 1) {
+            const redirAnalysis = analyzeSPF(redirSpf[0], redirDomain);
+            const redirDnsNames = redirAnalysis.mechanisms.dnsNames;
+            if (redirDnsNames.length > 0) {
+              const dnssecRes = await Promise.allSettled(redirDnsNames.map(m => checkDNSSEC(m.checkDomain)));
+              redirDnsNames.forEach((m, i) => {
+                m.dnssec = dnssecRes[i].status === 'fulfilled'
+                  ? dnssecRes[i].value
+                  : { error: true, rating: 'fail', message: String(dnssecRes[i].reason) };
+              });
+            }
+            const effectiveIssues = [
+              { rating: 'good', textKey: 'SPF_REDIRECT_FOLLOWED', textArgs: [redirDomain] },
+              ...redirAnalysis.issues,
+            ];
+            // Recursive lookup count check
+            if (totalLookupCount > redirAnalysis.lookupCount) {
+              const overIdx = effectiveIssues.findIndex(i => i.textKey === 'SPF_LOOKUP_EXCEED' || i.textKey === 'SPF_LOOKUP_HIGH');
+              if (overIdx !== -1) effectiveIssues.splice(overIdx, 1);
+              if (totalLookupCount > 10) {
+                effectiveIssues.push({ rating: 'fail', textKey: 'SPF_LOOKUP_TOTAL_EXCEED', textArgs: [totalLookupCount] });
+                redirAnalysis.rating = worstRating(redirAnalysis.rating, 'fail');
+              } else if (totalLookupCount >= 8) {
+                effectiveIssues.push({ rating: 'warning', textKey: 'SPF_LOOKUP_TOTAL_HIGH', textArgs: [totalLookupCount] });
+                redirAnalysis.rating = worstRating(redirAnalysis.rating, 'warning');
+              }
+            }
+            // Propagation check on original domain record
+            const googleResp = googleTxtRes.status === 'fulfilled' ? googleTxtRes.value : null;
+            if (googleResp) {
+              const googleSpf = (googleResp.Answer || []).filter(r => r.type === 16)
+                .map(r => parseTxtData(r.data)).filter(t => t.toLowerCase().startsWith('v=spf1'));
+              if ((googleSpf[0] || '') !== spfRecords[0]) {
+                effectiveIssues.push({ rating: 'warning', textKey: 'SPF_PROPAGATION_MISMATCH' });
+                redirAnalysis.rating = worstRating(redirAnalysis.rating, 'warning');
+              }
+            }
+            return {
+              rating: redirAnalysis.rating, records: spfRecords,
+              redirectDomain: redirDomain, redirectRecord: redirSpf[0],
+              issues: effectiveIssues, lookupCount: redirAnalysis.lookupCount, totalLookupCount,
+              mechanisms: redirAnalysis.mechanisms, allQualifier: redirAnalysis.allQualifier, message: null,
+            };
+          } else {
+            const errKey = redirSpf.length === 0 ? 'SPF_REDIRECT_NO_RECORD' : 'SPF_REDIRECT_MULTI';
+            return { rating: 'fail', records: spfRecords, redirectDomain: redirDomain, issues: [{ rating: 'fail', textKey: errKey, textArgs: [redirDomain] }], lookupCount: 0, totalLookupCount, mechanisms: { ipAddresses: [], ipPrefixes: [], dnsNames: [] }, allQualifier: null, message: null };
           }
-          return {
-            rating: redirAnalysis.rating,
-            records: spfRecords,
-            redirectDomain: redirDomain,
-            redirectRecord: redirSpf[0],
-            issues: [{ rating: 'good', textKey: 'SPF_REDIRECT_FOLLOWED', textArgs: [redirDomain] }, ...redirAnalysis.issues],
-            lookupCount: redirAnalysis.lookupCount,
-            mechanisms: redirAnalysis.mechanisms,
-            allQualifier: redirAnalysis.allQualifier,
-            message: null,
-          };
-        } else {
-          const errKey = redirSpf.length === 0 ? 'SPF_REDIRECT_NO_RECORD' : 'SPF_REDIRECT_MULTI';
-          return { rating: 'fail', records: spfRecords, redirectDomain: redirDomain, issues: [{ rating: 'fail', textKey: errKey, textArgs: [redirDomain] }], lookupCount: 0, mechanisms: { ipAddresses: [], ipPrefixes: [], dnsNames: [] }, allQualifier: null, message: null };
         }
       } catch (redirErr) {
-        return { rating: 'fail', records: spfRecords, redirectDomain: redirDomain, issues: [{ rating: 'fail', textKey: 'SPF_REDIRECT_ERROR', textArgs: [redirDomain] }], lookupCount: 0, mechanisms: { ipAddresses: [], ipPrefixes: [], dnsNames: [] }, allQualifier: null, message: null };
+        return { rating: 'fail', records: spfRecords, redirectDomain: analysis.redirectDomain, issues: [{ rating: 'fail', textKey: 'SPF_REDIRECT_ERROR', textArgs: [analysis.redirectDomain] }], lookupCount: 0, mechanisms: { ipAddresses: [], ipPrefixes: [], dnsNames: [] }, allQualifier: null, message: null };
       }
     }
 
     const dnsNames = analysis.mechanisms.dnsNames;
-    if (dnsNames.length > 0) {
-      const dnssecResults = await Promise.allSettled(dnsNames.map(m => checkDNSSEC(m.checkDomain)));
+    const [dnssecResults, totalCountRes, googleTxtRes] = await Promise.allSettled([
+      Promise.allSettled(dnsNames.map(m => checkDNSSEC(m.checkDomain))),
+      countSPFLookupsFull(spfRecords[0], domain),
+      dohQueryGoogle(domain, 'TXT').catch(() => null),
+    ]);
+
+    if (dnssecResults.status === 'fulfilled') {
       dnsNames.forEach((m, i) => {
-        m.dnssec = dnssecResults[i].status === 'fulfilled'
-          ? dnssecResults[i].value
-          : { error: true, rating: 'fail', message: String(dnssecResults[i].reason) };
+        m.dnssec = dnssecResults.value[i].status === 'fulfilled'
+          ? dnssecResults.value[i].value
+          : { error: true, rating: 'fail', message: String(dnssecResults.value[i].reason) };
       });
     }
-    return { rating: analysis.rating, records: spfRecords, issues: analysis.issues, lookupCount: analysis.lookupCount, mechanisms: analysis.mechanisms, allQualifier: analysis.allQualifier, message: null };
+
+    // Recursive lookup count
+    const totalLookupCount = totalCountRes.status === 'fulfilled' ? totalCountRes.value : analysis.lookupCount;
+    if (totalLookupCount > analysis.lookupCount) {
+      analysis.issues = analysis.issues.filter(i => i.textKey !== 'SPF_LOOKUP_EXCEED' && i.textKey !== 'SPF_LOOKUP_HIGH');
+      if (totalLookupCount > 10) {
+        analysis.issues.push({ rating: 'fail', textKey: 'SPF_LOOKUP_TOTAL_EXCEED', textArgs: [totalLookupCount] });
+        analysis.rating = worstRating(analysis.rating, 'fail');
+      } else if (totalLookupCount >= 8) {
+        analysis.issues.push({ rating: 'warning', textKey: 'SPF_LOOKUP_TOTAL_HIGH', textArgs: [totalLookupCount] });
+        analysis.rating = worstRating(analysis.rating, 'warning');
+      }
+    }
+
+    // Propagation check
+    const googleResp = googleTxtRes.status === 'fulfilled' ? googleTxtRes.value : null;
+    if (googleResp) {
+      const googleSpf = (googleResp.Answer || []).filter(r => r.type === 16)
+        .map(r => parseTxtData(r.data)).filter(t => t.toLowerCase().startsWith('v=spf1'));
+      if ((googleSpf[0] || '') !== spfRecords[0]) {
+        analysis.issues.push({ rating: 'warning', textKey: 'SPF_PROPAGATION_MISMATCH' });
+        analysis.rating = worstRating(analysis.rating, 'warning');
+      }
+    }
+
+    return { rating: analysis.rating, records: spfRecords, issues: analysis.issues, lookupCount: analysis.lookupCount, totalLookupCount, mechanisms: analysis.mechanisms, allQualifier: analysis.allQualifier, message: null };
   } catch (e) {
     return { error: true, rating: 'fail', message: e.message === 'Failed to fetch' ? 'Network error' : e.message };
   }
 }
-
 // ── DKIM ──────────────────────────────────────────────────────────────────────
 
 const AUTO_SELECTORS = [
@@ -4729,7 +4873,7 @@ async function checkDKIM(domain, customSelectors) {
     }
     let rating = 'excellent';
     for (const r of found) rating = worstRating(rating, r.rating);
-    return { rating, found, testedCount: allSelectors.length, message: null };
+    return { rating, found, testedCount: allSelectors.length, rotationNote: true, message: null };
   } catch (e) {
     return { error: true, rating: 'fail', message: e.message === 'Failed to fetch' ? 'Network error' : e.message };
   }
@@ -4820,6 +4964,17 @@ async function checkDMARC(domain) {
       endpointHosts.forEach((h, i) => {
         endpointDnssec[h] = dsResults[i].status === 'fulfilled' ? dsResults[i].value : { error: true, rating: 'fail', message: 'Check failed' };
       });
+    }
+
+    // Propagation check vs Google DoH
+    const googleDmarc = await dohQueryGoogle('_dmarc.' + domain, 'TXT').catch(() => null);
+    if (googleDmarc) {
+      const gTxts = (googleDmarc.Answer || []).filter(r => r.type === 16)
+        .map(r => parseTxtData(r.data)).filter(t => /^v=DMARC1/i.test(t));
+      if ((gTxts[0] || '') !== record) {
+        issues.push({ rating: 'warning', textKey: 'DMARC_PROPAGATION_MISMATCH' });
+        rating = worstRating(rating, 'warning');
+      }
     }
 
     return { rating, record, parsed, pct, issues, endpointDnssec };
@@ -5042,11 +5197,12 @@ async function checkCAA(domain) {
     const issues = [];
     let rating = 'good';
 
-    const issueTags  = parsed.filter(p => p.tag === 'issue').map(p => p.value.trim());
-    const wildTags   = parsed.filter(p => p.tag === 'issuewild').map(p => p.value.trim());
-    const iodefTags  = parsed.filter(p => p.tag === 'iodef').map(p => p.value.trim());
+    const issueTags     = parsed.filter(p => p.tag === 'issue').map(p => p.value.trim());
+    const wildTags      = parsed.filter(p => p.tag === 'issuewild').map(p => p.value.trim());
+    const issuemailTags = parsed.filter(p => p.tag === 'issuemail').map(p => p.value.trim());
+    const iodefTags     = parsed.filter(p => p.tag === 'iodef').map(p => p.value.trim());
 
-    const allowedCAs = [...new Set([...issueTags, ...wildTags].filter(v => v && v !== ';'))];
+    const allowedCAs = [...new Set([...issueTags, ...wildTags, ...issuemailTags].filter(v => v && v !== ';'))];
 
     if (allowedCAs.length > 0) {
       issues.push({ rating: 'good', textKey: 'CAA_AUTHORIZED_CA', textArgs: [allowedCAs.length], _caList: allowedCAs });
@@ -5055,6 +5211,10 @@ async function checkCAA(domain) {
     const issueProhibited = issueTags.includes(';');
     if (issueProhibited && allowedCAs.length === 0) {
       issues.push({ rating: 'excellent', textKey: 'CAA_ISSUE_PROHIBITED' });
+    }
+
+    if (issuemailTags.some(v => v && v !== ';')) {
+      issues.push({ rating: 'good', textKey: 'CAA_ISSUEMAIL_NOTE' });
     }
 
     if (iodefTags.length > 0) {
@@ -5070,9 +5230,9 @@ async function checkCAA(domain) {
       issues.push({ rating: 'warning', textKey: 'CAA_CRITICAL_COUNT', textArgs: [criticalRecords.length] });
     }
 
-    // DNSSEC check for each CA domain listed in issue/issuewild tags
+    // DNSSEC check for each CA domain listed in issue/issuewild/issuemail tags
     const caDomains = [...new Set(
-      [...issueTags, ...wildTags]
+      [...issueTags, ...wildTags, ...issuemailTags]
         .map(v => v.split(';')[0].trim())
         .filter(v => v && /^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/i.test(v))
     )];
@@ -5509,7 +5669,11 @@ async function checkRPKI(domain) {
       try { asnInfo[asn] = await fetchASNHolder(asn); } catch (_) {}
     }));
 
-    return { rating, hosts: hostResults, asnInfo, aspaData };
+    const nsAsns = [...new Set(
+      hostResults.filter(h => h.isNS).flatMap(h => h.ipResults.map(r => r.asn).filter(Boolean))
+    )];
+
+    return { rating, hosts: hostResults, asnInfo, aspaData, nsAsns };
   } catch (e) {
     return { error: true, rating: 'fail', message: e.message === 'Failed to fetch' ? 'Network error' : e.message };
   }
@@ -6011,7 +6175,9 @@ function renderSPF(result) {
       const record = d.records && d.records[0];
       const sumText = d.noRecord ? ts('SPF_NO_RECORD')
         : d.multiRecord ? td('SPF_MULTI_MESSAGE', d.multiCount)
-        : td('SPF_FOUND_LOOKUPS', d.lookupCount);
+        : (d.totalLookupCount && d.totalLookupCount > d.lookupCount)
+          ? td('SPF_FOUND_LOOKUPS_TOTAL', d.lookupCount, d.totalLookupCount)
+          : td('SPF_FOUND_LOOKUPS', d.lookupCount);
       body.appendChild(el('div', 'card-summary', sumText));
 
       if (d.issues && d.issues.length > 0) {
@@ -6201,6 +6367,10 @@ function renderDKIM(result) {
         }
         foundSection.appendChild(listEl);
         body.appendChild(foundSection);
+
+        if (d.rotationNote) {
+          body.appendChild(makeIssueList([{ rating: 'good', textKey: 'DKIM_ROTATION_NOTE' }]));
+        }
       }
 
       // Provider reference table
@@ -6423,7 +6593,7 @@ function renderCAA(result) {
               a.target = '_blank';
               a.rel = 'noopener noreferrer';
               txt.appendChild(a);
-            } else if ((p.tag === 'issue' || p.tag === 'issuewild') && val && val !== ';') {
+            } else if ((p.tag === 'issue' || p.tag === 'issuewild' || p.tag === 'issuemail') && val && val !== ';') {
               const domain = val.split(';')[0].trim();
               const rest = val.slice(domain.length);
               txt.appendChild(document.createTextNode(' '));
@@ -6571,6 +6741,25 @@ function renderRPKI(result) {
       }
       hostSec.appendChild(hostList);
       body.appendChild(hostSec);
+
+      // Nameserver ASN diversity
+      const nsAsns = d.nsAsns || [];
+      const asnInfoMap = d.asnInfo || {};
+      const nsDivSec = el('div', 'panel-section');
+      nsDivSec.appendChild(el('div', 'panel-section-title', ts('RPKI_NS_DIVERSITY')));
+      let nsDivMsg, nsDivRating;
+      if (nsAsns.length === 0) {
+        nsDivMsg = ts('RPKI_NS_NO_ASN_DATA');
+        nsDivRating = 'warning';
+      } else if (nsAsns.length === 1) {
+        nsDivMsg = td('RPKI_NS_SINGLE_ASN', 'AS' + nsAsns[0], asnInfoMap[nsAsns[0]] || null);
+        nsDivRating = 'warning';
+      } else {
+        nsDivMsg = td('RPKI_NS_MULTI_ASN', nsAsns.length);
+        nsDivRating = 'good';
+      }
+      nsDivSec.appendChild(makeIssueList([{ rating: nsDivRating, text: nsDivMsg }]));
+      body.appendChild(nsDivSec);
     }
 
     addExplanation(body, tx('RPKI'));
@@ -7070,6 +7259,77 @@ function renderStatsPanel(dkim, rpki) {
   document.getElementById('overview-content').appendChild(panel);
 }
 
+const SPF_INCLUDE_PROVIDERS = {
+  '_spf.google.com': 'Google Workspace', 'spf.google.com': 'Google Workspace',
+  '_spf.firebasemail.com': 'Google Firebase',
+  'spf.protection.outlook.com': 'Microsoft 365', 'spf.protection.exchangelabs.com': 'Microsoft 365',
+  'amazonses.com': 'Amazon SES',
+  'spf.sendgrid.net': 'SendGrid',
+  'spf.mandrillapp.com': 'Mailchimp / Mandrill', 'servers.mcsv.net': 'Mailchimp', 'spf.mailchimp.com': 'Mailchimp',
+  'pm.mtasv.net': 'Postmark',
+  'spf.sparkpostmail.com': 'SparkPost / Bird',
+  'mailgun.org': 'Mailgun',
+  'spf.sendinblue.com': 'Brevo', 'spf.brevo.com': 'Brevo',
+  'pphosted.com': 'Proofpoint',
+  'mimecast.com': 'Mimecast',
+  'mktomail.com': 'Marketo',
+  'exacttarget.com': 'Salesforce Marketing Cloud', 'salesforce.com': 'Salesforce', 'pardot.com': 'Salesforce Pardot',
+  'tuta.io': 'Tuta', 'tuta.de': 'Tuta',
+  'protonmail.ch': 'Proton Mail',
+  'fastmail.com': 'Fastmail', 'fastmail.fm': 'Fastmail',
+  'zoho.com': 'Zoho Mail', 'zohomail.com': 'Zoho Mail',
+  'infomaniak.ch': 'Infomaniak',
+  'domeneshop.no': 'Domeneshop',
+  'hubspot.com': 'HubSpot',
+  'klaviyo.com': 'Klaviyo',
+};
+
+const MX_HOST_PROVIDERS = [
+  [/aspmx.*\.google\.com$/i,             'Google Workspace'],
+  [/googlemail\.com$/i,                  'Google Workspace'],
+  [/\.mail\.protection\.outlook\.com$/i, 'Microsoft 365'],
+  [/\.pphosted\.com$/i,                  'Proofpoint'],
+  [/\.mimecast\.com$/i,                  'Mimecast'],
+  [/\.barracudanetworks\.com$/i,         'Barracuda'],
+  [/\.messagelabs\.com$/i,               'Symantec Email Security'],
+  [/\.sophos\.com$/i,                    'Sophos Email'],
+  [/mail\.fastmail\.com$/i,              'Fastmail'],
+  [/\.domains\.tuta\.com$/i,             'Tuta'],
+  [/mx\.domeneshop\.no$/i,               'Domeneshop'],
+];
+
+function detectEmailProviders(r) {
+  const providers = new Set();
+  const gv = x => (x && x.status === 'fulfilled' ? x.value : null);
+
+  const dkimVal = gv(r.dkim);
+  if (dkimVal && dkimVal.found) {
+    for (const s of dkimVal.found) if (s.provider) providers.add(s.provider);
+  }
+
+  const spfVal = gv(r.spf);
+  if (spfVal && spfVal.mechanisms && spfVal.mechanisms.dnsNames) {
+    for (const m of spfVal.mechanisms.dnsNames) {
+      const inc = (m.checkDomain || '').toLowerCase();
+      for (const [key, name] of Object.entries(SPF_INCLUDE_PROVIDERS)) {
+        if (inc === key || inc.endsWith('.' + key)) { providers.add(name); break; }
+      }
+    }
+  }
+
+  const mxVal = gv(r.mx);
+  if (mxVal && mxVal.hosts) {
+    for (const h of mxVal.hosts) {
+      const hn = (h.hostname || '').toLowerCase();
+      for (const [pat, name] of MX_HOST_PROVIDERS) {
+        if (pat.test(hn)) { providers.add(name); break; }
+      }
+    }
+  }
+
+  return [...providers];
+}
+
 function renderSummary({ dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois }) {
   const gv = r => (r && r.status === 'fulfilled' ? r.value : { rating: 'fail' });
   const g  = r => gv(r).rating;
@@ -7137,6 +7397,25 @@ function renderSummary({ dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, 
 
   document.getElementById('overview-placeholder').style.display = 'none';
   document.getElementById('overview-content').style.display = '';
+
+  // Detected email infrastructure chips
+  const providers = detectEmailProviders({ mx, spf, dkim });
+  const oldProvSec = document.getElementById('overview-providers');
+  if (oldProvSec) oldProvSec.parentNode.removeChild(oldProvSec);
+  if (providers.length > 0) {
+    const provSec = el('div', null);
+    provSec.id = 'overview-providers';
+    provSec.style.cssText = 'margin-top:0.8rem;padding-top:0.6rem;border-top:1px solid var(--border)';
+    const lbl = el('div', null, ts('OVERVIEW_PROVIDERS'));
+    lbl.style.cssText = 'font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.35rem';
+    provSec.appendChild(lbl);
+    const chips = el('div', null);
+    chips.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.3rem';
+    for (const p of providers) chips.appendChild(el('span', 'tag-pill', p));
+    provSec.appendChild(chips);
+    document.getElementById('overview-content').appendChild(provSec);
+  }
+
   renderStatsPanel(dkim, rpki);
 }
 
