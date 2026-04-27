@@ -80,6 +80,21 @@
   button#check-btn:hover { background: var(--accent-hover); }
   button#check-btn:disabled { opacity: 0.5; cursor: default; }
   #input-error { color: var(--fail); font-size: 0.85rem; margin-top: 0.5rem; min-height: 1.2em; }
+  .help-btn {
+    background: none; border: 1px solid var(--border); border-radius: 50%;
+    color: var(--text-muted); cursor: pointer; font-size: 0.68rem; font-weight: 700;
+    line-height: 1; padding: 0.08rem 0.34rem; transition: color 0.15s, border-color 0.15s;
+    vertical-align: middle; flex-shrink: 0;
+  }
+  .help-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .selector-group { position: relative; }
+  .help-popover {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.18); display: none; font-size: 0.84rem;
+    left: 0; line-height: 1.55; max-width: min(380px, calc(100vw - 3rem));
+    padding: 0.9rem 1rem; position: absolute; top: calc(100% + 5px); z-index: 200;
+  }
+  .help-popover.visible { display: block; }
 
   /* ── Tab bar ─────────────────────────────────────────────────────────────── */
   #tab-bar { display: none; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.75rem; }
@@ -414,8 +429,12 @@
         <input type="text" id="domain-input" placeholder="example.com" data-i18n-placeholder="LABEL_DOMAIN" autocomplete="off" spellcheck="false">
       </div>
       <div class="input-group selector-group">
-        <label for="selector-input" data-i18n="LABEL_SELECTORS">Extra DKIM Selectors (comma-separated)</label>
+        <div style="display:flex;align-items:center;gap:0.35rem">
+          <label for="selector-input" data-i18n="LABEL_SELECTORS">Extra DKIM Selectors (comma-separated)</label>
+          <button type="button" class="help-btn" id="selector-help-btn" aria-label="What is a DKIM selector?">?</button>
+        </div>
         <input type="text" id="selector-input" placeholder="sel1, sel2" autocomplete="off" spellcheck="false">
+        <div class="help-popover" id="selector-help-popover"></div>
       </div>
       <button id="check-btn" data-i18n="BTN_CHECK">Check</button>
     </div>
@@ -622,8 +641,16 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-April-17-1 &mdash; click for changelog</summary>
+      <summary>Version 2026-April-27-1 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-April-27-1</span>
+          <ul class="cl-changes">
+            <li>DKIM selector help popover: a <code>?</code> button next to the &ldquo;Extra DKIM Selectors&rdquo; label explains what a selector is, how to find it in email headers, and why to add custom ones here</li>
+            <li>Translations in all 7 languages (EN, NO, EO, ES, FR, AR, HI)</li>
+            <li>Popover closes on click-outside, Escape, or language switch</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-April-17-1</span>
           <ul class="cl-changes">
@@ -1328,6 +1355,13 @@ const STRINGS = {
         '<b>China:</b> MIIT IPv6 Scale Deployment Action Plan 2017 \u2014 full deployment across ISPs, government, and major platforms.<br><br>' +
         'This check queries AAAA records for the domain itself, all MX hosts, and all NS hosts. ' +
         'It does <b>not</b> affect the overall security score \u2014 informational only.',
+      SELECTOR_HELP:
+        '<b>What is a DKIM selector?</b> A selector is a short label (e.g. <code>google</code>) that tells receiving mail servers which public key to use when verifying the DKIM signature on an email. ' +
+        'A domain can have multiple selectors \u2014 one per mail provider or for key rotation.<br><br>' +
+        '<b>How to find your selectors:</b> Open any received email, view its full headers, and look for the <code>DKIM-Signature:</code> header. ' +
+        'The <code>s=</code> tag contains the selector name. In Gmail: click the three-dot menu \u2192 \u201cShow original\u201d.<br><br>' +
+        '<b>Why add extras here?</b> About 85 common selector names are probed automatically. ' +
+        'If your domain uses a custom or less-common selector, enter it here to include it in the check.',
     },
   },
   no: {
@@ -1828,6 +1862,13 @@ const STRINGS = {
         '<b>Kina:</b> MIITs handlingsplan for IPv6-skalering 2017 \u2014 full distribusjon hos ISP-er, offentlig sektor og store plattformer.<br><br>' +
         'Denne sjekken spør etter AAAA-poster for selve domenet, alle MX-verter og alle NS-verter. ' +
         'Det påvirker <b>ikke</b> den samlede sikkerhetsscoren \u2014 kun informativt.',
+      SELECTOR_HELP:
+        '<b>Hva er en DKIM-selektor?</b> En selektor er en kort etikett (f.eks. <code>google</code>) som forteller mottakende e-postservere hvilken offentlig n\u00f8kkel de skal bruke n\u00e5r de bekrefter DKIM-signaturen p\u00e5 en e-post. ' +
+        'Et domene kan ha flere selektorer \u2014 \u00e9n per e-postleverand\u00f8r eller for n\u00f8kkelrotasjon.<br><br>' +
+        '<b>Slik finner du selektorer:</b> \u00c5pne en mottatt e-post, vis fullstendige hoder og se etter <code>DKIM-Signature:</code>-hodet. ' +
+        '<code>s=</code>-taggen inneholder selektornavnet. I Gmail: klikk trepunktmenyen \u2192 \u00abVis original\u00bb.<br><br>' +
+        '<b>Hvorfor legge til ekstra her?</b> Ca. 85 vanlige selektornavn testes automatisk. ' +
+        'Bruk dette feltet for egendefinerte eller sjeldne selektorer.',
     },
   },
   eo: {
@@ -2266,6 +2307,13 @@ const STRINGS = {
         '<b>IPv6:</b> Etendita al 32 heksaj nibbloj, inversigita, kaj aldonita per <code>.ip6.arpa</code>.<br><br>' +
         '<b>\u0108i tiu kontrolo</b> solvas A kaj AAAA-registrojn por \u0109iu MX-gastigo, demandas la PTR-on por \u0109iu IP, kaj kontrolas \u0109u la PTR-valoro kongruas kun la MX-gastig-nomo (malstrikta FCrDNS-kontrolo). ' +
         'Ne influas la \u011deneralan gradon.',
+      SELECTOR_HELP:
+        '<b>Kio estas DKIM-selektilo?</b> Selektilo estas mallonga etikedo (ekz. <code>google</code>) kiu sciigas ricevantajn po\u015dtservilojn kiun publikan \u015dlosilon uzi por kontroli la DKIM-subskribon de retmesa\u011do. ' +
+        'Domajno povas havi plurajn selektilojn \u2014 po unu por po\u015dtprovizanto a\u016d por \u015dlosilrotacio.<br><br>' +
+        '<b>Kiel trovi selektilojn:</b> Malfermu ajnan ricevitan retmesa\u011don, vidu \u011diajn kompletajn kapojn kaj ser\u0109u la kapeton <code>DKIM-Signature:</code>. ' +
+        'La etikedo <code>s=</code> enhavas la selektilnomon.<br><br>' +
+        '<b>Kial aldoni ekstrajn?</b> \u010cirka 85 komunaj selektilnomoj estas a\u016dtomate probitaj. ' +
+        'Uzu \u010di tiun kampon por kutimaj a\u016d malkutimaj selektiloj.',
     },
   },
   es: {
@@ -2700,6 +2748,13 @@ const STRINGS = {
         '<b>IPv6:</b> Expandido a 32 d\u00edgitos hexadecimales, invertido y a\u00f1adido con <code>.ip6.arpa</code>.<br><br>' +
         '<b>Esta comprobaci\u00f3n</b> resuelve los registros A y AAAA para cada host MX, consulta el PTR para cada IP y verifica si el valor PTR coincide con el nombre de host MX (comprobaci\u00f3n FCrDNS relajada). ' +
         'No afecta a la calificaci\u00f3n global.',
+      SELECTOR_HELP:
+        '<b>\u00bfQu\u00e9 es un selector DKIM?</b> Un selector es una etiqueta corta (p. ej. <code>google</code>) que indica a los servidores receptores qu\u00e9 clave p\u00fablica usar para verificar la firma DKIM de un correo. ' +
+        'Un dominio puede tener varios selectores \u2014 uno por proveedor de correo o para la rotaci\u00f3n de claves.<br><br>' +
+        '<b>C\u00f3mo encontrar tus selectores:</b> Abre cualquier correo recibido, visualiza sus cabeceras completas y busca la cabecera <code>DKIM-Signature:</code>. ' +
+        'La etiqueta <code>s=</code> contiene el nombre del selector. En Gmail: men\u00fa de tres puntos \u2192 \u201cMostrar original\u201d.<br><br>' +
+        '<b>\u00bfPor qu\u00e9 a\u00f1adir extras aqu\u00ed?</b> Aproximadamente 85 nombres de selector comunes se comprueban autom\u00e1ticamente. ' +
+        'Usa este campo para selectores personalizados o poco comunes.',
     },
   },
 
@@ -3163,6 +3218,13 @@ const STRINGS = {
         '<b>IPv6\u00a0:</b> \u00c9tendu \u00e0 32 chiffres hexad\u00e9cimaux, invers\u00e9 et suivi de <code>.ip6.arpa</code>.<br><br>' +
         '<b>Cette v\u00e9rification</b> r\u00e9sout les enregistrements A et AAAA pour chaque h\u00f4te MX, interroge le PTR pour chaque IP et v\u00e9rifie si la valeur PTR correspond au nom d\'h\u00f4te MX (v\u00e9rification FCrDNS relax\u00e9e). ' +
         'N\'affecte pas la note globale.',
+      SELECTOR_HELP:
+        '<b>Qu\u2019est-ce qu\u2019un s\u00e9lecteur DKIM\u00a0?</b> Un s\u00e9lecteur est un court libell\u00e9 (ex. <code>google</code>) qui indique aux serveurs destinataires quelle cl\u00e9 publique utiliser pour v\u00e9rifier la signature DKIM d\u2019un e-mail. ' +
+        'Un domaine peut avoir plusieurs s\u00e9lecteurs \u2014 un par fournisseur de messagerie ou pour la rotation des cl\u00e9s.<br><br>' +
+        '<b>Comment trouver vos s\u00e9lecteurs\u00a0:</b> Ouvrez un e-mail re\u00e7u, affichez ses en-t\u00eates complets et cherchez l\u2019en-t\u00eate <code>DKIM-Signature:</code>. ' +
+        'La balise <code>s=</code> contient le nom du s\u00e9lecteur. Dans Gmail\u00a0: menu trois points \u2192 \u00ab\u00a0Afficher l\u2019original\u00a0\u00bb.<br><br>' +
+        '<b>Pourquoi en ajouter ici\u00a0?</b> Environ 85 noms de s\u00e9lecteurs courants sont sond\u00e9s automatiquement. ' +
+        'Utilisez ce champ pour les s\u00e9lecteurs personnalis\u00e9s ou peu communs.',
     },
   },
 
@@ -3549,6 +3611,14 @@ const STRINGS = {
         'كثير من فلاتر البريد المزعج وMTA المستقبِلة تتحقق من FCrDNS لخوادم MX. المطابقة تبني الثقة؛ PTR المفقود أو غير المطابق قد يرفع درجات البريد المزعج.<br><br>' +
         '<b>هذا الفحص</b> يحل سجلات A وAAAA لكل مضيف MX، يستعلم عن PTR لكل IP ويتحقق من تطابق قيمة PTR مع اسم مضيف MX. ' +
         'لا يؤثر على التقييم الإجمالي.',
+      SELECTOR_HELP:
+        '<b>\u0645\u0627 \u0647\u0648 \u0645\u062d\u062f\u062f DKIM\u061f</b> \u0627\u0644\u0645\u062d\u062f\u062f \u0647\u0648 \u062a\u0633\u0645\u064a\u0629 \u0642\u0635\u064a\u0631\u0629 (\u0645\u062b\u0644 <code>google</code>) ' +
+        '\u062a\u064f\u062e\u0628\u0631 \u062e\u0648\u0627\u062f\u0645 \u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0645\u0633\u062a\u0642\u0628\u0650\u0644\u0629 \u0628\u0623\u064a \u0645\u0641\u062a\u0627\u062d \u0639\u0627\u0645 \u062a\u0633\u062a\u062e\u062f\u0645\u0647 \u0644\u0644\u062a\u062d\u0642\u0642 \u0645\u0646 \u062a\u0648\u0642\u064a\u0639 DKIM \u0639\u0644\u0649 \u0627\u0644\u0631\u0633\u0627\u0644\u0629. ' +
+        '\u064a\u0645\u0643\u0646 \u0644\u0644\u0646\u0637\u0627\u0642 \u0623\u0646 \u064a\u0645\u062a\u0644\u0643 \u0645\u062d\u062f\u062f\u0627\u062a \u0645\u062a\u0639\u062f\u062f\u0629 \u2014 \u0648\u0627\u062d\u062f \u0644\u0643\u0644 \u0645\u0632\u0648\u062f \u0628\u0631\u064a\u062f \u0623\u0648 \u0644\u062a\u062f\u0648\u064a\u0631 \u0627\u0644\u0645\u0641\u0627\u062a\u064a\u062d.<br><br>' +
+        '<b>\u0643\u064a\u0641\u064a\u0629 \u0627\u0644\u0639\u062b\u0648\u0631 \u0639\u0644\u0649 \u0627\u0644\u0645\u062d\u062f\u062f\u0627\u062a:</b> \u0627\u0641\u062a\u062d \u0623\u064a \u0631\u0633\u0627\u0644\u0629 \u0628\u0631\u064a\u062f \u0645\u0633\u062a\u0644\u0645\u0629\u060c \u0627\u0639\u0631\u0636 \u0631\u0624\u0648\u0633\u0647\u0627 \u0643\u0627\u0645\u0644\u0629\u064b\u060c \u0648\u0627\u0628\u062d\u062b \u0639\u0646 \u0631\u0623\u0633 <code>DKIM-Signature:</code>. ' +
+        '\u062a\u062d\u062a\u0648\u064a \u0639\u0644\u0627\u0645\u0629 <code>s=</code> \u0639\u0644\u0649 \u0627\u0633\u0645 \u0627\u0644\u0645\u062d\u062f\u062f. \u0641\u064a Gmail: \u0627\u0644\u0642\u0627\u0626\u0645\u0629 \u062b\u0644\u0627\u062b\u064a\u0629 \u0627\u0644\u0646\u0642\u0627\u0637 \u2190 \u201c\u0625\u0638\u0647\u0627\u0631 \u0627\u0644\u0623\u0635\u0644\u064a\u201d.<br><br>' +
+        '<b>\u0644\u0645\u0627\u0630\u0627 \u062a\u0636\u064a\u0641 \u0645\u062d\u062f\u062f\u0627\u062a \u0625\u0636\u0627\u0641\u064a\u0629 \u0647\u0646\u0627\u061f</b> \u064a\u064f\u0641\u062d\u0635 \u0646\u062d\u0648 85 \u0627\u0633\u0645 \u0645\u062d\u062f\u062f \u0634\u0627\u0626\u0639\u0627\u064b \u062a\u0644\u0642\u0627\u0626\u064a\u0627\u064b. ' +
+        '\u0627\u0633\u062a\u062e\u062f\u0645 \u0647\u0630\u0627 \u0627\u0644\u062d\u0642\u0644 \u0644\u0644\u0645\u062d\u062f\u062f\u0627\u062a \u0627\u0644\u0645\u062e\u0635\u0635\u0629 \u0623\u0648 \u063a\u064a\u0631 \u0627\u0644\u0634\u0627\u0626\u0639\u0629.',
     },
   },
 
@@ -3917,6 +3987,13 @@ const STRINGS = {
         'कई स्पैम फ़िल्टर और प्राप्तकर्ता MTA MX होस्ट के लिए FCrDNS जाँचते हैं।<br><br>' +
         '<b>यह जाँच</b> प्रत्येक MX होस्ट के लिए A और AAAA रिकॉर्ड resolve करती है, प्रत्येक IP के लिए PTR क्वेरी करती है और जाँचती है कि PTR मूल्य MX होस्टनाम से मेल खाता है या नहीं। ' +
         'समग्र ग्रेड को प्रभावित नहीं करती।',
+      SELECTOR_HELP:
+        '<b>DKIM \u0938\u093f\u0932\u0947\u0915\u094d\u091f\u0930 \u0915\u094d\u092f\u093e \u0939\u0948?</b> \u0938\u093f\u0932\u0947\u0915\u094d\u091f\u0930 \u090f\u0915 \u091b\u094b\u091f\u093e \u0932\u0947\u092c\u0932 \u0939\u0948 (\u091c\u0948\u0938\u0947 <code>google</code>) \u091c\u094b \u092a\u094d\u0930\u093e\u092a\u094d\u0924\u0915\u0930\u094d\u0924\u093e \u092e\u0947\u0932 \u0938\u0930\u094d\u0935\u0930\u094b\u0902 \u0915\u094b \u092c\u0924\u093e\u0924\u093e \u0939\u0948 \u0915\u093f \u0908\u092e\u0947\u0932 \u092a\u0930 DKIM \u0939\u0938\u094d\u0924\u093e\u0915\u094d\u0937\u0930 \u0938\u0924\u094d\u092f\u093e\u092a\u093f\u0924 \u0915\u0930\u0928\u0947 \u0915\u0947 \u0932\u093f\u090f \u0915\u094c\u0928 \u0938\u0940 \u0938\u093e\u0930\u094d\u0935\u091c\u0928\u093f\u0915 \u0915\u0941\u0902\u091c\u0940 \u0915\u093e \u0909\u092a\u092f\u094b\u0917 \u0915\u0930\u0928\u093e \u0939\u0948\u0964 ' +
+        '\u090f\u0915 \u0921\u094b\u092e\u0947\u0928 \u092e\u0947\u0902 \u0915\u0908 \u0938\u093f\u0932\u0947\u0915\u094d\u091f\u0930 \u0939\u094b \u0938\u0915\u0924\u0947 \u0939\u0948\u0902 \u2014 \u092a\u094d\u0930\u0924\u094d\u092f\u0947\u0915 \u092e\u0947\u0932 \u092a\u094d\u0930\u0926\u093e\u0924\u093e \u0915\u0947 \u0932\u093f\u090f \u092f\u093e \u0915\u0941\u0902\u091c\u0940 \u0930\u094b\u091f\u0947\u0936\u0928 \u0915\u0947 \u0932\u093f\u090f\u0964<br><br>' +
+        '<b>\u0938\u093f\u0932\u0947\u0915\u094d\u091f\u0930 \u0915\u0948\u0938\u0947 \u0916\u094b\u091c\u0947\u0902:</b> \u0915\u094b\u0908 \u092d\u0940 \u092a\u094d\u0930\u093e\u092a\u094d\u0924 \u0908\u092e\u0947\u0932 \u0916\u094b\u0932\u0947\u0902, \u092a\u0942\u0930\u0947 \u0939\u0947\u0921\u0930 \u0926\u0947\u0916\u0947\u0902 \u0914\u0930 <code>DKIM-Signature:</code> \u0939\u0947\u0921\u0930 \u0922\u0942\u0902\u0922\u0947\u0902\u0964 ' +
+        '<code>s=</code> \u091f\u0948\u0917 \u092e\u0947\u0902 \u0938\u093f\u0932\u0947\u0915\u094d\u091f\u0930 \u0915\u093e \u0928\u093e\u092e \u0939\u094b\u0924\u093e \u0939\u0948\u0964 Gmail \u092e\u0947\u0902: \u0924\u0940\u0928-\u092c\u093f\u0902\u0926\u0941 \u092e\u0947\u0928\u0942 \u2192 \u201c\u092e\u0942\u0932 \u0926\u093f\u0916\u093e\u090f\u0902\u201d\u0964<br><br>' +
+        '<b>\u092f\u0939\u093e\u0901 \u0905\u0924\u093f\u0930\u093f\u0915\u094d\u0924 \u0915\u094d\u092f\u094b\u0902 \u091c\u094b\u0921\u093c\u0947\u0902?</b> \u0932\u0917\u092d\u0917 85 \u0938\u093e\u092e\u093e\u0928\u094d\u092f \u0938\u093f\u0932\u0947\u0915\u094d\u091f\u0930 \u0928\u093e\u092e \u0938\u094d\u0935\u091a\u093e\u0932\u093f\u0924 \u0930\u0942\u092a \u0938\u0947 \u091c\u093e\u0902\u091a\u0947 \u091c\u093e\u0924\u0947 \u0939\u0948\u0902\u0964 ' +
+        '\u0915\u0938\u094d\u091f\u092e \u092f\u093e \u0915\u092e-\u0938\u093e\u092e\u093e\u0928\u094d\u092f \u0938\u093f\u0932\u0947\u0915\u094d\u091f\u0930 \u0915\u0947 \u0932\u093f\u090f \u0907\u0938 \u092b\u093c\u0940\u0932\u094d\u0921 \u0915\u093e \u0909\u092a\u092f\u094b\u0917 \u0915\u0930\u0947\u0902\u0964',
     },
   },
 };
@@ -7198,6 +7275,20 @@ document.addEventListener('DOMContentLoaded', () => {
   domainInput.addEventListener('keydown',   e => { if (e.key === 'Enter') doCheck(); });
   selectorInput.addEventListener('keydown', e => { if (e.key === 'Enter') doCheck(); });
 
+  // ── DKIM selector help popover ───────────────────────────────────────────────
+  const selectorHelpBtn     = document.getElementById('selector-help-btn');
+  const selectorHelpPopover = document.getElementById('selector-help-popover');
+
+  selectorHelpBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const opening = !selectorHelpPopover.classList.contains('visible');
+    selectorHelpPopover.classList.toggle('visible', opening);
+    if (opening) {
+      clearNode(selectorHelpPopover);
+      safeMarkup(selectorHelpPopover, tx('SELECTOR_HELP'));
+    }
+  });
+
   // Auto-run if URL contains ?domain=
   const urlParams = new URLSearchParams(window.location.search);
   const urlDomain = urlParams.get('domain');
@@ -7218,6 +7309,7 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('mailcheck-lang', currentLang);
     applyI18n();
     applyTheme();
+    selectorHelpPopover.classList.remove('visible');
     if (lastResults) rerenderAll(lastResults);
   });
 
@@ -7264,12 +7356,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!settingsBtn.closest('#settings-menu').contains(e.target)) {
       settingsDropdown.hidden = true;
     }
+    if (!selectorHelpBtn.closest('.selector-group').contains(e.target)) {
+      selectorHelpPopover.classList.remove('visible');
+    }
   });
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       settingsDropdown.hidden = true;
       scoringBackdrop.classList.remove('visible');
+      selectorHelpPopover.classList.remove('visible');
     }
   });
 

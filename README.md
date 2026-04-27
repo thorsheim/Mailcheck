@@ -54,7 +54,7 @@ PTR, BIMI, RPKI, ASPA, Security.txt, and WHOIS are informational — shown but n
 - **DNS over HTTPS** via Cloudflare (`cloudflare-dns.com/dns-query`)
 - **RPKI/ASPA** via RIPE Stat API
 - **WHOIS/RDAP** via rdap.org
-- **English / Esperanto / Spanish / Norwegian** (Bokmål) UI — persisted in `localStorage`
+- **7 UI languages** — English, Norwegian (Bokmål), Esperanto, Spanish, French, Arabic (RTL), Hindi — persisted in `localStorage`
 - **Settings menu** (⚙, top-right) — dark/light theme toggle + scoring system explanation
 - **Mobile-friendly** — horizontal scrolling tab bar
 - **Language switch** — rerenders all panels without re-querying DNS
@@ -69,7 +69,7 @@ PTR, BIMI, RPKI, ASPA, Security.txt, and WHOIS are informational — shown but n
 
 Google Workspace, Microsoft 365, Apple iCloud, Mailchimp/Mandrill, SendGrid, Amazon SES, Postmark, Zoho Mail, Proton Mail, Tuta, Fastmail, HubSpot, Brevo/Sendinblue, Mimecast, Proofpoint, Klaviyo, SparkPost/Bird, Mailgun, Constant Contact, Marketo, Salesforce Pardot, ActiveCampaign, Intercom, Customer.io, Iterable, Sailthru, MailerLite, Infomaniak, OVH, Hetzner, Domeneshop (ds+YYYYMM rotation), and generic/legacy selectors.
 
-Custom selectors can be entered in the DKIM tab.
+Custom selectors can be entered in the "Extra DKIM Selectors" field on the start page. A `?` help button explains what a selector is and how to find it.
 
 ## Security
 
@@ -80,7 +80,7 @@ Custom selectors can be entered in the DKIM tab.
 
 ## Contributing a translation
 
-The UI currently ships in **English** and **Norwegian Bokmål**. Adding a new language requires editing only two places in `index.html` — no build tools needed.
+The UI currently ships in **7 languages**: English, Norwegian Bokmål, Esperanto, Spanish, French, Arabic, and Hindi. Adding a new language requires editing only two places in `index.html` — no build tools needed.
 
 See **[translations/CONTRIBUTING.md](translations/CONTRIBUTING.md)** for the full step-by-step guide.
 
@@ -104,6 +104,7 @@ Missing keys fall back to English automatically, so partial translations are wel
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-April-27-1 | 2026-04-27 | DKIM selector help popover: `?` button next to "Extra DKIM Selectors" input explains what a selector is, how to find it in email headers, and why to add custom ones; translations in all 7 languages |
 | 2026-April-17-1 | 2026-04-17 | New IPv6 tab (informational, not scored): AAAA checks for domain, MX hosts, NS hosts; IPv6 badge on MX tab per host; government mandate references (Norway, USA, EU, India, China); EN+NO translations |
 | 2026-April-16-2 | 2026-04-16 | Acknowledgements fireworks on click (not hover); acknowledgements table cells left-aligned |
 | 2026-April-16-1 | 2026-04-16 | Arabic (العربية) + Hindi (हिन्दी) UI languages — RTL layout via CSS logical properties for Arabic; full translations for both |
