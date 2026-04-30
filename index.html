@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>DNS Email Security Checker</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -41,6 +41,9 @@
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     min-height: 100vh;
     padding: 2rem 1rem;
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-bottom: max(2rem, env(safe-area-inset-bottom));
   }
 
   #app { max-width: 900px; margin: 0 auto; }
@@ -373,7 +376,17 @@
   }
 
   @media (max-width: 600px) {
+    body {
+      padding: 1.5rem 0.875rem;
+      padding-left: max(0.875rem, env(safe-area-inset-left));
+      padding-right: max(0.875rem, env(safe-area-inset-right));
+      padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+    }
     #header h1 { font-size: 1.5rem; }
+    #header { padding-right: 3rem; }
+    #input-section { padding: 1rem; }
+    .panel-header { padding: 0.7rem 0.875rem; }
+    .panel-body { padding: 0.875rem; }
     .input-row { flex-direction: column; }
     button#check-btn { width: 100%; }
 
@@ -396,11 +409,35 @@
       white-space: nowrap;
     }
 
-    /* Tighten kv-table label column */
-    .kv-table td:first-child { width: 100px; }
+    /* Tighten kv-table label column; allow wrapping so long IPv6 country names don't overflow */
+    .kv-table { table-layout: fixed; }
+    .kv-table td:first-child { width: 100px; white-space: normal; word-break: break-word; }
 
-    /* Score bar label narrower */
+    /* Score bar adjustments */
     .score-bar-label { width: 50px; }
+    .score-bars { min-width: 0; }
+
+    /* Security.txt field key narrower */
+    .stxt-field-key { min-width: 100px; }
+  }
+
+  @media (max-width: 480px) {
+    body {
+      padding: 1rem 0.75rem;
+      padding-left: max(0.75rem, env(safe-area-inset-left));
+      padding-right: max(0.75rem, env(safe-area-inset-right));
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+    #input-section { padding: 0.875rem 0.75rem; }
+    .panel-body { padding: 0.75rem; }
+    .panel-header { padding: 0.6rem 0.75rem; }
+
+    /* Stack security.txt field rows vertically on small phones */
+    .stxt-field-row { flex-direction: column; gap: 0.1rem; }
+    .stxt-field-key { min-width: 0; }
+
+    /* Allow DKIM provider table to scroll horizontally if needed */
+    .provider-table { display: block; overflow-x: auto; }
   }
 </style>
 </head>
@@ -641,8 +678,17 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-April-27-2 &mdash; click for changelog</summary>
+      <summary>Version 2026-April-30-1 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-April-30-1</span>
+          <ul class="cl-changes">
+            <li>Mobile layout improvements: reduced padding on small screens, gear button no longer overlaps the title on iPhone</li>
+            <li>iOS safe-area support (<code>viewport-fit=cover</code> + <code>env(safe-area-inset-*)</code>) &mdash; content clears notch and home indicator bar</li>
+            <li>New 480px breakpoint for compact phones (iPhone SE): tighter padding, Security.txt fields stack vertically, DKIM provider table scrolls horizontally if needed</li>
+            <li>IPv6 requirements table: country names now wrap correctly instead of overflowing on narrow screens</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-April-27-2</span>
           <ul class="cl-changes">
