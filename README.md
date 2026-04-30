@@ -104,6 +104,7 @@ Missing keys fall back to English automatically, so partial translations are wel
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-April-30-2 | 2026-04-30 | Mobile fix: domain/DKIM inputs now fill full card width on mobile (flex column mode was expanding items to fill height, leaving a large blank gap); score bar labels "MTA-STS" and "TLS-RPT" no longer wrap to two lines |
 | 2026-April-30-1 | 2026-04-30 | Mobile layout improvements: reduced padding, gear button no longer overlaps title on iPhone; iOS safe-area support (viewport-fit=cover + env(safe-area-inset-*)); new 480px breakpoint for compact phones (Security.txt fields stack vertically, DKIM provider table scrollable); IPv6 requirements table wraps correctly on narrow screens |
 | 2026-April-27-2 | 2026-04-27 | SPF recursive include-chain lookup counting; DKIM key rotation best-practice note; Cloudflare vs Google DNS propagation cross-check for SPF and DMARC; nameserver ASN diversity in RPKI tab; SPF legacy type-99 record detection; email provider detection on Overview tab; CAA issuemail tag (RFC 8657) support |
 | 2026-April-27-1 | 2026-04-27 | DKIM selector help popover: `?` button next to "Extra DKIM Selectors" input explains what a selector is, how to find it in email headers, and why to add custom ones; translations in all 7 languages |

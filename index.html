@@ -254,7 +254,7 @@
   .summary-details p { color: var(--text-muted); font-size: 0.85rem; }
   .score-bars { display: flex; flex-direction: column; gap: 0.4rem; min-width: 200px; }
   .score-bar-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; }
-  .score-bar-label { color: var(--text-muted); width: 65px; }
+  .score-bar-label { color: var(--text-muted); width: 65px; white-space: nowrap; flex-shrink: 0; }
   .score-bar-track { flex: 1; background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; }
   .score-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
 
@@ -387,7 +387,10 @@
     #input-section { padding: 1rem; }
     .panel-header { padding: 0.7rem 0.875rem; }
     .panel-body { padding: 0.875rem; }
-    .input-row { flex-direction: column; }
+    .input-row { flex-direction: column; align-items: stretch; }
+    /* Prevent flex-basis from becoming height in column mode (causes huge blank gaps) */
+    .input-group.domain-group,
+    .input-group.selector-group { flex: none; width: 100%; }
     button#check-btn { width: 100%; }
 
     /* Tab bar: single scrollable row instead of wrapping */
@@ -414,7 +417,6 @@
     .kv-table td:first-child { width: 100px; white-space: normal; word-break: break-word; }
 
     /* Score bar adjustments */
-    .score-bar-label { width: 50px; }
     .score-bars { min-width: 0; }
 
     /* Security.txt field key narrower */
@@ -678,8 +680,15 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-April-30-1 &mdash; click for changelog</summary>
+      <summary>Version 2026-April-30-2 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-April-30-2</span>
+          <ul class="cl-changes">
+            <li>Mobile fix: domain and DKIM selector inputs now fill the full card width (flex column mode was expanding items to fill height instead of width, leaving a large blank gap)</li>
+            <li>Mobile fix: &ldquo;MTA-STS&rdquo; and &ldquo;TLS-RPT&rdquo; score bar labels no longer wrap to two lines (<code>white-space:nowrap</code> added; 50px width override removed)</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-April-30-1</span>
           <ul class="cl-changes">
