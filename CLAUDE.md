@@ -8,7 +8,7 @@ Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-April-30-2**
+Current version: **2026-July-27-1**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -51,7 +51,7 @@ Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**
 | DANE | `_25._tcp.<mx-hostname>` TLSA | Checks per-MX-host; requires DNSSEC validation (AD flag) |
 | SPF | `<domain>` TXT | Follows `redirect=` to target domain; returns `allQualifier` |
 | DKIM | `<selector>._domainkey.<domain>` TXT | ~48 auto selectors + custom; capped at 10 parallel |
-| DMARC | `_dmarc.<domain>` TXT | RFC 7489; parses p=, sp=, pct=, rua=, ruf=, adkim=, aspf=; DNSSEC checked for rua/ruf endpoint domains |
+| DMARC | `_dmarc.<domain>` TXT | RFC 7489 + RFC 9989 (DMARCbis); parses p=, sp=, pct=, rua=, ruf=, adkim=, aspf=; DNSSEC checked for rua/ruf endpoint domains; DMARCbis sub-analysis attached as `dmarcbis` |
 | BIMI | `default._bimi.<domain>` TXT | Parses l= (logo URL) and a= (authority/VMC); does not affect grade |
 | TLS-RPT | `_smtp._tls.<domain>` TXT | RFC 8460; DNSSEC checked for rua= endpoint domains |
 | MTA-STS | `_mta-sts.<domain>` TXT + HTTPS policy fetch | RFC 8461; collects all `mx:` lines as array; cross-checks against actual MX hosts |
@@ -88,7 +88,22 @@ probeDKIMSelector() returns { selector, ...analysis, ad }
 checkDKIM()         returns {rating, found[], testedCount, message}
 checkDMARC()        _dmarc.<domain> TXT; parses p=, sp=, pct=, rua=, ruf=, adkim=, aspf=;
                       runs checkDNSSEC for all unique hostnames in rua= and ruf= URIs;
-                      returns endpointDnssec map
+                      returns endpointDnssec map + dmarcbis (see DMARCbis section)
+parseDMARCTagList() order-preserving tag list (v= must be first, duplicates detected)
+dmarcTagValue()     single lowercased tag value from a record string
+dmarcTreeWalkQuery()one tree-walk step: query _dmarc.<name>, discard non-v=DMARC1 and multi-record sets
+dmarcTreeWalk()     RFC 9989 §4.10 DNS Tree Walk; max 8 queries; returns steps[], orgDomain,
+                      orgRule, policyDomain, policyRecord, inherited, isOrgDomain
+dmarcDomainExists() NXDOMAIN test (RFC 9989 §3.2.13) deciding sp= vs np= for inherited policy
+checkReportAuthorization()
+                    RFC 9990 §4 / RFC 9991 §5; queries <policyDomain>._report._dmarc.<host>;
+                      status: internal|authorized|override|override-bad|missing|too-long|unparsable|error
+analyzeDMARCbisTags()
+                    pure record conformance analysis (no DNS); returns { issues, map, tags }
+buildDMARCbisSuggestion()
+                    generates an RFC 9989-conformant record from the parsed tag map
+analyzeDMARCbis()   orchestrates tree walk + tag conformance + external auth; returns
+                      { rating, issues, tagIssues, extAuth, suggestion, treeWalk, appliedTag }
 checkBIMI()         default._bimi.<domain> TXT; parses l= and a=; rating: excellent/good/warning/fail
 checkTLSRPT()       _smtp._tls.<domain> TXT; runs checkDNSSEC for all rua= endpoint hostnames;
                       returns endpointDnssec map
@@ -156,7 +171,7 @@ Three namespaces per language in the `STRINGS` object:
 
 - **`s` (static)** — plain string key→value. Access with `ts('KEY')`.
 - **`d` (dynamic)** — arrow functions for pluralised/interpolated strings. Access with `td('KEY', ...args)`.
-- **`x` (explanations)** — full explanation markup strings for `addExplanation()` (15 keys: DMARC, DNSSEC, MX, PTR, DANE, SPF, DKIM, TLSRPT, MTASTS, CAA, RPKI, BIMI, STXT, WHOIS, IPV6). Access with `tx('KEY')`.
+- **`x` (explanations)** — full explanation markup strings for `addExplanation()` (16 keys: DMARC, DMARCBIS, DNSSEC, MX, PTR, DANE, SPF, DKIM, TLSRPT, MTASTS, CAA, RPKI, BIMI, STXT, WHOIS, IPV6). Access with `tx('KEY')`.
 
 Lookup order: current language → English fallback → key name as visible fallback.
 
@@ -264,11 +279,53 @@ const resolvedText = iss.textKey
 - Queries `_dmarc.<domain>` TXT; record must start with `v=DMARC1`.
 - Parses all tag=value pairs split by `;`.
 - Rating: `excellent` (p=reject, pct=100), `good` (p=quarantine), `warning` (p=none or pct<100 or no rua=), `fail` (no record).
-- `checkDMARC` returns `{ rating, record, parsed, pct, issues, endpointDnssec }`. `parsed` is the full tag map.
+- `checkDMARC` returns `{ rating, record, parsed, pct, issues, endpointDnssec, dmarcbis }`. `parsed` is the full tag map.
 - `renderMX` accesses `lastResults.dmarc` to check if `p=reject` is set when the domain has no MX records.
 - `analyzeSPF` and `checkSPF` both return `allQualifier` so `renderMX` can check for SPF `-all`.
 - Null MX (RFC 7505): `checkMX` detects a single `MX 0 .` record and returns `{ nullMX: true, rating: 'good', hosts: [] }`. `renderMX` shows a positive confirmation for null MX.
 - When no MX (and not null MX): if SPF `-all` or DMARC `p=reject` is missing, `renderMX` shows `MX_NULL_SUGGEST` warning recommending null MX + SPF -all + DMARC p=reject.
+
+### DMARCbis details (RFC 9989 / 9990 / 9991)
+Additive section rendered **below** the RFC 7489 analysis and the DMARC explanation.
+**Informational only** — `dmarcbis.rating` never reaches the tab dot, the score bars or the grade.
+`checkDMARC` attaches it via `const bis = (rec, multi) => analyzeDMARCbis(...).catch(() => null)`;
+every early-return branch (NXDOMAIN, no record, multi-record) also carries it, so the tree walk
+still reports an inherited parent policy when the author domain has no record of its own.
+
+- **Tag registry** (`DMARCBIS_ACTIVE_TAGS` / `DMARCBIS_HISTORIC_TAGS`) mirrors RFC 9989 §9.3.
+  Active: adkim, aspf, fo, np, p, psd, rua, ruf, sp, t, v. Historic: pct, rf, ri.
+- **DNS Tree Walk** (`dmarcTreeWalk`, §4.10): starts at the parent of the queried domain (the author
+  lookup is passed in from `checkDMARC`, never repeated), walks toward the root one label at a time,
+  and stops on a record carrying `psd=y` or `psd=n`. Domains with ≥8 labels jump straight to their
+  seven right-most labels so the total never exceeds `DMARCBIS_TW_MAX_QUERIES` (8).
+  Organizational-domain selection follows §4.10.2: psd=n wins, else a non-start psd=y (org = one label
+  below), else the shortest name carrying a record, else the queried domain (`orgRule` records which).
+- **Policy discovery** (§4.10.1): the author domain's own record wins; otherwise the nearest ancestor.
+  For an inherited policy, `dmarcDomainExists()` decides whether `np=` (NXDOMAIN) or `sp=` applies.
+- **External reporting authorization** (RFC 9990 §4, RFC 9991 §5): for each `rua=`/`ruf=` URI whose host
+  is not under `orgDomain`, queries `<policyDomain>._report._dmarc.<host>` TXT. A wildcard at
+  `*._report._dmarc.<host>` answers the same query, so `authorized` covers both cases. A `rua=`/`ruf=`
+  tag in the authorization record is a destination override — legal only on the same host
+  (`override-bad` otherwise: RFC 9990 §4 forbids sending to *either* address).
+- **Tag conformance** (`analyzeDMARCbisTags`, pure — no DNS): v= first and case-exact, duplicate tags,
+  p= missing (→ p=none if rua= present, else no DMARC processing), pct= historic (0 → suggest t=y,
+  100 → drop, other → drop), rf=/ri= historic, t= validity + testing semantics, np=/psd= presence and
+  validity (only flagged as missing at the organizational domain), sp= ignored on subdomain records,
+  adkim/aspf validity, fo= without ruf= and fo= syntax, obsolete `!size` URI suffix, missing mailto:
+  in rua=, unregistered tags.
+- `buildDMARCbisSuggestion()` emits a conformant record: historic/unregistered tags dropped, `pct=0`
+  migrated to `t=y`, `np=reject` and `psd=n` added at an organizational domain. The `p=` value is
+  carried over unchanged — never silently strengthened.
+- `renderDMARCbis(body, bis)` renders four sub-sections (discovery + collapsible query list, tag
+  conformance, external authorization, suggested record) plus `tx('DMARCBIS')`.
+  `DMARCBIS_EXT_RATING` / `DMARCBIS_EXT_KEY` map ext-auth statuses to ratings and i18n keys; all four
+  ext-auth textArgs are always `(tag, uri, name, override)`.
+- `DMARCBIS_TW_ORG_DOMAIN` takes the *rule key* (`'psd-n' | 'psd-y' | 'shortest' | 'default'`) as an
+  arg and resolves it inside the per-language `d` function — never call `ts()` at check time
+  (see critical bug 5).
+- Test domains: `gov.uk` (np=reject, sp=none, fo= without ruf=), `cloudflare.com` (pct=100 historic),
+  `mail.cloudflare.com` (inherited via sp=), `zzz-no-such-host.thorsheim.net` (NXDOMAIN → np/sp path),
+  `a.b.c.d.e.f.g.h.i.j.mail.example.com` (reproduces the RFC 9989 §4.10 eight-query example exactly).
 
 ### WHOIS/RDAP details
 - Single fetch to `https://rdap.org/domain/<domain>` (bootstraps to authoritative RDAP server).
@@ -359,6 +416,15 @@ remain scalar.
 - `apple.com` — has BIMI record; tests BIMI tab
 - `fastmail.com` — MTA-STS enforce mode with multiple mx: lines; tests MX match check
 - DMARC: `p=reject` → excellent, `p=quarantine` → good, `p=none` → warning, no record → fail
+- DMARCbis tree walk: `mail.cloudflare.com` (no own record → inherits via `sp=`), `zzz-no-such-host.thorsheim.net`
+  (NXDOMAIN → `np=`/`sp=` selection path), `a.b.c.d.e.f.g.h.i.j.mail.example.com` (reproduces the eight-query
+  example in RFC 9989 §4.10 exactly: author domain, then `g.h.i.j.mail.example.com` down to `com`)
+- DMARCbis tag conformance: `gov.uk` (`np=reject` + `sp=none`, and `fo=1` published without `ruf=`),
+  `cloudflare.com` (`pct=100` flagged historic), `mimecast.com` (`pct=100` + three external report destinations)
+- DMARCbis external auth: `thorsheim.net` (rua + ruf both at dmarcmanager.app), `gmail.com` (wildcard
+  authorization at google.com). A destination with no `_report._dmarc` record must rate `fail`, not warning.
+- DMARCbis must never move the grade: the DMARC tab dot, score bars and overall grade for any test domain
+  must be identical with and without the section
 - Null MX: domain with `MX 0 .` should show green confirmation; domain with no MX and missing SPF `-all` or DMARC `p=reject` should show `MX_NULL_SUGGEST` warning
 - PTR: Google/Cloudflare MX hosts should show FCrDNS confirmed; check IPv6 PTR reversal correctness
 - RPKI: any domain with Google/Cloudflare NS or MX will show valid ROAs; ASPA coverage varies by ASN

@@ -271,6 +271,42 @@ const LANG_TEMPLATE = {
     DMARC_NO_RECORD:        '',
     DMARC_MULTI_RECORDS:    '',
 
+    // DMARCbis (RFC 9989 / 9990 / 9991) — section labels
+    DMARCBIS_TITLE:            '',  // "DMARCbis conformance — RFC 9989 / 9990 / 9991"
+    DMARCBIS_INTRO:            '',  // one-sentence intro; these checks do not affect the grade
+    DMARCBIS_DISCOVERY_TITLE:  '',  // "Policy discovery — DNS tree walk (RFC 9989 §4.10)"
+    DMARCBIS_TAGS_TITLE:       '',  // "Tag conformance (RFC 9989 §4.7, §9.3)"
+    DMARCBIS_EXTAUTH_TITLE:    '',  // "External reporting authorization (RFC 9990 §4, RFC 9991 §5)"
+    DMARCBIS_SUGGESTED_TITLE:  '',  // "Suggested RFC 9989 record"
+    DMARCBIS_SUGGESTED_NOTE:   '',  // caveat shown under the suggested record
+    DMARCBIS_TW_TAG_AUTHOR:    '',  // pill: "author domain"
+    DMARCBIS_TW_TAG_ORG:       '',  // pill: "org domain"
+    DMARCBIS_TW_STEP_FOUND:    '',  // badge: "record"
+    DMARCBIS_TW_STEP_NONE:     '',  // badge: "none"
+    DMARCBIS_TW_STEP_MULTI:    '',  // badge: "multiple"
+    DMARCBIS_TW_STEP_ERROR:    '',  // badge: "error"
+
+    // DMARCbis issue keys (static)
+    DMARCBIS_TW_NO_POLICY:     '',
+    DMARCBIS_TW_MULTI:         '',
+    DMARCBIS_TAGS_CLEAN:       '',
+    DMARCBIS_V_NOT_FIRST:      '',
+    DMARCBIS_P_DEFAULT_NONE:   '',
+    DMARCBIS_P_NO_PROCESSING:  '',
+    DMARCBIS_PCT_ZERO:         '',
+    DMARCBIS_PCT_FULL:         '',
+    DMARCBIS_T_NO_EFFECT:      '',
+    DMARCBIS_T_ENFORCED:       '',
+    DMARCBIS_NP_REJECT:        '',
+    DMARCBIS_NP_MISSING:       '',
+    DMARCBIS_PSD_Y:            '',
+    DMARCBIS_PSD_N:            '',
+    DMARCBIS_PSD_U:            '',
+    DMARCBIS_PSD_MISSING:      '',
+    DMARCBIS_FO_NO_RUF:        '',
+    DMARCBIS_URI_NO_MAILTO:    '',
+    DMARCBIS_EXT_NONE:         '',
+
     // BIMI
     BIMI_FOUND:             '',  // "BIMI record found."
     BIMI_NOT_FOUND:         '',  // "No BIMI record."
@@ -339,6 +375,40 @@ const LANG_TEMPLATE = {
     DMARC_PCT_LOW:          pct => '',   // "pct=50 — policy enforced on only 50% of messages"
     DMARC_RUA_URI:          uri => '',   // "Aggregate reports (rua): mailto:…"
     DMARC_RUF_URI:          uri => '',   // "Forensic reports (ruf): mailto:…"
+
+    // DMARCbis (RFC 9989 / 9990 / 9991)
+    DMARCBIS_TW_AT_AUTHOR:      dom => '',   // "Policy record published at the author domain (_dmarc.example.com) — …"
+    DMARCBIS_TW_INHERITED:      (dom, tag, val) => '',   // "…inherit the policy published at _dmarc.example.com, applying sp=reject"
+    // rule is one of 'psd-n' | 'psd-y' | 'shortest' | 'default' — translate each
+    // branch inline; do not call ts() here.
+    DMARCBIS_TW_ORG_DOMAIN:     (dom, rule) => '',
+    DMARCBIS_TW_QUERIES:          n => '',   // "Tree walk — 3 queries"
+    DMARCBIS_V_CASE:              v => '',
+    DMARCBIS_DUPLICATE_TAGS:      l => '',
+    DMARCBIS_PCT_PARTIAL:         v => '',
+    DMARCBIS_RF_HISTORIC:         v => '',
+    DMARCBIS_RI_HISTORIC:         v => '',
+    DMARCBIS_T_INVALID:           v => '',
+    DMARCBIS_T_TESTING:      (p, eff) => '',   // "t=y — test mode: receivers apply quarantine instead of the published p=reject"
+    DMARCBIS_NP_INVALID:          v => '',
+    DMARCBIS_NP_SET:              v => '',
+    DMARCBIS_PSD_INVALID:         v => '',
+    DMARCBIS_SP_INVALID:          v => '',
+    DMARCBIS_SP_IGNORED:        org => '',
+    DMARCBIS_ALIGN_INVALID:  (tag, v) => '',
+    DMARCBIS_FO_INVALID:          v => '',
+    DMARCBIS_URI_OBS_SIZE:        l => '',
+    DMARCBIS_UNKNOWN_TAGS:        l => '',
+    // The four ext-auth arguments are always (tag, uri, name, override);
+    // unused ones may simply be ignored in the translation.
+    DMARCBIS_EXT_INTERNAL:     (tag, uri) => '',
+    DMARCBIS_EXT_AUTHORIZED:   (tag, uri, name) => '',
+    DMARCBIS_EXT_MISSING:      (tag, uri, name) => '',
+    DMARCBIS_EXT_OVERRIDE:     (tag, uri, name, ov) => '',
+    DMARCBIS_EXT_OVERRIDE_BAD: (tag, uri, name, ov) => '',
+    DMARCBIS_EXT_TOO_LONG:     (tag, uri) => '',
+    DMARCBIS_EXT_UNPARSABLE:   (tag, uri) => '',
+    DMARCBIS_EXT_ERROR:        (tag, uri, name) => '',
     BIMI_LOGO_URL:          url => '',   // "Logo URL: https://…"
     BIMI_AUTHORITY_URL:     url => '',   // "Authority URL: https://…"
     PTR_VALUE:                v => '',   // "PTR: mail.example.com"
@@ -351,6 +421,7 @@ const LANG_TEMPLATE = {
   // Keep all <a href="…"> links as-is (they point to RFCs).
   x: {
     DMARC:   '',
+    DMARCBIS: '',
     DNSSEC:  '',
     MX:      '',
     PTR:     '',

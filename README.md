@@ -19,7 +19,7 @@ Created by [Per Thorsheim](https://thorsheim.net) · [PasswordsCon](https://pass
 | DANE | RFC 7672 | TLSA records per MX host, DNSSEC requirement |
 | SPF | RFC 7208 | Record syntax, qualifiers, redirect= following, lookup count |
 | DKIM | RFC 6376 | ~85 auto-probed selectors + custom; key type, size, hash algorithms (`h=`), service type (`s=`), flags (`t=`), notes (`n=`), raw record |
-| DMARC | RFC 7489 | Policy, alignment, pct, rua/ruf endpoints with DNSSEC |
+| DMARC | RFC 7489, RFC 9989 | Policy, alignment, pct, rua/ruf endpoints with DNSSEC; **DMARCbis section** — DNS tree walk policy discovery, tag registry conformance, external reporting authorization (RFC 9990/9991), suggested conformant record |
 | BIMI | — | Logo URL, VMC authority record |
 | TLS-RPT | RFC 8460 | Reporting record, rua= endpoint DNSSEC |
 | MTA-STS | RFC 8461 | DNS record, HTTPS policy fetch, MX pattern matching |
@@ -51,6 +51,7 @@ PTR, BIMI, RPKI, ASPA, Security.txt, and WHOIS are informational — shown but n
 ## Features
 
 - **No dependencies** — single `index.html`, works offline after first load
+- **DMARCbis conformance** — checks the DMARC record against RFC 9989 / 9990 / 9991 (May 2026): DNS tree walk policy discovery, tag registry status, external reporting authorization, and a generated conformant record. Informational only — the grade is unaffected
 - **DNS over HTTPS** via Cloudflare (`cloudflare-dns.com/dns-query`)
 - **RPKI/ASPA** via RIPE Stat API
 - **WHOIS/RDAP** via rdap.org
@@ -104,6 +105,7 @@ Missing keys fall back to English automatically, so partial translations are wel
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-July-27-1 | 2026-07-27 | DMARCbis: new informational section on the DMARC tab checking the record against RFC 9989 / 9990 / 9991 (which obsolete RFC 7489 and RFC 9091) — DNS tree walk policy discovery replacing the Public Suffix List, tag registry conformance (`pct=`/`rf=`/`ri=` historic, new `t=`/`np=`/`psd=`), external reporting authorization via `<domain>._report._dmarc.<destination>`, and a generated conformant record. Grade unchanged; translated into all 7 languages |
 | 2026-April-30-2 | 2026-04-30 | Mobile fix: domain/DKIM inputs now fill full card width on mobile (flex column mode was expanding items to fill height, leaving a large blank gap); score bar labels "MTA-STS" and "TLS-RPT" no longer wrap to two lines |
 | 2026-April-30-1 | 2026-04-30 | Mobile layout improvements: reduced padding, gear button no longer overlaps title on iPhone; iOS safe-area support (viewport-fit=cover + env(safe-area-inset-*)); new 480px breakpoint for compact phones (Security.txt fields stack vertically, DKIM provider table scrollable); IPv6 requirements table wraps correctly on narrow screens |
 | 2026-April-27-2 | 2026-04-27 | SPF recursive include-chain lookup counting; DKIM key rotation best-practice note; Cloudflare vs Google DNS propagation cross-check for SPF and DMARC; nameserver ASN diversity in RPKI tab; SPF legacy type-99 record detection; email provider detection on Overview tab; CAA issuemail tag (RFC 8657) support |
