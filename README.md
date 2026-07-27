@@ -105,6 +105,7 @@ Missing keys fall back to English automatically, so partial translations are wel
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-July-27-2 | 2026-07-27 | Arabic Security.txt explanation typo fixed; `translations/ar.js`, `fr.js` and `hi.js` synced with `index.html` (DMARCbis keys backfilled, plus the previously missing `PANEL_IPV6` and `SELECTOR_HELP` keys) |
 | 2026-July-27-1 | 2026-07-27 | DMARCbis: new informational section on the DMARC tab checking the record against RFC 9989 / 9990 / 9991 (which obsolete RFC 7489 and RFC 9091) — DNS tree walk policy discovery replacing the Public Suffix List, tag registry conformance (`pct=`/`rf=`/`ri=` historic, new `t=`/`np=`/`psd=`), external reporting authorization via `<domain>._report._dmarc.<destination>`, and a generated conformant record. Grade unchanged; translated into all 7 languages |
 | 2026-April-30-2 | 2026-04-30 | Mobile fix: domain/DKIM inputs now fill full card width on mobile (flex column mode was expanding items to fill height, leaving a large blank gap); score bar labels "MTA-STS" and "TLS-RPT" no longer wrap to two lines |
 | 2026-April-30-1 | 2026-04-30 | Mobile layout improvements: reduced padding, gear button no longer overlaps title on iPhone; iOS safe-area support (viewport-fit=cover + env(safe-area-inset-*)); new 480px breakpoint for compact phones (Security.txt fields stack vertically, DKIM provider table scrollable); IPv6 requirements table wraps correctly on narrow screens |

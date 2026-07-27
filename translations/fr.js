@@ -30,6 +30,7 @@ const LANG_FR = {
     PANEL_CAA:           'CAA',
     PANEL_RPKI:          'RPKI ROA',
     PANEL_ASPA:          'ASPA',
+    PANEL_IPV6:          'IPv6',
     PANEL_STXT:          'Security.txt',
     PANEL_WHOIS:         'WHOIS / RDAP',
     PANEL_RECS:          'Correctifs',
@@ -554,5 +555,12 @@ const LANG_FR = {
       '<b>IPv6 :</b> Étendu à 32 chiffres hexadécimaux, inversé et suivi de <code>.ip6.arpa</code>.<br><br>' +
       '<b>Cette vérification</b> résout les enregistrements A et AAAA pour chaque hôte MX, interroge le PTR pour chaque IP et vérifie si la valeur PTR correspond au nom d\'hôte MX (vérification FCrDNS relaxée). ' +
       'N\'affecte pas la note globale.',
+    SELECTOR_HELP:
+      '<b>Qu\u2019est-ce qu\u2019un s\u00e9lecteur DKIM\u00a0?</b> Un s\u00e9lecteur est un court libell\u00e9 (ex. <code>google</code>) qui indique aux serveurs destinataires quelle cl\u00e9 publique utiliser pour v\u00e9rifier la signature DKIM d\u2019un e-mail. ' +
+      'Un domaine peut avoir plusieurs s\u00e9lecteurs \u2014 un par fournisseur de messagerie ou pour la rotation des cl\u00e9s.<br><br>' +
+      '<b>Comment trouver vos s\u00e9lecteurs\u00a0:</b> Ouvrez un e-mail re\u00e7u, affichez ses en-t\u00eates complets et cherchez l\u2019en-t\u00eate <code>DKIM-Signature:</code>. ' +
+      'La balise <code>s=</code> contient le nom du s\u00e9lecteur. Dans Gmail\u00a0: menu trois points \u2192 \u00ab\u00a0Afficher l\u2019original\u00a0\u00bb.<br><br>' +
+      '<b>Pourquoi en ajouter ici\u00a0?</b> Environ 85 noms de s\u00e9lecteurs courants sont sond\u00e9s automatiquement. ' +
+      'Utilisez ce champ pour les s\u00e9lecteurs personnalis\u00e9s ou peu communs.',
   },
 };

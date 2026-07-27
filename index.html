@@ -680,8 +680,15 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-July-27-1 &mdash; click for changelog</summary>
+      <summary>Version 2026-July-27-2 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-July-27-2</span>
+          <ul class="cl-changes">
+            <li>Arabic: fixed a typo in the Security.txt explanation (&ldquo;&#x64A;&#x64F;&#x648;&#x62B;&#x64E;&#x62F;&rdquo; &rarr; &ldquo;&#x64A;&#x64F;&#x648;&#x62B;&#x64E;&#x642;&rdquo;)</li>
+            <li>Translation files <code>translations/ar.js</code>, <code>fr.js</code> and <code>hi.js</code> brought in sync with <code>index.html</code> &mdash; DMARCbis keys backfilled, plus the previously missing <code>PANEL_IPV6</code> and <code>SELECTOR_HELP</code> keys</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-July-27-1</span>
           <ul class="cl-changes">
@@ -4258,7 +4265,7 @@ const STRINGS = {
         '<b>security.txt (<a href="https://www.rfc-editor.org/rfc/rfc9116">RFC 9116</a>)</b> معيار لنشر معلومات الإفصاح عن الثغرات الأمنية.<br><br>' +
         'ضع الملف في <code>/.well-known/security.txt</code> (المُفضَّل) أو <code>/security.txt</code>.<br><br>' +
         '<b>الحقول الإلزامية:</b> <code>Contact</code> \u2014 أين تبلّغ عن الثغرات. ' +
-        '<code>Expires</code> \u2014 تاريخ ISO 8601 بعده لا يُوثَد بالملف.<br><br>' +
+        '<code>Expires</code> \u2014 تاريخ ISO 8601 بعده لا يُوثَق بالملف.<br><br>' +
         '<b>الحقول الاختيارية:</b> <code>Encryption</code>، <code>Policy</code>، ' +
         '<code>Acknowledgments</code>، <code>Preferred-Languages</code>، <code>Canonical</code>، <code>Hiring</code>.',
       WHOIS:
