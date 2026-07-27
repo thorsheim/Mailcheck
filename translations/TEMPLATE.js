@@ -13,7 +13,11 @@
 //        <b>bold</b>  <a href="…">link</a>  <code>monospace</code>  <br>
 //   5. Open index.html and:
 //        a. Add your completed object to the STRINGS block (see below).
-//        b. Add <option value="fr">Français</option> to #lang-select.
+//        b. Add a separator span + button to #lang-row:
+//             <span class="lang-sep" aria-hidden="true">&middot;</span>
+//             <button type="button" class="lang-btn" data-lang="fr" lang="fr">Français</button>
+//           data-lang must match your STRINGS key; lang= is the BCP 47 tag for
+//           the button's own label text.
 //   6. Open a pull request — see CONTRIBUTING.md for the full workflow.
 //
 // ADDING TO index.html

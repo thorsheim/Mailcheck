@@ -110,13 +110,18 @@ temporarily integrate it into `index.html`:
   }
 ```
 
-3. Search for `lang-select` and add your option:
+3. Search for `lang-row` and add your button, preceded by a separator span:
 
 ```html
-<option value="fr">Français</option>
+<span class="lang-sep" aria-hidden="true">&middot;</span>
+<button type="button" class="lang-btn" data-lang="fr" lang="fr">Français</button>
 ```
 
-4. Open `index.html` in a browser, select your language, and run a check on
+The `data-lang` value must match the key you added to `STRINGS`. The `lang`
+attribute is the BCP 47 tag for the button's own text, so browsers and screen
+readers pronounce the language name correctly.
+
+4. Open `index.html` in a browser, click your language, and run a check on
    a domain like `gmail.com` or `cloudflare.com`.
 
 **Do not commit these `index.html` changes** — only commit your language file.

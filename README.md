@@ -55,7 +55,7 @@ PTR, BIMI, RPKI, ASPA, Security.txt, and WHOIS are informational — shown but n
 - **DNS over HTTPS** via Cloudflare (`cloudflare-dns.com/dns-query`)
 - **RPKI/ASPA** via RIPE Stat API
 - **WHOIS/RDAP** via rdap.org
-- **4 UI languages** — English, Norwegian (Bokmål), Spanish, French — persisted in `localStorage`
+- **4 UI languages** — English, Norwegian (Bokmål), Spanish, French — picked from an inline button row, persisted in `localStorage`
 - **Settings menu** (⚙, top-right) — dark/light theme toggle + scoring system explanation
 - **Mobile-friendly** — horizontal scrolling tab bar
 - **Language switch** — rerenders all panels without re-querying DNS
@@ -105,6 +105,7 @@ Missing keys fall back to English automatically, so partial translations are wel
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-July-27-5 | 2026-07-27 | Language picker changed from a `<select>` dropdown to a row of inline buttons — one click instead of two. Active language marked with `aria-pressed`, which both announces the selection to assistive tech and drives the highlight via a CSS attribute selector |
 | 2026-July-27-4 | 2026-07-27 | Esperanto, Arabic and Hindi removed as UI languages — now ships in English, Norwegian, Spanish and French. A stored `mailcheck-lang` naming a removed language falls back to English and is rewritten; text direction fixed to `ltr` (CSS logical properties retained for a future RTL language) |
 | 2026-July-27-3 | 2026-07-27 | Translation debt cleared — all 7 UI languages now complete, no English fallback anywhere. Norwegian +13 keys; Esperanto, Spanish, French, Arabic and Hindi +34 each (full IPv6 tab and explanation, SPF recursive lookup counts, SPF legacy type-99, SPF/DMARC propagation warnings, DKIM rotation note, CAA issuemail note, nameserver ASN diversity, Overview provider chips). `translations/*.js` synced with `index.html` |
 | 2026-July-27-2 | 2026-07-27 | Arabic Security.txt explanation typo fixed; `translations/ar.js`, `fr.js` and `hi.js` synced with `index.html` (DMARCbis keys backfilled, plus the previously missing `PANEL_IPV6` and `SELECTOR_HELP` keys) |

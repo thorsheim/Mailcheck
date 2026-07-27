@@ -90,6 +90,24 @@
     vertical-align: middle; flex-shrink: 0;
   }
   .help-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* Language picker — inline buttons rather than a <select>; with only a handful
+     of languages a dropdown costs two clicks to do a one-click job. */
+  #lang-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0.15rem 0.3rem; }
+  .lang-btn {
+    background: none; border: none; border-radius: 6px; color: var(--text-muted);
+    cursor: pointer; font-family: inherit; font-size: 0.82rem; line-height: 1.3;
+    padding: 0.2rem 0.45rem; transition: color .15s, background-color .15s;
+  }
+  .lang-btn:hover { color: var(--text); background: var(--bg); }
+  .lang-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .lang-btn[aria-pressed="true"] {
+    color: var(--accent-hover); font-weight: 600; background: rgba(99,102,241,.1);
+  }
+  /* Separators are their own elements so they stay outside each button's
+     hover/active background. Hidden from assistive tech. */
+  .lang-sep { color: var(--border); font-size: 0.82rem; user-select: none; }
+
   .selector-group { position: relative; }
   .help-popover {
     background: var(--card); border: 1px solid var(--border); border-radius: 10px;
@@ -477,14 +495,17 @@
       </div>
       <button id="check-btn" data-i18n="BTN_CHECK">Check</button>
     </div>
-    <div style="margin-top:0.6rem;display:flex;align-items:center;gap:0.5rem">
-      <label for="lang-select" style="font-size:0.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em" data-i18n="LANG_LABEL">Language</label>
-      <select id="lang-select" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.88rem;padding:0.35rem 0.6rem;outline:none;cursor:pointer">
-        <option value="en">English</option>
-        <option value="no">Norsk</option>
-        <option value="es">Español</option>
-        <option value="fr">Français</option>
-      </select>
+    <div style="margin-top:0.6rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+      <span id="lang-label" style="font-size:0.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em" data-i18n="LANG_LABEL">Language</span>
+      <div id="lang-row" role="group" aria-labelledby="lang-label">
+        <button type="button" class="lang-btn" data-lang="en" lang="en">English</button>
+        <span class="lang-sep" aria-hidden="true">&middot;</span>
+        <button type="button" class="lang-btn" data-lang="no" lang="nb">Norsk</button>
+        <span class="lang-sep" aria-hidden="true">&middot;</span>
+        <button type="button" class="lang-btn" data-lang="es" lang="es">Español</button>
+        <span class="lang-sep" aria-hidden="true">&middot;</span>
+        <button type="button" class="lang-btn" data-lang="fr" lang="fr">Français</button>
+      </div>
     </div>
     <div style="margin-top:0.45rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
       <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.82rem;color:var(--text-muted);cursor:pointer">
@@ -677,8 +698,15 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-July-27-4 &mdash; click for changelog</summary>
+      <summary>Version 2026-July-27-5 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-July-27-5</span>
+          <ul class="cl-changes">
+            <li>Language picker is now a row of inline buttons instead of a dropdown &mdash; switching language is one click rather than two</li>
+            <li>Active language is marked with <code>aria-pressed</code>, so screen readers announce the selection and the highlight is driven straight off that attribute</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-July-27-4</span>
           <ul class="cl-changes">
@@ -928,8 +956,10 @@
        1. Copy translations/TEMPLATE.js as your starting point.
        2. Add a new key (e.g. "fr") to the STRINGS object below,
           with all three sub-objects: s, d, and x.
-       3. Add <option value="fr">Français</option> to #lang-select
-          (search for "lang-select" in this file — it is near the top).
+       3. Add a button to #lang-row (search for "lang-row" in this file —
+          it is near the top), preceded by a separator span:
+            <span class="lang-sep" aria-hidden="true">&middot;</span>
+            <button type="button" class="lang-btn" data-lang="fr" lang="fr">Français</button>
        4. Open a pull request. See translations/CONTRIBUTING.md for details.
      ============================================================= -->
 <script>
@@ -7492,17 +7522,32 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ── Language selector ────────────────────────────────────────────────────────
-  const langSelect = document.getElementById('lang-select');
-  langSelect.value = currentLang;
+  // Inline buttons rather than a <select>. aria-pressed carries the active state
+  // for assistive tech and drives the highlight via the CSS attribute selector,
+  // so there is no separate class to keep in sync.
+  const langButtons = [...document.querySelectorAll('.lang-btn')];
+
+  function markActiveLang() {
+    for (const b of langButtons) {
+      b.setAttribute('aria-pressed', String(b.dataset.lang === currentLang));
+    }
+  }
+
+  markActiveLang();
   applyI18n();
-  langSelect.addEventListener('change', e => {
-    currentLang = e.target.value;
-    localStorage.setItem('mailcheck-lang', currentLang);
-    applyI18n();
-    applyTheme();
-    selectorHelpPopover.classList.remove('visible');
-    if (lastResults) rerenderAll(lastResults);
-  });
+
+  for (const btn of langButtons) {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.lang === currentLang) return;
+      currentLang = btn.dataset.lang;
+      try { localStorage.setItem('mailcheck-lang', currentLang); } catch (_) {}
+      markActiveLang();
+      applyI18n();
+      applyTheme();
+      selectorHelpPopover.classList.remove('visible');
+      if (lastResults) rerenderAll(lastResults);
+    });
+  }
 
   // ── Settings menu ────────────────────────────────────────────────────────────
   const settingsBtn    = document.getElementById('settings-btn');
