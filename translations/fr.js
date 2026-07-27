@@ -430,67 +430,67 @@ const LANG_FR = {
       '<b>S\u00e9paration des rapports\u00a0:</b> les rapports agr\u00e9g\u00e9s (XML) rel\u00e8vent de RFC 9990\u00a0; les rapports d\u2019\u00e9chec par message rel\u00e8vent de RFC 9991, qui met aussi \u00e0 jour le format ARF de ' +
       '<a href="https://www.rfc-editor.org/rfc/rfc6591">RFC 6591</a> avec un champ <code>Identity-Alignment</code> et rend le s\u00e9lecteur DKIM obligatoire dans les rapports.',
     DNSSEC:
-      '<b>Qu\'est-ce que DNSSEC ?</b> DNSSEC (<a href="https://www.rfc-editor.org/rfc/rfc4033">RFC 4033</a>) ajoute des signatures cryptographiques aux enregistrements DNS, ' +
+      '<b>Qu\'est-ce que DNSSEC\u00a0?</b> DNSSEC (<a href="https://www.rfc-editor.org/rfc/rfc4033">RFC 4033</a>) ajoute des signatures cryptographiques aux enregistrements DNS, ' +
       'empêchant l\'empoisonnement de cache et les attaques de l\'homme du milieu. ' +
       'L\'<b>indicateur AD</b> (Authentic Data) du résolveur Cloudflare confirme que toute la chaîne depuis la racine jusqu\'à ce domaine est validée.<br><br>' +
-      '<b>Évaluation des algorithmes</b> selon <a href="https://www.rfc-editor.org/rfc/rfc8624">RFC 8624</a> : <b>Ed25519</b> (alg 15) et <b>ECDSA P-256</b> (alg 13) sont les plus forts. ' +
+      '<b>Évaluation des algorithmes</b> selon <a href="https://www.rfc-editor.org/rfc/rfc8624">RFC 8624</a>\u00a0: <b>Ed25519</b> (alg 15) et <b>ECDSA P-256</b> (alg 13) sont les plus forts. ' +
       'RSA/SHA-256 (alg 8) est acceptable. RSA/SHA-1 (alg 5) et les variantes DSA sont faibles ou non sécurisés.<br><br>' +
-      '<b>DNSSEC active DANE :</b> Sans DNS validé par DNSSEC, les enregistrements TLSA ne sont pas fiables \u2014 ' +
+      '<b>DNSSEC active DANE\u00a0:</b> Sans DNS validé par DNSSEC, les enregistrements TLSA ne sont pas fiables \u2014 ' +
       'un attaquant pourrait substituer de faux enregistrements TLSA.',
     MX:
       '<b>Les enregistrements MX (Mail eXchange)</b> (<a href="https://www.rfc-editor.org/rfc/rfc5321">RFC 5321</a>) indiquent aux autres serveurs où livrer le courrier de votre domaine. ' +
       'Les numéros de priorité plus bas sont essayés en premier (priorité 10 avant 20).<br><br>' +
-      '<b>Pourquoi DNSSEC est important pour MX :</b> Un attaquant capable de falsifier les enregistrements MX pourrait rediriger tous les courriers entrants. ' +
+      '<b>Pourquoi DNSSEC est important pour MX\u00a0:</b> Un attaquant capable de falsifier les enregistrements MX pourrait rediriger tous les courriers entrants. ' +
       'Les enregistrements MX validés par DNSSEC empêchent cela. Le DNSSEC de chaque nom d\'hôte MX est vérifié au sommet de sa zone.',
     DANE:
       '<b>DANE</b> (<a href="https://www.rfc-editor.org/rfc/rfc7672">RFC 7672</a>) utilise des enregistrements TLSA (<a href="https://www.rfc-editor.org/rfc/rfc6698">RFC 6698</a>) pour permettre aux serveurs de messagerie de vérifier les certificats TLS ' +
       'sans dépendre des CA commerciales. Interrogé à <b>_25._tcp.&lt;mx-hostname&gt;</b>.<br><br>' +
-      '<b>Codes d\'utilisation TLSA :</b> ' +
+      '<b>Codes d\'utilisation TLSA\u00a0:</b> ' +
       '<b>DANE-EE (3)</b> \u2014 ancrer au certificat d\'entité finale (le plus fort). ' +
       '<b>DANE-TA (2)</b> \u2014 ancrer à une ancre de confiance. ' +
       '<b>PKIX-EE (1)</b> / <b>PKIX-TA (0)</b> \u2014 nécessitent une validation CA plus une correspondance TLSA.<br><br>' +
-      '<b>Types de correspondance :</b> SHA-256 (1) et SHA-512 (2) sont recommandés. La correspondance exacte (0) est fragile lors de la rotation des certificats.<br><br>' +
-      '<b>DNSSEC obligatoire :</b> Sans DNSSEC, les enregistrements TLSA peuvent être falsifiés et DANE n\'offre aucune sécurité.',
+      '<b>Types de correspondance\u00a0:</b> SHA-256 (1) et SHA-512 (2) sont recommandés. La correspondance exacte (0) est fragile lors de la rotation des certificats.<br><br>' +
+      '<b>DNSSEC obligatoire\u00a0:</b> Sans DNSSEC, les enregistrements TLSA peuvent être falsifiés et DANE n\'offre aucune sécurité.',
     SPF:
       '<b>SPF (Sender Policy Framework, <a href="https://www.rfc-editor.org/rfc/rfc7208">RFC 7208</a>)</b> spécifie quels serveurs sont autorisés à envoyer du courrier pour votre domaine. ' +
       'Les serveurs destinataires vérifient si l\'IP d\'envoi correspond.<br><br>' +
-      '<b>Qualificateurs :</b> <b>-all</b> (échec dur) rejette les expéditeurs non autorisés \u2014 le plus fort. ' +
+      '<b>Qualificateurs\u00a0:</b> <b>-all</b> (échec dur) rejette les expéditeurs non autorisés \u2014 le plus fort. ' +
       '<b>~all</b> (échec souple) les marque comme suspects. <b>?all</b> (neutre) n\'offre aucune protection. ' +
       '<b>+all</b> autorise tout le monde \u2014 ne jamais utiliser ceci.<br><br>' +
-      '<b>Mécanismes :</b> <b>include:</b> délègue à un autre domaine. ' +
+      '<b>Mécanismes\u00a0:</b> <b>include:</b> délègue à un autre domaine. ' +
       '<b>ip4:</b>/<b>ip6:</b> autorisent des plages d\'IP. <b>mx</b> autorise vos serveurs MX.<br><br>' +
-      '<b>Limite de 10 requêtes (<a href="https://www.rfc-editor.org/rfc/rfc7208#section-4.6.4">RFC 7208 §4.6.4</a>) :</b> Dépasser 10 mécanismes de requête DNS provoque un PermError.',
+      '<b>Limite de 10 requêtes (<a href="https://www.rfc-editor.org/rfc/rfc7208#section-4.6.4">RFC 7208 §4.6.4</a>)\u00a0:</b> Dépasser 10 mécanismes de requête DNS provoque un PermError.',
     DKIM:
-      '<b>Qu\'est-ce qu\'un sélecteur DKIM ?</b> DKIM (<a href="https://www.rfc-editor.org/rfc/rfc6376">RFC 6376</a>) utilise la cryptographie à clé publique pour signer le courrier sortant. ' +
+      '<b>Qu\'est-ce qu\'un sélecteur DKIM\u00a0?</b> DKIM (<a href="https://www.rfc-editor.org/rfc/rfc6376">RFC 6376</a>) utilise la cryptographie à clé publique pour signer le courrier sortant. ' +
       'Un sélecteur (ex. <code>google</code>) est une étiquette pointant vers une clé publique DKIM ' +
       'publiée à <code>&lt;selector&gt;._domainkey.&lt;domain&gt;</code>. ' +
       'Un domaine peut avoir plusieurs sélecteurs \u2014 un par fournisseur de messagerie ou pour la rotation des clés.<br><br>' +
-      '<b>Trouver des sélecteurs :</b> Recherchez dans l\'en-tête <code>DKIM-Signature:</code> de tout courrier reçu. ' +
+      '<b>Trouver des sélecteurs\u00a0:</b> Recherchez dans l\'en-tête <code>DKIM-Signature:</code> de tout courrier reçu. ' +
       'La balise <code>s=</code> contient le sélecteur. Les sélecteurs personnalisés ne peuvent pas être découverts automatiquement.<br><br>' +
-      '<b>Balises d\'enregistrement de clé (<a href="https://www.rfc-editor.org/rfc/rfc6376">RFC 6376</a> §3.6.1) :</b><br>' +
-      '<b>k=</b> type de clé : <b>ed25519</b> est recommandé (compact et fort). <b>rsa</b> est la valeur par défaut si omis.<br>' +
+      '<b>Balises d\'enregistrement de clé (<a href="https://www.rfc-editor.org/rfc/rfc6376">RFC 6376</a> §3.6.1)\u00a0:</b><br>' +
+      '<b>k=</b> type de clé\u00a0: <b>ed25519</b> est recommandé (compact et fort). <b>rsa</b> est la valeur par défaut si omis.<br>' +
       '<b>h=</b> algorithmes de hachage autorisés. <b>sha256</b> est la seule valeur recommandée. ' +
       '<b>sha1</b> a été déprécié dans <a href="https://www.rfc-editor.org/rfc/rfc8301">RFC 8301</a> (2018) et ne doit pas être utilisé. ' +
       'Si omis, tous les algorithmes sont implicitement autorisés \u2014 ajoutez explicitement <code>h=sha256</code> pour restreindre à l\'algorithme fort.<br>' +
-      '<b>s=</b> type de service : <b>email</b> restreint la clé à l\'usage pour la messagerie (recommandé). ' +
+      '<b>s=</b> type de service\u00a0: <b>email</b> restreint la clé à l\'usage pour la messagerie (recommandé). ' +
       '<b>*</b> (par défaut si omis) autorise l\'utilisation pour tout service.<br>' +
       '<b>t=y</b> marque la clé en mode test \u2014 les vérificateurs ne doivent pas rejeter les échecs. À supprimer des clés en production.<br>' +
       '<b>t=s</b> désactive l\'héritage de clé par les sous-domaines \u2014 les sous-domaines doivent publier leurs propres clés DKIM.<br>' +
       '<b>p=</b> la clé publique (base64). Une valeur vide révoque la clé, ce qui est la méthode recommandée pour retirer un sélecteur.<br>' +
-      '<b>v=</b> version : <code>DKIM1</code> est optionnel mais recommandé pour la clarté. Toute autre valeur invalide l\'enregistrement.<br>' +
-      '<b>n=</b> notes : texte lisible par l\'humain ignoré par les vérificateurs.<br><br>' +
-      '<b>Tailles de clé :</b> <b>Ed25519</b> est le plus fort et le plus compact. ' +
+      '<b>v=</b> version\u00a0: <code>DKIM1</code> est optionnel mais recommandé pour la clarté. Toute autre valeur invalide l\'enregistrement.<br>' +
+      '<b>n=</b> notes\u00a0: texte lisible par l\'humain ignoré par les vérificateurs.<br><br>' +
+      '<b>Tailles de clé\u00a0:</b> <b>Ed25519</b> est le plus fort et le plus compact. ' +
       '<b>RSA-2048</b> est la recommandation minimale. ' +
       '<b>RSA-1024</b> est faible et doit être remplacé immédiatement.<br><br>' +
       '<b>DNSSEC sur les enregistrements DKIM</b> empêche un attaquant de substituer votre clé publique dans le DNS.',
     TLSRPT:
       '<b>TLS-RPT (<a href="https://www.rfc-editor.org/rfc/rfc8460">RFC 8460</a>)</b> permet de recevoir des rapports d\'échecs TLS des serveurs de messagerie expéditeurs. ' +
       'Publié comme enregistrement TXT à <code>_smtp._tls.&lt;domaine&gt;</code>.<br><br>' +
-      '<b>Points de rapport rua= :</b> Les rapports sont envoyés aux adresses <code>mailto:</code> ou aux services d\'agrégation <code>https:</code>. ' +
+      '<b>Points de rapport rua=\u00a0:</b> Les rapports sont envoyés aux adresses <code>mailto:</code> ou aux services d\'agrégation <code>https:</code>. ' +
       'Les points HTTPS sont excellents\u00a0; mailto est bon.<br><br>' +
-      '<b>Contenu des rapports :</b> Données JSON agrégées \u2014 connexions TLS réussies, échecs de handshake, ' +
+      '<b>Contenu des rapports\u00a0:</b> Données JSON agrégées \u2014 connexions TLS réussies, échecs de handshake, ' +
       'erreurs de certificat et violations de politique. Essentiel pour diagnostiquer les problèmes MTA-STS et DANE.<br><br>' +
-      '<b>Exemples d\'enregistrements DNS :</b><br>' +
+      '<b>Exemples d\'enregistrements DNS\u00a0:</b><br>' +
       '<code>_smtp._tls.example.com. TXT "v=TLSRPTv1; rua=mailto:tlsrpt@example.com"</code><br>' +
       '<code>_smtp._tls.example.com. TXT "v=TLSRPTv1; rua=https://tlsrpt.example.com/v1"</code> — point d\'agrégation HTTPS',
     MTASTS:
@@ -498,33 +498,33 @@ const LANG_FR = {
       'et de valider le certificat de votre serveur de messagerie. ' +
       'Enregistrement DNS à <code>_mta-sts.&lt;domaine&gt;</code>\u00a0; ' +
       'politique à <code>https://mta-sts.&lt;domaine&gt;/.well-known/mta-sts.txt</code>.<br><br>' +
-      '<b>Modes de politique :</b> <b>enforce</b> \u2014 TLS obligatoire avec certificat valide, ou livraison refusée. ' +
+      '<b>Modes de politique\u00a0:</b> <b>enforce</b> \u2014 TLS obligatoire avec certificat valide, ou livraison refusée. ' +
       '<b>testing</b> \u2014 collecter des données TLS-RPT sans appliquer. ' +
       '<b>none</b> \u2014 explicitement désactivé.<br><br>' +
-      '<b>max_age :</b> Secondes pendant lesquelles les expéditeurs mettent la politique en cache. 604800 (1 semaine) ou 31557600 (1 an) sont des valeurs typiques.<br><br>' +
-      '<b>Exemple d\'enregistrement DNS :</b><br>' +
+      '<b>max_age\u00a0:</b> Secondes pendant lesquelles les expéditeurs mettent la politique en cache. 604800 (1 semaine) ou 31557600 (1 an) sont des valeurs typiques.<br><br>' +
+      '<b>Exemple d\'enregistrement DNS\u00a0:</b><br>' +
       '<code>_mta-sts.example.com. TXT "v=STSv1; id=20240101000000"</code><br><br>' +
-      '<b>Exemple de fichier de politique</b> à <code>https://mta-sts.example.com/.well-known/mta-sts.txt</code> :<br>' +
+      '<b>Exemple de fichier de politique</b> à <code>https://mta-sts.example.com/.well-known/mta-sts.txt</code>\u00a0:<br>' +
       '<code>version: STSv1</code><br>' +
       '<code>mode: enforce</code><br>' +
       '<code>mx: mail.example.com</code><br>' +
       '<code>max_age: 604800</code>',
     CAA:
       '<b>CAA (Certification Authority Authorization, <a href="https://www.rfc-editor.org/rfc/rfc8659">RFC 8659</a>)</b> restreint les CA pouvant émettre des certificats TLS.<br><br>' +
-      '<b>Balises :</b> <b>issue</b> \u2014 autorise une CA pour les certificats normaux (ex. <code>issue "letsencrypt.org"</code>). ' +
+      '<b>Balises\u00a0:</b> <b>issue</b> \u2014 autorise une CA pour les certificats normaux (ex. <code>issue "letsencrypt.org"</code>). ' +
       '<b>issuewild</b> \u2014 autorise une CA pour les certificats wildcard. ' +
       '<b>iodef</b> \u2014 où les CA doivent signaler les violations de politique.<br><br>' +
-      '<b>Certificats S/MIME (issuemail, <a href="https://www.rfc-editor.org/rfc/rfc9495">RFC 9495</a>) :</b> ' +
+      '<b>Certificats S/MIME (issuemail, <a href="https://www.rfc-editor.org/rfc/rfc9495">RFC 9495</a>)\u00a0:</b> ' +
       'La balise <b>issuemail</b> contrôle quelles CA peuvent émettre des certificats S/MIME pour les adresses e-mail de votre domaine. ' +
       'Si omise, la balise <b>issue</b> régit également l\'émission S/MIME. ' +
       'Utilisez <code>issuemail ";"</code> pour interdire toute émission S/MIME depuis votre domaine.<br><br>' +
-      '<b>Certificats VMC pour BIMI :</b> Les Verified Mark Certificates (VMC) utilisés pour les enregistrements d\'autorité BIMI sont régis par la balise standard <b>issue</b> \u2014 il n\'existe pas de balise spécifique aux VMC. ' +
+      '<b>Certificats VMC pour BIMI\u00a0:</b> Les Verified Mark Certificates (VMC) utilisés pour les enregistrements d\'autorité BIMI sont régis par la balise standard <b>issue</b> \u2014 il n\'existe pas de balise spécifique aux VMC. ' +
       'Seul un petit nombre de CA émet actuellement des VMC (DigiCert, Entrust). ' +
       'Si vous utilisez BIMI avec VMC (balise <code>a=</code>), assurez-vous que vos enregistrements <b>issue</b> incluent votre fournisseur VMC.<br><br>' +
-      '<b>Indicateur critique :</b> Les CA ne comprenant pas une balise avec indicateur critique doivent refuser l\'émission. ' +
+      '<b>Indicateur critique\u00a0:</b> Les CA ne comprenant pas une balise avec indicateur critique doivent refuser l\'émission. ' +
       'À utiliser avec précaution \u2014 les balises critiques inconnues peuvent bloquer toute émission de certificats.<br><br>' +
       '<b>Sans enregistrements CAA,</b> toute CA réussissant la validation de domaine peut émettre des certificats.<br><br>' +
-      '<b>Exemples d\'enregistrements DNS :</b><br>' +
+      '<b>Exemples d\'enregistrements DNS\u00a0:</b><br>' +
       '<code>example.com. CAA 0 issue "letsencrypt.org"</code><br>' +
       '<code>example.com. CAA 0 issue "sectigo.com"</code><br>' +
       '<code>example.com. CAA 0 issuewild "letsencrypt.org"</code><br>' +
@@ -533,28 +533,28 @@ const LANG_FR = {
     RPKI:
       '<b>RPKI (Resource Public Key Infrastructure)</b> permet aux détenteurs d\'adresses IP de publier des Autorisations d\'Origine de Route (ROA) ' +
       'spécifiant quel ASN est autorisé à annoncer leurs préfixes.<br><br>' +
-      '<b>Valide</b> \u2014 une ROA correspondante existe : le préfixe est protégé contre le détournement BGP. ' +
-      '<b>Invalide</b> \u2014 une ROA existe mais n\'autorise PAS l\'annonce actuelle : les routeurs avec validation RPKI peuvent filtrer la route. ' +
-      '<b>Sans ROA</b> \u2014 aucune ROA trouvée : le préfixe n\'est pas protégé mais peut être routé.<br><br>' +
+      '<b>Valide</b> \u2014 une ROA correspondante existe\u00a0: le préfixe est protégé contre le détournement BGP. ' +
+      '<b>Invalide</b> \u2014 une ROA existe mais n\'autorise PAS l\'annonce actuelle\u00a0: les routeurs avec validation RPKI peuvent filtrer la route. ' +
+      '<b>Sans ROA</b> \u2014 aucune ROA trouvée\u00a0: le préfixe n\'est pas protégé mais peut être routé.<br><br>' +
       'Cette vérification résout les IPs pour tous les hôtes NS et MX, puis interroge RIPE Stat pour valider chaque préfixe par rapport à son ASN d\'origine. ' +
       'RPKI protège l\'infrastructure de messagerie contre le détournement de routes BGP qui pourrait rediriger ou intercepter le trafic de messagerie.',
     ASPA:
       '<b>ASPA (Autonomous System Provider Authorization, <a href="https://www.rfc-editor.org/rfc/rfc9582">RFC 9582</a>)</b> permet à un AS de déclarer quels fournisseurs upstream il est autorisé à utiliser. ' +
-      'Les enregistrements ASPA publiés permettent de détecter les fuites de routes : si le trafic arrive via un fournisseur non autorisé, les routeurs compatibles ASPA peuvent le rejeter.<br><br>' +
+      'Les enregistrements ASPA publiés permettent de détecter les fuites de routes\u00a0: si le trafic arrive via un fournisseur non autorisé, les routeurs compatibles ASPA peuvent le rejeter.<br><br>' +
       '<b>Publié</b> \u2014 un enregistrement ASPA avec des fournisseurs déclarés existe. ' +
       '<b>Sans ASPA</b> \u2014 aucun enregistrement publié\u00a0; les fuites de routes impliquant cet AS ne peuvent pas être détectées par les routeurs compatibles ASPA.<br><br>' +
       'Cette vérification lit les données ASPA obtenues lors de la vérification RPKI, affichant les enregistrements d\'autorisation de fournisseur pour tous les ASN associés aux hôtes NS et MX du domaine.<br><br>' +
-      '<b>Note :</b> RFC 9582 est encore une norme proposée et le déploiement réel est actuellement très limité. ' +
+      '<b>Note\u00a0:</b> RFC 9582 est encore une norme proposée et le déploiement réel est actuellement très limité. ' +
       'C\'est pourquoi l\'absence d\'enregistrements ASPA n\'affecte pas votre score \u2014 cette vérification est purement informative pour l\'instant. ' +
       'Cependant, il vaut la peine de demander à votre hébergeur ou FAI s\'il suit le développement d\'ASPA et envisage son implémentation.',
     STXT:
       '<b>security.txt (<a href="https://www.rfc-editor.org/rfc/rfc9116">RFC 9116</a>)</b> est une norme pour publier des informations de divulgation des vulnérabilités.<br><br>' +
       'Placez le fichier à <code>/.well-known/security.txt</code> (préféré) ou <code>/security.txt</code>.<br><br>' +
-      '<b>Champs obligatoires :</b> <code>Contact</code> \u2014 où signaler des vulnérabilités (e-mail, URL ou téléphone). ' +
+      '<b>Champs obligatoires\u00a0:</b> <code>Contact</code> \u2014 où signaler des vulnérabilités (e-mail, URL ou téléphone). ' +
       '<code>Expires</code> \u2014 date ISO 8601 à partir de laquelle le fichier ne doit plus être fiable.<br><br>' +
-      '<b>Champs optionnels :</b> <code>Encryption</code> (URL de clé GPG), <code>Policy</code> (URL de politique de divulgation), ' +
+      '<b>Champs optionnels\u00a0:</b> <code>Encryption</code> (URL de clé GPG), <code>Policy</code> (URL de politique de divulgation), ' +
       '<code>Acknowledgments</code>, <code>Preferred-Languages</code>, <code>Canonical</code>, <code>Hiring</code>.<br><br>' +
-      '<b>Exemple de fichier :</b><br>' +
+      '<b>Exemple de fichier\u00a0:</b><br>' +
       '<code>Contact: mailto:security@example.com</code><br>' +
       '<code>Contact: https://example.com/security/report</code><br>' +
       '<code>Expires: 2027-01-01T00:00:00Z</code><br>' +
@@ -566,28 +566,28 @@ const LANG_FR = {
     WHOIS:
       '<b>WHOIS / RDAP</b> fournit des données d\'enregistrement de domaine via le protocole d\'accès aux données d\'enregistrement (<a href="https://www.rfc-editor.org/rfc/rfc7480">RFC 7480</a>).<br><br>' +
       'Les données sont récupérées depuis le serveur RDAP faisant autorité pour le TLD du domaine via <code>rdap.org</code>.<br><br>' +
-      '<b>Champs principaux :</b> <b>Registrar</b> \u2014 qui gère l\'enregistrement. ' +
+      '<b>Champs principaux\u00a0:</b> <b>Registrar</b> \u2014 qui gère l\'enregistrement. ' +
       '<b>Expire</b> \u2014 quand l\'enregistrement doit être renouvelé. ' +
       '<b>Statut</b> \u2014 verrous du domaine (ex. <code>clientTransferProhibited</code> empêche les transferts non autorisés).<br><br>' +
       'RDAP remplace l\'ancien protocole WHOIS en texte brut (<a href="https://www.rfc-editor.org/rfc/rfc3912">RFC 3912</a>) par une API structurée basée sur JSON.<br><br>' +
-      '<b>Note :</b> Un domaine récemment créé est un indicateur reconnu de moindre confiance et de risque accru d\'être utilisé pour la distribution de logiciels malveillants, le phishing ou la fraude. ' +
+      '<b>Note\u00a0:</b> Un domaine récemment créé est un indicateur reconnu de moindre confiance et de risque accru d\'être utilisé pour la distribution de logiciels malveillants, le phishing ou la fraude. ' +
       'Si vous vérifiez un domaine que vous ne possédez ni ne contrôlez, traitez une date de création très récente comme un signal d\'avertissement et appliquez une précaution et une vérification supplémentaires avant d\'interagir avec tout courrier ou service de ce domaine.',
     BIMI:
-      '<b>BIMI est généralement considéré comme un outil marketing qui n\'apporte aucune valeur de sécurité supplémentaire. Afficher un logo dans une boîte aux lettres pour « prouver » que c\'est le vrai expéditeur revient à afficher un GIF disant « 100 % garanti ». Si vous souhaitez quand même payer des CA pour cela, libre à vous.</b><br><br>' +
+      '<b>BIMI est généralement considéré comme un outil marketing qui n\'apporte aucune valeur de sécurité supplémentaire. Afficher un logo dans une boîte aux lettres pour « prouver » que c\'est le vrai expéditeur revient à afficher un GIF disant « 100\u00a0% garanti ». Si vous souhaitez quand même payer des CA pour cela, libre à vous.</b><br><br>' +
       '<b>BIMI (Brand Indicators for Message Identification)</b> permet aux organisations d\'afficher leur logo dans les clients de messagerie compatibles (ex. Gmail, Apple Mail, Yahoo).<br><br>' +
-      '<b>Enregistrement DNS :</b> Publié comme enregistrement TXT à <code>default._bimi.&lt;domaine&gt;</code>.<br><br>' +
-      '<b>l= (URL du logo) :</b> Une URL pointant vers un fichier SVG du logo. Nécessaire pour que BIMI fonctionne. ' +
+      '<b>Enregistrement DNS\u00a0:</b> Publié comme enregistrement TXT à <code>default._bimi.&lt;domaine&gt;</code>.<br><br>' +
+      '<b>l= (URL du logo)\u00a0:</b> Une URL pointant vers un fichier SVG du logo. Nécessaire pour que BIMI fonctionne. ' +
       'Le SVG doit être une image carrée et sécurisée pour les profils, hébergée sur HTTPS.<br><br>' +
-      '<b>a= (preuve d\'autorité) :</b> Une URL pointant vers un Verified Mark Certificate (VMC) émis par une CA autorisée (ex. DigiCert, Entrust). ' +
+      '<b>a= (preuve d\'autorité)\u00a0:</b> Une URL pointant vers un Verified Mark Certificate (VMC) émis par une CA autorisée (ex. DigiCert, Entrust). ' +
       'La plupart des grands clients (dont Gmail) l\'exigent pour afficher le logo. Sans VMC, l\'enregistrement est purement informatif.<br><br>' +
-      '<b>Prérequis :</b> DMARC doit être en mode d\'application <code>p=quarantine</code> ou <code>p=reject</code>. ' +
+      '<b>Prérequis\u00a0:</b> DMARC doit être en mode d\'application <code>p=quarantine</code> ou <code>p=reject</code>. ' +
       'BIMI n\'affecte pas directement la sécurité de la messagerie \u2014 c\'est une fonctionnalité de visibilité de marque qui récompense une application rigoureuse de DMARC.',
     PTR:
       '<b>Les enregistrements PTR</b> (enregistrements pointeur) mappent les adresses IP vers des noms d\'hôte \u2014 l\'inverse des enregistrements A/AAAA.<br><br>' +
-      '<b>FCrDNS (Forward-Confirmed reverse DNS) :</b> Un enregistrement PTR est « confirmé en avant » lorsque la valeur PTR résout en avant vers l\'IP d\'origine. ' +
+      '<b>FCrDNS (Forward-Confirmed reverse DNS)\u00a0:</b> Un enregistrement PTR est « confirmé en avant » lorsque la valeur PTR résout en avant vers l\'IP d\'origine. ' +
       'De nombreux filtres anti-spam et MTA destinataires vérifient FCrDNS pour les hôtes MX. Une correspondance renforce la confiance\u00a0; un PTR absent ou non correspondant peut augmenter les scores de spam.<br><br>' +
-      '<b>IPv4 :</b> Inversé comme <code>d.c.b.a.in-addr.arpa</code>. ' +
-      '<b>IPv6 :</b> Étendu à 32 chiffres hexadécimaux, inversé et suivi de <code>.ip6.arpa</code>.<br><br>' +
+      '<b>IPv4\u00a0:</b> Inversé comme <code>d.c.b.a.in-addr.arpa</code>. ' +
+      '<b>IPv6\u00a0:</b> Étendu à 32 chiffres hexadécimaux, inversé et suivi de <code>.ip6.arpa</code>.<br><br>' +
       '<b>Cette vérification</b> résout les enregistrements A et AAAA pour chaque hôte MX, interroge le PTR pour chaque IP et vérifie si la valeur PTR correspond au nom d\'hôte MX (vérification FCrDNS relaxée). ' +
       'N\'affecte pas la note globale.',
     SELECTOR_HELP:
