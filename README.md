@@ -55,7 +55,7 @@ PTR, BIMI, RPKI, ASPA, Security.txt, and WHOIS are informational — shown but n
 - **DNS over HTTPS** via Cloudflare (`cloudflare-dns.com/dns-query`)
 - **RPKI/ASPA** via RIPE Stat API
 - **WHOIS/RDAP** via rdap.org
-- **7 UI languages** — English, Norwegian (Bokmål), Esperanto, Spanish, French, Arabic (RTL), Hindi — persisted in `localStorage`
+- **4 UI languages** — English, Norwegian (Bokmål), Spanish, French — persisted in `localStorage`
 - **Settings menu** (⚙, top-right) — dark/light theme toggle + scoring system explanation
 - **Mobile-friendly** — horizontal scrolling tab bar
 - **Language switch** — rerenders all panels without re-querying DNS
@@ -81,7 +81,7 @@ Custom selectors can be entered in the "Extra DKIM Selectors" field on the start
 
 ## Contributing a translation
 
-The UI currently ships in **7 languages**: English, Norwegian Bokmål, Esperanto, Spanish, French, Arabic, and Hindi. Adding a new language requires editing only two places in `index.html` — no build tools needed.
+The UI currently ships in **4 languages**: English, Norwegian Bokmål, Spanish, and French. Adding a new language requires editing only two places in `index.html` — no build tools needed.
 
 See **[translations/CONTRIBUTING.md](translations/CONTRIBUTING.md)** for the full step-by-step guide.
 
@@ -105,6 +105,7 @@ Missing keys fall back to English automatically, so partial translations are wel
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-July-27-4 | 2026-07-27 | Esperanto, Arabic and Hindi removed as UI languages — now ships in English, Norwegian, Spanish and French. A stored `mailcheck-lang` naming a removed language falls back to English and is rewritten; text direction fixed to `ltr` (CSS logical properties retained for a future RTL language) |
 | 2026-July-27-3 | 2026-07-27 | Translation debt cleared — all 7 UI languages now complete, no English fallback anywhere. Norwegian +13 keys; Esperanto, Spanish, French, Arabic and Hindi +34 each (full IPv6 tab and explanation, SPF recursive lookup counts, SPF legacy type-99, SPF/DMARC propagation warnings, DKIM rotation note, CAA issuemail note, nameserver ASN diversity, Overview provider chips). `translations/*.js` synced with `index.html` |
 | 2026-July-27-2 | 2026-07-27 | Arabic Security.txt explanation typo fixed; `translations/ar.js`, `fr.js` and `hi.js` synced with `index.html` (DMARCbis keys backfilled, plus the previously missing `PANEL_IPV6` and `SELECTOR_HELP` keys) |
 | 2026-July-27-1 | 2026-07-27 | DMARCbis: new informational section on the DMARC tab checking the record against RFC 9989 / 9990 / 9991 (which obsolete RFC 7489 and RFC 9091) — DNS tree walk policy discovery replacing the Public Suffix List, tag registry conformance (`pct=`/`rf=`/`ri=` historic, new `t=`/`np=`/`psd=`), external reporting authorization via `<domain>._report._dmarc.<destination>`, and a generated conformant record. Grade unchanged; translated into all 7 languages |
