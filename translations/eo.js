@@ -85,7 +85,7 @@ const LANG_EO = {
 
     DNSSEC_VALIDATED:    '\u2713 DNSSEC konfirmita (AD=vera)',
     DNSSEC_UNVALIDATED:  '\u26a0 Subskribita sed ne konfirmita de solvilisto (AD=malvera)',
-    DNSSEC_RESOLVER_ONLY:'DNSSEC konfirmita de solvilisto, sed \u015dlosilregistroj ne povis esti elŝutitaj.',
+    DNSSEC_RESOLVER_ONLY:'\u015closilregistroj ne povis esti el\u015dutitaj, sed DNSSEC konfirmita de solvilisto.',
     DNSSEC_NOT_SIGNED:   'Neniuj DNSKEY-registroj trovitaj \u2014 domajno ne estas DNSSEC-subskribita.',
     DNSSEC_ALG_DETAILS:  'Algoritmaj detaloj',
 
@@ -230,6 +230,65 @@ const LANG_EO = {
     PTR_MATCH:           'FCrDNS konfirmita \u2014 PTR kongruas kun MX-gastig-nomo',
     PTR_MISMATCH:        'PTR \u0109eestas sed ne kongruas kun MX-gastig-nomo',
     PTR_MISSING:         'Neniu PTR-registro trovita',
+    // Keys added in later releases — backfilled
+    PANEL_IPV6:          'IPv6',
+    DMARCBIS_TITLE:            'DMARCbis-konformeco — RFC 9989 / 9990 / 9991',
+    DMARCBIS_INTRO:            'RFC 9989 malaktualigas RFC 7489 kaj RFC 9091, kaj dividas raportadon en RFC 9990 (kolekta) kaj RFC 9991 (malsukcesa). Ĉi tiuj kontroloj estas informaj kaj ne influas la noton.',
+    DMARCBIS_DISCOVERY_TITLE:  'Politika malkovro — DNS-arba trairo (RFC 9989 §4.10)',
+    DMARCBIS_TAGS_TITLE:       'Etikeda konformeco (RFC 9989 §4.7, §9.3)',
+    DMARCBIS_EXTAUTH_TITLE:    'Rajtigo de ekstera raport-celo (RFC 9990 §4, RFC 9991 §5)',
+    DMARCBIS_SUGGESTED_TITLE:  'Proponita RFC 9989-registro',
+    DMARCBIS_SUGGESTED_NOTE:   'Historiaj kaj neregistritaj etikedoj forigitaj, pct=0 migrigita al t=y, kaj la etikedoj rekomendataj de RFC 9989 ĉe organiza domajno aldonitaj. La politika valoro restas neŝanĝita — kontrolu antaŭ publikigo.',
+    DMARCBIS_TW_TAG_AUTHOR:    'aŭtora domajno',
+    DMARCBIS_TW_TAG_ORG:       'organiza domajno',
+    DMARCBIS_TW_STEP_FOUND:    'registro',
+    DMARCBIS_TW_STEP_NONE:     'neniu',
+    DMARCBIS_TW_STEP_MULTI:    'multoblaj',
+    DMARCBIS_TW_STEP_ERROR:    'eraro',
+    DMARCBIS_TW_NO_POLICY:     'Neniu DMARC-politika registro ie ajn en la arba trairo — ricevantoj aplikas neniun DMARC-traktadon al tiu ĉi domajno',
+    DMARCBIS_TW_MULTI:         'Paŝo de la arba trairo redonis multoblajn DMARC-registrojn — RFC 9989 §4.10 forigas ĉiujn',
+    DMARCBIS_TAGS_CLEAN:       'Ĉiuj etikedoj estas registritaj kiel aktivaj en RFC 9989 §9.3 — neniu historia, neregistrita aŭ nevalida etikedo',
+    DMARCBIS_V_NOT_FIRST:      'v= mankas aŭ ne estas la unua etikedo — RFC 9989 §4.7 postulas ke la tuta registro estu ignorata',
+    DMARCBIS_P_DEFAULT_NONE:   'Neniu valida p=-etikedo — RFC 9989 §4.10.1: ĉar rua= ĉeestas, ricevantoj traktas la registron kiel p=none',
+    DMARCBIS_P_NO_PROCESSING:  'Neniu valida p=-etikedo kaj neniu rua= — RFC 9989 §4.10.1: ricevantoj aplikas neniun DMARC-traktadon entute',
+    DMARCBIS_PCT_ZERO:         'pct=0 estas historia en RFC 9989 — anstataŭigu ĝin per t=y, la etikedo kiu nun portas tiun signifon (Aldono A.6)',
+    DMARCBIS_PCT_FULL:         'pct=100 estas historia en RFC 9989 kaj jam estis la defaŭlto — forigu la etikedon',
+    DMARCBIS_T_NO_EFFECT:      't=y havas neniun efikon dum la politiko estas none — RFC 9989 §4.7',
+    DMARCBIS_T_ENFORCED:       't=n — la publikigita politiko estas aplikata lauvorte (defaŭlto de RFC 9989)',
+    DMARCBIS_NP_REJECT:        'np=reject — poŝto de neekzistantaj subdomajnoj estas rifuzata (RFC 9989 §4.7)',
+    DMARCBIS_NP_MISSING:       'Neniu np=-etikedo — RFC 9989 aldonas ĝin por neekzistantaj subdomajnoj; np=reject estas rekomendita ĉe organiza domajno',
+    DMARCBIS_PSD_Y:            'psd=y — deklarita kiel publika sufiksa domajno; la arba trairo haltas ĉi tie (RFC 9989 §4.10.2)',
+    DMARCBIS_PSD_N:            'psd=n — deklarita kiel organiza domajno; la arba trairo haltas ĉi tie (RFC 9989 §4.10.2)',
+    DMARCBIS_PSD_U:            'psd=u — la organiza domajno estas lasata al la arba trairo (defaŭlto de RFC 9989)',
+    DMARCBIS_PSD_MISSING:      'Neniu psd=-etikedo — publikigi psd=n ĉe la organiza domajno tuj finas la arban trairon kaj forigas ĉian dubon',
+    DMARCBIS_FO_NO_RUF:        'fo= ĉeestas sen ruf= — RFC 9989 §4.7 postulas ke ĝia enhavo estu ignorata',
+    DMARCBIS_URI_NO_MAILTO:    'Neniu mailto:-URI en rua= — ricevantoj devas subteni nur mailto:, do aliaj skemoj povas esti ignorataj',
+    DMARCBIS_EXT_NONE:         'Neniuj rua= aŭ ruf=-URI-oj rajtigendaj — sen kolektaj raportoj mankas ĉia videbleco pri DMARC-malsukcesoj',
+    IPV6_HOST_DETAILS: 'Adresdetaloj po gastiganto',
+    IPV6_NO_AAAA: 'Neniu AAAA-registro',
+    IPV6_NO_MX: 'Neniuj MX-gastigantoj trovitaj',
+    IPV6_NO_NS: 'Neniuj NS-gastigantoj trovitaj',
+    IPV6_MANDATORY_TITLE: 'Devigaj IPv6-postuloj',
+    IPV6_MANDATORY_NOTE: 'IPv6 estas postulata de registara regularo en la jenaj landoj:',
+    IPV6_DOMAIN_HAS_IPV6: '✓ La domajno havas IPv6-adreso(j)n',
+    IPV6_DOMAIN_NO_IPV6: 'La domajno havas neniun IPv6-adreson — atingebla nur per IPv4',
+    IPV6_ALL_MX_HAVE_IPV6: '✓ Ĉiuj MX-gastigantoj havas IPv6-adresojn',
+    IPV6_SOME_MX_HAVE_IPV6: 'Kelkaj MX-gastigantoj havas IPv6 — ne ĉiuj',
+    IPV6_NO_MX_HAVE_IPV6: 'Neniu MX-gastiganto havas IPv6-adreson',
+    IPV6_ALL_NS_HAVE_IPV6: '✓ Ĉiuj NS-gastigantoj havas IPv6-adresojn',
+    IPV6_SOME_NS_HAVE_IPV6: 'Kelkaj NS-gastigantoj havas IPv6 — ne ĉiuj',
+    IPV6_NO_NS_HAVE_IPV6: 'Neniu NS-gastiganto havas IPv6-adreson',
+    IPV6_MX_BADGE_YES: 'IPv6',
+    IPV6_MX_BADGE_NO: 'Sen IPv6',
+    SPF_NO_IP6_MECHS: 'La MX/NS-gastigantoj subtenas IPv6, sed neniu ip6:-ero troviĝas en la SPF-registro — se tiu ĉi domajno sendas retpoŝton per IPv6, aldonu ip6:-mekanismojn por rajtigi tiujn adresojn',
+    SPF_LEGACY_TYPE: 'Malnova SPF-registrotipo (DNS-tipo 99) trovita — malrekomendita ekde RFC 7208 (2014); forigenda',
+    SPF_PROPAGATION_MISMATCH: 'La SPF-registro malsamas inter la DNS-solvantoj de Cloudflare kaj Google — nekompleta disvastigo aŭ miskonfiguro',
+    DMARC_PROPAGATION_MISMATCH: 'La DMARC-registro malsamas inter la DNS-solvantoj de Cloudflare kaj Google — nekompleta disvastigo aŭ miskonfiguro',
+    DKIM_ROTATION_NOTE: 'Bona praktiko: rotaciu DKIM-ŝlosilojn almenaŭ ĉiujare. La aĝo de ŝlosilo ne determineblas el DNS — kontrolu la rotacian politikon ĉe via retpoŝta provizanto.',
+    CAA_ISSUEMAIL_NOTE: 'issuemail-etikedo ĉeestas — ĝi regas la eldonon de S/MIME-atestiloj por tiu ĉi domajno (RFC 8657)',
+    RPKI_NS_DIVERSITY: 'ASN-diverseco de la nomserviloj',
+    RPKI_NS_NO_ASN_DATA: 'Neniuj ASN-datumoj disponeblas por la nomserviloj',
+    OVERVIEW_PROVIDERS: 'Detektita retpoŝta infrastrukturo',
   },
 
   // ── d: dynamic strings (arrow functions) ───────────────────────────────────
@@ -280,26 +339,73 @@ const LANG_EO = {
     BIMI_LOGO_URL:         url => 'Logo-URL: ' + url,
     BIMI_AUTHORITY_URL:    url => 'A\u016dtoritata URL: ' + url,
     PTR_VALUE:             v => 'PTR: ' + v,
+    // Keys added in later releases — backfilled
+    DMARCBIS_TW_AT_AUTHOR:   dom => 'Politika registro publikigita ĉe la aŭtora domajno (_dmarc.' + dom + ') — tio estas la registro kiun ricevantoj aplikas',
+    DMARCBIS_TW_INHERITED:   (dom, tag, val) => 'Neniu registro ĉe la aŭtora domajno — ricevantoj heredas la politikon publikigitan ĉe _dmarc.' + dom + ', aplikante ' + tag + '=' + val,
+    DMARCBIS_TW_ORG_DOMAIN:  (dom, rule) => 'Organiza domajno: ' + dom + ' — ' + ({
+                               'psd-n':    'fiksita de psd=n',
+                               'psd-y':    'unu etikedon sub registro kun psd=y',
+                               'shortest': 'plej mallonga nomo en la arba trairo kun DMARC-registro',
+                               'default':  'neniu registro trovita en la arba trairo, do la informpetita domajno estas uzata',
+                             }[rule] || rule),
+    DMARCBIS_TW_QUERIES:     n => 'Arba trairo — ' + n + (n === 1 ? ' informpeto' : ' informpetoj'),
+    DMARCBIS_V_CASE:         v => 'v=' + v + ' — la versia valoro distingas usklecon en RFC 9989 §4.7 kaj devas esti ekzakte DMARC1',
+    DMARCBIS_DUPLICATE_TAGS: l => 'Etikedo ripetita en la registro: ' + l + ' — RFC 9989 §4.8 traktas tion kiel sintaksan eraron',
+    DMARCBIS_PCT_PARTIAL:    v => 'pct=' + v + ' estis forigita en RFC 9989 (Aldono A.6) — partaj procentoj estis aplikataj nekonsekvence; uzu t=y dum testado, alie forigu la etikedon',
+    DMARCBIS_RF_HISTORIC:    v => 'rf=' + v + ' estas historia en la registro de RFC 9989 §9.3 — forigu ĝin',
+    DMARCBIS_RI_HISTORIC:    v => 'ri=' + v + ' estas historia en la registro de RFC 9989 §9.3 — forigu ĝin',
+    DMARCBIS_T_INVALID:      v => 't=' + v + ' estas nevalida — RFC 9989 §4.7 permesas nur y aŭ n',
+    DMARCBIS_T_TESTING:      (p, eff) => 't=y — testreĝimo: ricevantoj aplikas ' + eff + ' anstataŭ la publikigita p=' + p + ' (RFC 9989 §4.7)',
+    DMARCBIS_NP_INVALID:     v => 'np=' + v + ' estas nevalida — RFC 9989 §4.7 permesas nur none, quarantine aŭ reject',
+    DMARCBIS_NP_SET:         v => 'np=' + v + ' — politiko por neekzistantaj subdomajnoj (RFC 9989 §4.7)',
+    DMARCBIS_PSD_INVALID:    v => 'psd=' + v + ' estas nevalida — RFC 9989 §4.7 permesas nur y, n aŭ u',
+    DMARCBIS_SP_INVALID:     v => 'sp=' + v + ' estas nevalida — RFC 9989 §4.7 permesas nur none, quarantine aŭ reject',
+    DMARCBIS_SP_IGNORED:     org => 'sp= estas ignorata en tiu ĉi registro — RFC 9989 §4.7: politika malkovro legas sp= nur de la organiza domajno (' + org + ')',
+    DMARCBIS_ALIGN_INVALID:  (tag, v) => tag + '=' + v + ' estas nevalida — RFC 9989 §4.7 permesas nur r aŭ s',
+    DMARCBIS_FO_INVALID:     v => 'fo=' + v + ' ne kongruas kun la sintakso de RFC 9989 §4.8 — validaj valoroj estas 0, 1, d kaj s, apartigitaj per dupunkto, kie 0 kaj 1 ekskluzivas unu la alian',
+    DMARCBIS_URI_OBS_SIZE:   l => 'Malaktuala !size-sufikso en raporta URI: ' + l + ' — RFC 9989 §4.8 petas raport-generilojn ignori ĝin',
+    DMARCBIS_UNKNOWN_TAGS:   l => 'Neregistrita(j) etikedo(j): ' + l + ' — forestas el la registro de RFC 9989 §9.3, do ricevantoj devas ignori ilin',
+    DMARCBIS_EXT_INTERNAL:   (tag, uri) => tag + '=' + uri + ' — sama organiza domajno, neniu rajtiga registro necesas',
+    DMARCBIS_EXT_AUTHORIZED: (tag, uri, name) => tag + '=' + uri + ' — ekstera celo rajtigita de ' + name,
+    DMARCBIS_EXT_MISSING:    (tag, uri, name) => tag + '=' + uri + ' — ekstera celo NE rajtigita: neniu v=DMARC1 TXT-registro ĉe ' + name + '; ricevantoj devas ignori tiun ĉi URI-on kaj sendas neniun raporton',
+    DMARCBIS_EXT_OVERRIDE:   (tag, uri, name, ov) => tag + '=' + uri + ' — rajtigita de ' + name + ', kiu redirektas raportojn al ' + ov,
+    DMARCBIS_EXT_OVERRIDE_BAD: (tag, uri, name, ov) => tag + '=' + uri + ' — la rajtiga registro ĉe ' + name + ' redirektas al ' + ov + ' ĉe alia gastiganto; RFC 9990 §4 malpermesas sendi al ambaŭ adresoj',
+    DMARCBIS_EXT_TOO_LONG:   (tag, uri) => tag + '=' + uri + ' — la rajtiga nomo superas la DNS-longolimojn, do la rilato ne konfirmeblas (RFC 9990 §4 paŝo 4)',
+    DMARCBIS_EXT_UNPARSABLE: (tag, uri) => tag + '=' + uri + ' — neniu gastiganto eltireblis el tiu ĉi URI',
+    DMARCBIS_EXT_ERROR:      (tag, uri, name) => tag + '=' + uri + ' — la informpeto pri ' + name + ' malsukcesis; rajtigo ne konfirmeblis',
+    IPV6_DOMAIN_SUMMARY: n => n + ' IPv6-adreso' + (n !== 1 ? 'j' : '') + ' trovita' + (n !== 1 ? 'j' : '') + ' por la domajno.',
+    IPV6_MX_SUMMARY: (n, t) => n + '/' + t + ' MX-gastiganto' + (t !== 1 ? 'j' : '') + ' havas IPv6.',
+    IPV6_NS_SUMMARY: (n, t) => n + '/' + t + ' NS-gastiganto' + (t !== 1 ? 'j' : '') + ' havas IPv6.',
+    SPF_LOOKUP_TOTAL_EXCEED: n => n + ' entutaj DNS-informpetoj (inkluzive de ingitaj include) superas la limon de 10 en RFC 7208 — ricevantoj redonos SPF PermError',
+    SPF_LOOKUP_TOTAL_HIGH: n => n + ' entutaj DNS-informpetoj (inkluzive de ingitaj include) — proksimiĝas al la limo de 10 en RFC 7208',
+    SPF_FOUND_LOOKUPS_TOTAL: (direct, total) => 'SPF-registro trovita. ' + direct + ' rektaj + ' + total + ' entutaj DNS-informpetoj (rekursie).',
+    RPKI_NS_SINGLE_ASN: (asn, holder) => 'Ĉiuj nomserviloj sur unu sola ASN (' + asn + (holder ? ' — ' + holder : '') + ') — ununura punkto de malsukceso por la DNS-vojigo',
+    RPKI_NS_MULTI_ASN: n => 'La nomserviloj distribuiĝas sur ' + n + ' malsamaj ASN-oj — bona vojiga rezisto',
   },
 
   // ── x: explanation strings (HTML) ──────────────────────────────────────────
   x: {
     DMARC:
-      '<b>DMARC (Domain-based Message Authentication, Reporting and Conformance, <a href="https://www.rfc-editor.org/rfc/rfc7489">RFC 7489</a>)</b> ' +
-      'kunligas SPF kaj DKIM per politiko kiu diras al ricevantoj kion fari kiam a\u016dtentikado malsukcesas.<br><br>' +
+      '<b>DMARC (Domain-based Message Authentication, Reporting and Conformance)</b> ' +
+      'kunligas SPF kaj DKIM per politiko kiu diras al ricevantoj kion fari kiam a\u016dtentikado malsukcesas. ' +
+      'Originale <a href="https://www.rfc-editor.org/rfc/rfc7489">RFC 7489</a>, nun normigita kiel <a href="https://www.rfc-editor.org/rfc/rfc9989">RFC 9989</a> (\u201cDMARCbis\u201d), kiu ankaŭ malaktualigas <a href="https://www.rfc-editor.org/rfc/rfc9091">RFC 9091</a> (PSD DMARC). Vidu la DMARCbis-sekcion sube por konformeco kun la pli nova specifo.<br><br>' +
       '<b>Politiko (p=):</b> <b>reject</b> \u2014 malsukceso de a\u016dtentikado \u2192 forigi mesa\u011don (plej forta). ' +
       '<b>quarantine</b> \u2014 sendi al spamo. <b>none</b> \u2014 nur monitorado, neniu ago farita.<br><br>' +
       '<b>Identiga vicigo:</b> DMARC postulas ke la domajno en la <code>From:</code>-kaplinio kongruu kun la domajno a\u016dtentikita de SPF a\u016d DKIM. ' +
       '<b>Malstrikta</b> (defa\u016dlta) permesas organizan-domajnan kongruon; <b>strikta</b> (<code>adkim=s</code> / <code>aspf=s</code>) postulas ekzaktan kongruon.<br><br>' +
-      '<b>Raportado:</b> <code>rua=</code> ricevas kolektajn JSON-raportojn (rekomendita). ' +
-      '<code>ruf=</code> ricevas po-mesa\u011dajn jurisprudencajn raportojn (sentema \u2014 uzu singarde).<br><br>' +
+      '<b>Raportado:</b> <code>rua=</code> ricevas kolektajn XML-raportojn (rekomendita), difinitajn en ' +
+      '<a href="https://www.rfc-editor.org/rfc/rfc9990">RFC 9990</a>. ' +
+      '<code>ruf=</code> ricevas po-mesa\u011dajn malsukces-raportojn, difinitajn en ' +
+      '<a href="https://www.rfc-editor.org/rfc/rfc9991">RFC 9991</a> (sentema \u2014 uzu singarde).<br><br>' +
       '<b>Subdomajna politiko (sp=):</b> Se forestas, subdomajnoj heredas <code>p=</code>. ' +
-      'Agordu <code>sp=reject</code> por eksplicite protekti \u0109iujn subdomajnojn.<br><br>' +
-      '<b>pct=:</b> Aplikas la politikon al la specifita procento de malsukcesaj mesa\u011doj. 100 (defa\u016dlta) signifas plenan devigon.<br><br>' +
+      'Agordu <code>sp=reject</code> por eksplicite protekti \u0109iujn subdomajnojn. ' +
+      'RFC 9989 aldonas <code>np=</code> por subdomajnoj kiuj tute ne ekzistas.<br><br>' +
+      '<b>pct=:</b> Aplikis la politikon al la specifita procento de malsukcesaj mesa\u011doj. ' +
+      '<b>Forigita en RFC 9989</b> \u2014 <code>pct=0</code> nun skribi\u011das <code>t=y</code>, kaj \u0109iu alia valoro simple forigendas.<br><br>' +
       '<b>Ekzemplaj DNS-registroj:</b><br>' +
       '<code>_dmarc.example.com. TXT "v=DMARC1; p=none; rua=mailto:dmarc@example.com"</code> \u2014 nur monitorado<br>' +
-      '<code>_dmarc.example.com. TXT "v=DMARC1; p=quarantine; pct=100; rua=mailto:dmarc@example.com; sp=quarantine"</code> \u2014 karanteno<br>' +
-      '<code>_dmarc.example.com. TXT "v=DMARC1; p=reject; adkim=r; aspf=r; pct=100; rua=mailto:dmarc@example.com; ruf=mailto:dmarc-forensic@example.com; sp=reject"</code> \u2014 plena devigo',
+      '<code>_dmarc.example.com. TXT "v=DMARC1; p=quarantine; sp=quarantine; rua=mailto:dmarc@example.com"</code> \u2014 karanteno<br>' +
+      '<code>_dmarc.example.com. TXT "v=DMARC1; p=reject; sp=reject; np=reject; adkim=s; aspf=s; rua=mailto:dmarc@example.com; psd=n"</code> \u2014 plena devigo, RFC 9989-stile',
     DNSSEC:
       '<b>Kio estas DNSSEC?</b> DNSSEC (<a href="https://www.rfc-editor.org/rfc/rfc4033">RFC 4033</a>) aldonas kriptografajn subskribojn al DNS-registroj, ' +
       'malhelpi ka\u015dmemoron venenadon kaj vir-en-meza atakojn. ' +
@@ -444,6 +550,7 @@ const LANG_EO = {
       '<b>Noto:</b> Lastatempe kreita domajno estas rekonate indikilo de malplii\u011dinta fido kaj pliigita risko de la domajno estanta uzata por malica programaro, phi\u015ding a\u016d fra\u016ddo. ' +
       'Se vi kontrolas domajnon kiu ne apartenas al vi, traktu tre fre\u015dan krea-daton kiel avertosigno kaj apliku ekstra singardo kaj kontrolon anta\u016d interagi kun iu ajn retpo\u015dto a\u016d servo de tiu domajno.',
     BIMI:
+      '<b>BIMI estas vaste konsiderata kiel merkata afero, kiu ne provizas iun ajn plian sekurecan valoron al iu ajn. Montri logoon en reto-kesto por \u201ckonfirmi\u201d la veran sendiston estas kiel iu ajn GIF-bildo diranta \u201c100% garantiita\u201d. Se vi ankoraŭ volas pagi CA-ojn por \u011di, bonvolu.</b><br><br>' +
       '<b>BIMI (Brand Indicators for Message Identification)</b> permesas al organizoj montri sian logoon en retpo\u015dt-programoj kiuj subtenas \u011din (ekz. Gmail, Apple Mail, Yahoo).<br><br>' +
       '<b>DNS-registro:</b> Publikigita kiel TXT-registro \u0109e <code>default._bimi.&lt;domajno&gt;</code>.<br><br>' +
       '<b>l= (logo-URL):</b> URL montranta al SVG-logo dosiero. Postulata por ke BIMI funkcii. ' +
@@ -460,5 +567,48 @@ const LANG_EO = {
       '<b>IPv6:</b> Etendita al 32 heksaj nibbloj, inversigita, kaj aldonita per <code>.ip6.arpa</code>.<br><br>' +
       '<b>\u0108i tiu kontrolo</b> solvas A kaj AAAA-registrojn por \u0109iu MX-gastigo, demandas la PTR-on por \u0109iu IP, kaj kontrolas \u0109u la PTR-valoro kongruas kun la MX-gastig-nomo (malstrikta FCrDNS-kontrolo). ' +
       'Ne influas la \u011deneralan gradon.',
+    // Keys added in later releases — backfilled
+    DMARCBIS:
+      '<b>DMARCbis</b> estas la revizio de DMARC el 2026, publikigita kiel tri dokumentoj: ' +
+      '<a href="https://www.rfc-editor.org/rfc/rfc9989">RFC 9989</a> (la protokolo), ' +
+      '<a href="https://www.rfc-editor.org/rfc/rfc9990">RFC 9990</a> (kolekta raportado) kaj ' +
+      '<a href="https://www.rfc-editor.org/rfc/rfc9991">RFC 9991</a> (malsukces-raportado). ' +
+      'Registroj verkitaj por RFC 7489 plu funkcias \u2014 nenio \u0109i tie rompas ekzistantan instalon \u2014 sed pluraj etikedoj \u015dan\u011dis staton.<br><br>' +
+      '<b>Kio \u015dan\u011dis:</b><br>' +
+      '\u2022 <code>pct=</code> malaperis (Aldono A.6). Ricevantoj aplikis partajn procentojn nekonsekvence; nur <code>pct=0</code> montri\u011dis utila, kaj \u011di nun estas <code>t=y</code>.<br>' +
+      '\u2022 <code>t=</code> (testre\u011dimo) estas nova: kun <code>t=y</code> ricevantoj aplikas unu nivelon sub la publikigita politiko \u2014 <code>reject</code> kondutas kiel <code>quarantine</code>, <code>quarantine</code> kiel <code>none</code>.<br>' +
+      '\u2022 <code>np=</code> difinas la politikon por <b>neekzistantaj</b> subdomajnoj, aparte de <code>sp=</code>, kiu kovras la ekzistantajn.<br>' +
+      '\u2022 <code>psd=</code> markas publikan sufiksan domajnon (<code>y</code>) a\u016d fiksas organizan domajnon (<code>n</code>). Ambaŭ valoroj tuj finas la arban trairon.<br>' +
+      '\u2022 <code>rf=</code> kaj <code>ri=</code> estas historiaj en la etikeda registro (\u00a79.3) kaj forigendas.<br><br>' +
+      '<b>DNS-arba trairo (\u00a74.10):</b> la Publika Sufiksa Listo ne plu servas por trovi la organizan domajnon. ' +
+      'Ricevantoj informpetas <code>_dmarc.</code> \u0109e la a\u016dtora domajno, poste supreniras etikedon post etikedo \u2014 maksimume ok informpetoj \u2014 \u011dis ili trovas registron ' +
+      'a\u016d unu portantan <code>psd=y</code> / <code>psd=n</code>. Tio permesas al grandaj organizoj publikigi politikon \u0109e pluraj punktoj de sia nomspaco.<br><br>' +
+      '<b>Rajtigo de ekstera raport-celo (RFC 9990 \u00a74, RFC 9991 \u00a75):</b> se <code>rua=</code> a\u016d <code>ruf=</code> montras ekster via organiza domajno, ' +
+      'tiu celo devas publikigi <code>via-domajno._report._dmarc.ilia-domajno</code> enhavantan almena\u016d <code>v=DMARC1</code>. ' +
+      'Sen \u011di ricevantoj <b>devas</b> forigi la URI-on, kaj vi silente ricevas nenion. ' +
+      'Celo preta akcepti raportojn por iu ajn povas publikigi \u0135okeron \u0109e <code>*._report._dmarc.</code><br><br>' +
+      '<b>Dividita raportado:</b> kolektaj raportoj (XML) estas RFC 9990; po-mesa\u011daj malsukces-raportoj estas RFC 9991, kiu ankaŭ \u011disdatigas la ' +
+      '<a href="https://www.rfc-editor.org/rfc/rfc6591">RFC 6591</a>-ARF-formaton per kampo <code>Identity-Alignment</code> kaj igas la DKIM-elektilon deviga en raportoj.',
+    SELECTOR_HELP:
+      '<b>Kio estas DKIM-selektilo?</b> Selektilo estas mallonga etikedo (ekz. <code>google</code>) kiu sciigas ricevantajn po\u015dtservilojn kiun publikan \u015dlosilon uzi por kontroli la DKIM-subskribon de retmesa\u011do. ' +
+      'Domajno povas havi plurajn selektilojn \u2014 po unu por po\u015dtprovizanto a\u016d por \u015dlosilrotacio.<br><br>' +
+      '<b>Kiel trovi selektilojn:</b> Malfermu ajnan ricevitan retmesa\u011don, vidu \u011diajn kompletajn kapojn kaj ser\u0109u la kapeton <code>DKIM-Signature:</code>. ' +
+      'La etikedo <code>s=</code> enhavas la selektilnomon.<br><br>' +
+      '<b>Kial aldoni ekstrajn?</b> \u010cirka 85 komunaj selektilnomoj estas a\u016dtomate probitaj. ' +
+      'Uzu \u010di tiun kampon por kutimaj a\u016d malkutimaj selektiloj.',
+    IPV6:
+      '<b>IPv6 (Interreta Protokolo versio 6)</b> estas la posteulo de IPv4; ĝi uzas 128-bitajn adresojn por solvi la elĉerpiĝon de la 32-bita adresspaco de IPv4. ' +
+      'Retpoŝta infrastrukturo sen IPv6 ne povas ricevi mesaĝojn de nur-IPv6-sendantoj kaj povas iĝi neatingebla dum nur-IPv6-aliro kreskas.<br><br>' +
+      '<b>Kial gravas por retpoŝto:</b> MX-gastigantoj sen AAAA-registroj ne povas akcepti mesaĝojn de nur-IPv6-sendaj serviloj. ' +
+      'NS-gastigantoj sen IPv6 ne povas respondi DNS-informpetojn de nur-IPv6-solvantoj. ' +
+      'Ambaŭ kaŭzas silentajn liverajn malsukcesojn kiujn estas malfacile diagnozi.<br><br>' +
+      '<b>Devigaj registaraj postuloj \u2014 elektitaj landoj:</b><br>' +
+      '<b>Norvegio:</b> <a href="https://lovdata.no/dokument/SF/forskrift/2013-04-05-959">Forskrift om IT-standarder i offentlig forvaltning \u00a712</a> \u2014 IPv6 deviga por registaraj servoj ekde la 1-a de januaro 2023; maksimuma prokrasto ĝis la 1-a de januaro 2025.<br>' +
+      '<b>Usono:</b> OMB Memorandum M-21-07 \u2014 federaciaj agentejoj devas funkciigi nur-IPv6-infrastrukturon antaŭ la fiska jaro 2025.<br>' +
+      '<b>EU:</b> European Interoperability Framework / NIS2-direktivo \u2014 antaŭenigas IPv6-pretecon por publikaj servoj de la membroŝtatoj.<br>' +
+      '<b>Barato:</b> DoT National Telecom Policy 2018 \u2014 IPv6 deviga por retprovizantoj, registaro kaj publiksektoraj organizoj.<br>' +
+      '<b>Ĉinio:</b> MIIT IPv6 Scale Deployment Action Plan 2017 \u2014 plena disfaldo ĉe retprovizantoj, registaro kaj grandaj platformoj.<br><br>' +
+      'Tiu ĉi kontrolo informpetas AAAA-registrojn por la domajno mem, ĉiuj MX-gastigantoj kaj ĉiuj NS-gastigantoj. ' +
+      'Ĝi <b>ne</b> influas la ĝeneralan sekurecan poentaron \u2014 nur informa.'
   },
 };

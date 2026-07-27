@@ -229,6 +229,65 @@ const LANG_ES = {
     PTR_MATCH:           'FCrDNS confirmado \u2014 PTR coincide con el nombre del servidor MX',
     PTR_MISMATCH:        'PTR presente pero no coincide con el nombre del servidor MX',
     PTR_MISSING:         'No se encontró registro PTR',
+    // Keys added in later releases — backfilled
+    PANEL_IPV6:          'IPv6',
+    DMARCBIS_TITLE:            'Conformidad DMARCbis — RFC 9989 / 9990 / 9991',
+    DMARCBIS_INTRO:            'RFC 9989 deja obsoletos RFC 7489 y RFC 9091, y divide los informes en RFC 9990 (agregados) y RFC 9991 (de fallo). Estas comprobaciones son informativas y no afectan a la calificación.',
+    DMARCBIS_DISCOVERY_TITLE:  'Descubrimiento de política — recorrido del árbol DNS (RFC 9989 §4.10)',
+    DMARCBIS_TAGS_TITLE:       'Conformidad de etiquetas (RFC 9989 §4.7, §9.3)',
+    DMARCBIS_EXTAUTH_TITLE:    'Autorización de destino externo (RFC 9990 §4, RFC 9991 §5)',
+    DMARCBIS_SUGGESTED_TITLE:  'Registro RFC 9989 sugerido',
+    DMARCBIS_SUGGESTED_NOTE:   'Etiquetas históricas y no registradas eliminadas, pct=0 migrado a t=y, y añadidas las etiquetas que RFC 9989 recomienda en un dominio organizacional. El valor de la política se mantiene sin cambios — revísalo antes de publicar.',
+    DMARCBIS_TW_TAG_AUTHOR:    'dominio autor',
+    DMARCBIS_TW_TAG_ORG:       'dominio organizacional',
+    DMARCBIS_TW_STEP_FOUND:    'registro',
+    DMARCBIS_TW_STEP_NONE:     'ninguno',
+    DMARCBIS_TW_STEP_MULTI:    'varios',
+    DMARCBIS_TW_STEP_ERROR:    'error',
+    DMARCBIS_TW_NO_POLICY:     'Ningún registro de política DMARC en todo el recorrido del árbol — los receptores no aplican ningún procesamiento DMARC a este dominio',
+    DMARCBIS_TW_MULTI:         'Un paso del recorrido devolvió varios registros DMARC — RFC 9989 §4.10 los descarta todos',
+    DMARCBIS_TAGS_CLEAN:       'Todas las etiquetas figuran como activas en el registro de RFC 9989 §9.3 — sin etiquetas históricas, no registradas ni inválidas',
+    DMARCBIS_V_NOT_FIRST:      'Falta v= o no es la primera etiqueta — RFC 9989 §4.7 exige ignorar el registro completo',
+    DMARCBIS_P_DEFAULT_NONE:   'Sin etiqueta p= válida — RFC 9989 §4.10.1: al existir rua=, los receptores procesan el registro como p=none',
+    DMARCBIS_P_NO_PROCESSING:  'Sin etiqueta p= válida y sin rua= — RFC 9989 §4.10.1: los receptores no aplican ningún procesamiento DMARC',
+    DMARCBIS_PCT_ZERO:         'pct=0 es histórica en RFC 9989 — sustitúyela por t=y, la etiqueta que ahora tiene ese significado (Apéndice A.6)',
+    DMARCBIS_PCT_FULL:         'pct=100 es histórica en RFC 9989 y ya era el valor por defecto — elimina la etiqueta',
+    DMARCBIS_T_NO_EFFECT:      't=y no tiene efecto mientras la política sea none — RFC 9989 §4.7',
+    DMARCBIS_T_ENFORCED:       't=n — la política publicada se aplica tal cual (valor por defecto de RFC 9989)',
+    DMARCBIS_NP_REJECT:        'np=reject — el correo desde subdominios inexistentes se rechaza (RFC 9989 §4.7)',
+    DMARCBIS_NP_MISSING:       'Sin etiqueta np= — RFC 9989 la añade para subdominios inexistentes; se recomienda np=reject en un dominio organizacional',
+    DMARCBIS_PSD_Y:            'psd=y — declarado dominio de sufijo público; el recorrido del árbol se detiene aquí (RFC 9989 §4.10.2)',
+    DMARCBIS_PSD_N:            'psd=n — declarado dominio organizacional; el recorrido del árbol se detiene aquí (RFC 9989 §4.10.2)',
+    DMARCBIS_PSD_U:            'psd=u — el dominio organizacional se deja al recorrido del árbol (valor por defecto de RFC 9989)',
+    DMARCBIS_PSD_MISSING:      'Sin etiqueta psd= — publicar psd=n en el dominio organizacional finaliza el recorrido de inmediato y elimina toda ambigüedad',
+    DMARCBIS_FO_NO_RUF:        'fo= está presente sin ruf= — RFC 9989 §4.7 exige ignorar su contenido',
+    DMARCBIS_URI_NO_MAILTO:    'Sin URI mailto: en rua= — los receptores solo están obligados a admitir mailto:, por lo que otros esquemas pueden ignorarse',
+    DMARCBIS_EXT_NONE:         'No hay URIs rua= ni ruf= que autorizar — sin informes agregados no hay visibilidad de los fallos DMARC',
+    IPV6_HOST_DETAILS: 'Detalles de direcciones por host',
+    IPV6_NO_AAAA: 'Sin registro AAAA',
+    IPV6_NO_MX: 'No se encontraron hosts MX',
+    IPV6_NO_NS: 'No se encontraron hosts NS',
+    IPV6_MANDATORY_TITLE: 'Requisitos obligatorios de IPv6',
+    IPV6_MANDATORY_NOTE: 'IPv6 es obligatorio por normativa gubernamental en los siguientes países:',
+    IPV6_DOMAIN_HAS_IPV6: '✓ El dominio tiene dirección(es) IPv6',
+    IPV6_DOMAIN_NO_IPV6: 'El dominio no tiene dirección IPv6 — solo accesible por IPv4',
+    IPV6_ALL_MX_HAVE_IPV6: '✓ Todos los hosts MX tienen direcciones IPv6',
+    IPV6_SOME_MX_HAVE_IPV6: 'Algunos hosts MX tienen IPv6 — no todos',
+    IPV6_NO_MX_HAVE_IPV6: 'Ningún host MX tiene dirección IPv6',
+    IPV6_ALL_NS_HAVE_IPV6: '✓ Todos los hosts NS tienen direcciones IPv6',
+    IPV6_SOME_NS_HAVE_IPV6: 'Algunos hosts NS tienen IPv6 — no todos',
+    IPV6_NO_NS_HAVE_IPV6: 'Ningún host NS tiene dirección IPv6',
+    IPV6_MX_BADGE_YES: 'IPv6',
+    IPV6_MX_BADGE_NO: 'Sin IPv6',
+    SPF_NO_IP6_MECHS: 'Los hosts MX/NS admiten IPv6, pero no se encontraron entradas ip6: en el registro SPF — si este dominio envía correo por IPv6, añade mecanismos ip6: para autorizar esas direcciones',
+    SPF_LEGACY_TYPE: 'Tipo de registro SPF heredado (tipo DNS 99) encontrado — obsoleto desde RFC 7208 (2014); debe eliminarse',
+    SPF_PROPAGATION_MISMATCH: 'El registro SPF difiere entre los resolutores DNS de Cloudflare y Google — propagación incompleta o configuración errónea',
+    DMARC_PROPAGATION_MISMATCH: 'El registro DMARC difiere entre los resolutores DNS de Cloudflare y Google — propagación incompleta o configuración errónea',
+    DKIM_ROTATION_NOTE: 'Buena práctica: rota las claves DKIM al menos una vez al año. La antigüedad de la clave no puede determinarse desde el DNS — confirma la política de rotación con tu proveedor de correo.',
+    CAA_ISSUEMAIL_NOTE: 'Etiqueta issuemail presente — controla la emisión de certificados S/MIME para este dominio (RFC 8657)',
+    RPKI_NS_DIVERSITY: 'Diversidad de ASN de los servidores de nombres',
+    RPKI_NS_NO_ASN_DATA: 'No hay datos de ASN disponibles para los servidores de nombres',
+    OVERVIEW_PROVIDERS: 'Infraestructura de correo detectada',
   },
 
   // ── d: cadenas dinámicas (funciones flecha) ───────────────────────────────
@@ -279,26 +338,73 @@ const LANG_ES = {
     BIMI_LOGO_URL:         url => 'URL del logotipo: ' + url,
     BIMI_AUTHORITY_URL:    url => 'URL de autoridad: ' + url,
     PTR_VALUE:             v => 'PTR: ' + v,
+    // Keys added in later releases — backfilled
+    DMARCBIS_TW_AT_AUTHOR:   dom => 'Registro de política publicado en el dominio autor (_dmarc.' + dom + ') — este es el registro que aplican los receptores',
+    DMARCBIS_TW_INHERITED:   (dom, tag, val) => 'Sin registro en el dominio autor — los receptores heredan la política publicada en _dmarc.' + dom + ', aplicando ' + tag + '=' + val,
+    DMARCBIS_TW_ORG_DOMAIN:  (dom, rule) => 'Dominio organizacional: ' + dom + ' — ' + ({
+                               'psd-n':    'fijado por psd=n',
+                               'psd-y':    'una etiqueta por debajo de un registro con psd=y',
+                               'shortest': 'nombre más corto del recorrido con un registro DMARC',
+                               'default':  'no se halló ningún registro en el recorrido, por lo que se usa el dominio consultado',
+                             }[rule] || rule),
+    DMARCBIS_TW_QUERIES:     n => 'Recorrido del árbol — ' + n + (n === 1 ? ' consulta' : ' consultas'),
+    DMARCBIS_V_CASE:         v => 'v=' + v + ' — el valor de versión distingue mayúsculas en RFC 9989 §4.7 y debe ser exactamente DMARC1',
+    DMARCBIS_DUPLICATE_TAGS: l => 'Etiqueta repetida en el registro: ' + l + ' — RFC 9989 §4.8 lo considera un error de sintaxis',
+    DMARCBIS_PCT_PARTIAL:    v => 'pct=' + v + ' se eliminó en RFC 9989 (Apéndice A.6) — los porcentajes parciales se aplicaban de forma inconsistente; usa t=y durante las pruebas y, si no, elimina la etiqueta',
+    DMARCBIS_RF_HISTORIC:    v => 'rf=' + v + ' es histórica en el registro de RFC 9989 §9.3 — elimínala',
+    DMARCBIS_RI_HISTORIC:    v => 'ri=' + v + ' es histórica en el registro de RFC 9989 §9.3 — elimínala',
+    DMARCBIS_T_INVALID:      v => 't=' + v + ' no es válido — RFC 9989 §4.7 solo permite y o n',
+    DMARCBIS_T_TESTING:      (p, eff) => 't=y — modo de prueba: los receptores aplican ' + eff + ' en lugar de la p=' + p + ' publicada (RFC 9989 §4.7)',
+    DMARCBIS_NP_INVALID:     v => 'np=' + v + ' no es válido — RFC 9989 §4.7 solo permite none, quarantine o reject',
+    DMARCBIS_NP_SET:         v => 'np=' + v + ' — política para subdominios inexistentes (RFC 9989 §4.7)',
+    DMARCBIS_PSD_INVALID:    v => 'psd=' + v + ' no es válido — RFC 9989 §4.7 solo permite y, n o u',
+    DMARCBIS_SP_INVALID:     v => 'sp=' + v + ' no es válido — RFC 9989 §4.7 solo permite none, quarantine o reject',
+    DMARCBIS_SP_IGNORED:     org => 'sp= se ignora en este registro — RFC 9989 §4.7: el descubrimiento de política solo lee sp= del dominio organizacional (' + org + ')',
+    DMARCBIS_ALIGN_INVALID:  (tag, v) => tag + '=' + v + ' no es válido — RFC 9989 §4.7 solo permite r o s',
+    DMARCBIS_FO_INVALID:     v => 'fo=' + v + ' no cumple la sintaxis de RFC 9989 §4.8 — los valores válidos son 0, 1, d y s, separados por dos puntos, y 0 y 1 son mutuamente excluyentes',
+    DMARCBIS_URI_OBS_SIZE:   l => 'Sufijo !size obsoleto en una URI de informes: ' + l + ' — RFC 9989 §4.8 indica a los generadores de informes que lo ignoren',
+    DMARCBIS_UNKNOWN_TAGS:   l => 'Etiqueta(s) no registrada(s): ' + l + ' — no figuran en el registro de RFC 9989 §9.3, por lo que los receptores deben ignorarlas',
+    DMARCBIS_EXT_INTERNAL:   (tag, uri) => tag + '=' + uri + ' — mismo dominio organizacional, no se necesita registro de autorización',
+    DMARCBIS_EXT_AUTHORIZED: (tag, uri, name) => tag + '=' + uri + ' — destino externo autorizado por ' + name,
+    DMARCBIS_EXT_MISSING:    (tag, uri, name) => tag + '=' + uri + ' — destino externo NO autorizado: no hay registro TXT v=DMARC1 en ' + name + '; los receptores deben ignorar esta URI y no enviar informes',
+    DMARCBIS_EXT_OVERRIDE:   (tag, uri, name, ov) => tag + '=' + uri + ' — autorizado por ' + name + ', que redirige los informes a ' + ov,
+    DMARCBIS_EXT_OVERRIDE_BAD: (tag, uri, name, ov) => tag + '=' + uri + ' — el registro de autorización en ' + name + ' redirige a ' + ov + ' en otro host; RFC 9990 §4 prohíbe enviar a cualquiera de las dos direcciones',
+    DMARCBIS_EXT_TOO_LONG:   (tag, uri) => tag + '=' + uri + ' — el nombre de autorización supera los límites de longitud del DNS, por lo que la relación no puede confirmarse (RFC 9990 §4 paso 4)',
+    DMARCBIS_EXT_UNPARSABLE: (tag, uri) => tag + '=' + uri + ' — no se pudo extraer ningún host de esta URI',
+    DMARCBIS_EXT_ERROR:      (tag, uri, name) => tag + '=' + uri + ' — la consulta de ' + name + ' falló; no se pudo confirmar la autorización',
+    IPV6_DOMAIN_SUMMARY: n => n + ' dirección' + (n !== 1 ? 'es' : '') + ' IPv6 encontrada' + (n !== 1 ? 's' : '') + ' para el dominio.',
+    IPV6_MX_SUMMARY: (n, t) => n + '/' + t + ' host' + (t !== 1 ? 's' : '') + ' MX con IPv6.',
+    IPV6_NS_SUMMARY: (n, t) => n + '/' + t + ' host' + (t !== 1 ? 's' : '') + ' NS con IPv6.',
+    SPF_LOOKUP_TOTAL_EXCEED: n => n + ' consultas DNS totales (incluidos los include anidados) superan el límite de 10 de RFC 7208 — los receptores devolverán SPF PermError',
+    SPF_LOOKUP_TOTAL_HIGH: n => n + ' consultas DNS totales (incluidos los include anidados) — cerca del límite de 10 de RFC 7208',
+    SPF_FOUND_LOOKUPS_TOTAL: (direct, total) => 'Registro SPF encontrado. ' + direct + ' directas + ' + total + ' consultas DNS totales (recursivas).',
+    RPKI_NS_SINGLE_ASN: (asn, holder) => 'Todos los servidores de nombres en un único ASN (' + asn + (holder ? ' — ' + holder : '') + ') — punto único de fallo para el enrutamiento DNS',
+    RPKI_NS_MULTI_ASN: n => 'Los servidores de nombres se reparten entre ' + n + ' ASN distintos — buena resiliencia de enrutamiento',
   },
 
   // ── x: textos de explicación (HTML) ──────────────────────────────────────
   x: {
     DMARC:
-      '<b>DMARC (Domain-based Message Authentication, Reporting and Conformance, <a href="https://www.rfc-editor.org/rfc/rfc7489">RFC 7489</a>)</b> ' +
-      'une SPF y DKIM con una política que indica a los receptores qué hacer cuando falla la autenticación.<br><br>' +
-      '<b>Política (p=):</b> <b>reject</b> \u2014 si falla la autenticación, el mensaje se descarta (más fuerte). ' +
-      '<b>quarantine</b> \u2014 enviar a spam. <b>none</b> \u2014 solo monitoreo, sin acción.<br><br>' +
-      '<b>Alineación de identificadores:</b> DMARC requiere que el dominio en la cabecera <code>From:</code> se alinee con el dominio autenticado por SPF o DKIM. ' +
+      '<b>DMARC (Domain-based Message Authentication, Reporting and Conformance)</b> ' +
+      'une SPF y DKIM con una pol\u00edtica que indica a los receptores qu\u00e9 hacer cuando falla la autenticaci\u00f3n. ' +
+      'Originalmente <a href="https://www.rfc-editor.org/rfc/rfc7489">RFC 7489</a>, ahora normalizado como <a href="https://www.rfc-editor.org/rfc/rfc9989">RFC 9989</a> («DMARCbis»), que tambi\u00e9n deja obsoleto <a href="https://www.rfc-editor.org/rfc/rfc9091">RFC 9091</a> (PSD DMARC). Consulta la secci\u00f3n DMARCbis m\u00e1s abajo para la conformidad con la especificaci\u00f3n m\u00e1s reciente.<br><br>' +
+      '<b>Pol\u00edtica (p=):</b> <b>reject</b> \u2014 si falla la autenticaci\u00f3n, el mensaje se descarta (m\u00e1s fuerte). ' +
+      '<b>quarantine</b> \u2014 enviar a spam. <b>none</b> \u2014 solo monitoreo, sin acci\u00f3n.<br><br>' +
+      '<b>Alineaci\u00f3n de identificadores:</b> DMARC requiere que el dominio en la cabecera <code>From:</code> se alinee con el dominio autenticado por SPF o DKIM. ' +
       '<b>Relajada</b> (por defecto) permite coincidencias de dominio organizacional; <b>estricta</b> (<code>adkim=s</code> / <code>aspf=s</code>) requiere coincidencia exacta.<br><br>' +
-      '<b>Informes:</b> <code>rua=</code> recibe informes JSON agregados (recomendado). ' +
-      '<code>ruf=</code> recibe informes forenses por mensaje (sensible \u2014 usar con precaución).<br><br>' +
-      '<b>Política de subdominio (sp=):</b> Si se omite, los subdominios heredan <code>p=</code>. ' +
-      'Usa <code>sp=reject</code> para proteger explícitamente todos los subdominios.<br><br>' +
-      '<b>pct=:</b> Aplica la política al porcentaje indicado de mensajes que fallan. 100 (por defecto) significa aplicación completa.<br><br>' +
+      '<b>Informes:</b> <code>rua=</code> recibe informes XML agregados (recomendado), definidos en ' +
+      '<a href="https://www.rfc-editor.org/rfc/rfc9990">RFC 9990</a>. ' +
+      '<code>ruf=</code> recibe informes de fallo por mensaje, definidos en ' +
+      '<a href="https://www.rfc-editor.org/rfc/rfc9991">RFC 9991</a> (sensible \u2014 usar con precauci\u00f3n).<br><br>' +
+      '<b>Pol\u00edtica de subdominio (sp=):</b> Si se omite, los subdominios heredan <code>p=</code>. ' +
+      'Usa <code>sp=reject</code> para proteger expl\u00edcitamente todos los subdominios. ' +
+      'RFC 9989 a\u00f1ade <code>np=</code> para subdominios que ni siquiera existen.<br><br>' +
+      '<b>pct=:</b> Aplicaba la pol\u00edtica al porcentaje indicado de mensajes que fallan. ' +
+      '<b>Eliminado en RFC 9989</b> \u2014 <code>pct=0</code> ahora se escribe <code>t=y</code>, y cualquier otro valor debe simplemente eliminarse.<br><br>' +
       '<b>Ejemplos de registros DNS:</b><br>' +
-      '<code>_dmarc.example.com. TXT "v=DMARC1; p=none; rua=mailto:dmarc@example.com"</code> — solo monitoreo<br>' +
-      '<code>_dmarc.example.com. TXT "v=DMARC1; p=quarantine; pct=100; rua=mailto:dmarc@example.com; sp=quarantine"</code> — cuarentena<br>' +
-      '<code>_dmarc.example.com. TXT "v=DMARC1; p=reject; adkim=r; aspf=r; pct=100; rua=mailto:dmarc@example.com; ruf=mailto:dmarc-forensic@example.com; sp=reject"</code> — aplicación completa',
+      '<code>_dmarc.example.com. TXT "v=DMARC1; p=none; rua=mailto:dmarc@example.com"</code> \u2014 solo monitoreo<br>' +
+      '<code>_dmarc.example.com. TXT "v=DMARC1; p=quarantine; sp=quarantine; rua=mailto:dmarc@example.com"</code> \u2014 cuarentena<br>' +
+      '<code>_dmarc.example.com. TXT "v=DMARC1; p=reject; sp=reject; np=reject; adkim=s; aspf=s; rua=mailto:dmarc@example.com; psd=n"</code> \u2014 aplicaci\u00f3n completa, al estilo RFC 9989',
     DNSSEC:
       '<b>¿Qué es DNSSEC?</b> DNSSEC (<a href="https://www.rfc-editor.org/rfc/rfc4033">RFC 4033</a>) añade firmas criptográficas a los registros DNS, ' +
       'previniendo el envenenamiento de caché y los ataques de intermediario. ' +
@@ -460,5 +566,48 @@ const LANG_ES = {
       '<b>IPv6:</b> Expandido a 32 dígitos hexadecimales, invertido y añadido con <code>.ip6.arpa</code>.<br><br>' +
       '<b>Esta comprobación</b> resuelve los registros A y AAAA para cada host MX, consulta el PTR para cada IP y verifica si el valor PTR coincide con el nombre de host MX (comprobación FCrDNS relajada). ' +
       'No afecta a la calificación global.',
+    // Keys added in later releases — backfilled
+    DMARCBIS:
+      '<b>DMARCbis</b> es la revisi\u00f3n de DMARC de 2026, publicada como tres documentos: ' +
+      '<a href="https://www.rfc-editor.org/rfc/rfc9989">RFC 9989</a> (el protocolo), ' +
+      '<a href="https://www.rfc-editor.org/rfc/rfc9990">RFC 9990</a> (informes agregados) y ' +
+      '<a href="https://www.rfc-editor.org/rfc/rfc9991">RFC 9991</a> (informes de fallo). ' +
+      'Los registros escritos para RFC 7489 siguen funcionando \u2014 nada de esto rompe una implementaci\u00f3n existente \u2014 pero varias etiquetas han cambiado de estado.<br><br>' +
+      '<b>Qu\u00e9 ha cambiado:</b><br>' +
+      '\u2022 <code>pct=</code> desaparece (Ap\u00e9ndice A.6). Los receptores aplicaban los porcentajes parciales de forma inconsistente; solo <code>pct=0</code> result\u00f3 \u00fatil, y ahora es <code>t=y</code>.<br>' +
+      '\u2022 <code>t=</code> (modo de prueba) es nueva: con <code>t=y</code> los receptores aplican un nivel por debajo de la pol\u00edtica publicada \u2014 <code>reject</code> act\u00faa como <code>quarantine</code>, y <code>quarantine</code> como <code>none</code>.<br>' +
+      '\u2022 <code>np=</code> fija la pol\u00edtica para subdominios <b>inexistentes</b>, por separado de <code>sp=</code>, que cubre los existentes.<br>' +
+      '\u2022 <code>psd=</code> marca un dominio de sufijo p\u00fablico (<code>y</code>) o fija un dominio organizacional (<code>n</code>). Cualquiera de los dos valores finaliza el recorrido del \u00e1rbol.<br>' +
+      '\u2022 <code>rf=</code> y <code>ri=</code> son hist\u00f3ricas en el registro de etiquetas (\u00a79.3) y deben eliminarse.<br><br>' +
+      '<b>Recorrido del \u00e1rbol DNS (\u00a74.10):</b> la Public Suffix List ya no se usa para hallar el dominio organizacional. ' +
+      'Los receptores consultan <code>_dmarc.</code> en el dominio autor y luego suben etiqueta a etiqueta \u2014 como m\u00e1ximo ocho consultas \u2014 hasta encontrar un registro ' +
+      'o uno que lleve <code>psd=y</code> / <code>psd=n</code>. Esto permite a las grandes organizaciones publicar pol\u00edtica en varios puntos de su espacio de nombres.<br><br>' +
+      '<b>Autorizaci\u00f3n de destino externo (RFC 9990 \u00a74, RFC 9991 \u00a75):</b> si <code>rua=</code> o <code>ruf=</code> apunta fuera de tu dominio organizacional, ' +
+      'ese destino debe publicar <code>tu-dominio._report._dmarc.su-dominio</code> con al menos <code>v=DMARC1</code>. ' +
+      'Sin ello los receptores <b>deben</b> descartar la URI, y no recibir\u00e1s nada sin aviso alguno. ' +
+      'Un destino dispuesto a aceptar informes de cualquiera puede publicar un comod\u00edn en <code>*._report._dmarc.</code><br><br>' +
+      '<b>Divisi\u00f3n de los informes:</b> los informes agregados (XML) son RFC 9990; los informes de fallo por mensaje son RFC 9991, que adem\u00e1s actualiza el formato ARF de ' +
+      '<a href="https://www.rfc-editor.org/rfc/rfc6591">RFC 6591</a> con un campo <code>Identity-Alignment</code> y hace obligatorio el selector DKIM en los informes.',
+    SELECTOR_HELP:
+      '<b>\u00bfQu\u00e9 es un selector DKIM?</b> Un selector es una etiqueta corta (p. ej. <code>google</code>) que indica a los servidores receptores qu\u00e9 clave p\u00fablica usar para verificar la firma DKIM de un correo. ' +
+      'Un dominio puede tener varios selectores \u2014 uno por proveedor de correo o para la rotaci\u00f3n de claves.<br><br>' +
+      '<b>C\u00f3mo encontrar tus selectores:</b> Abre cualquier correo recibido, visualiza sus cabeceras completas y busca la cabecera <code>DKIM-Signature:</code>. ' +
+      'La etiqueta <code>s=</code> contiene el nombre del selector. En Gmail: men\u00fa de tres puntos \u2192 \u201cMostrar original\u201d.<br><br>' +
+      '<b>\u00bfPor qu\u00e9 a\u00f1adir extras aqu\u00ed?</b> Aproximadamente 85 nombres de selector comunes se comprueban autom\u00e1ticamente. ' +
+      'Usa este campo para selectores personalizados o poco comunes.',
+    IPV6:
+      '<b>IPv6 (Internet Protocol version 6)</b> es el sucesor de IPv4 y usa direcciones de 128 bits para resolver el agotamiento del espacio de direcciones de 32 bits de IPv4. ' +
+      'Una infraestructura de correo sin IPv6 no puede recibir mensajes de remitentes solo-IPv6 y puede volverse inalcanzable a medida que crece el acceso solo-IPv6.<br><br>' +
+      '<b>Por qué importa para el correo:</b> los hosts MX sin registros AAAA no pueden aceptar correo de servidores emisores solo-IPv6. ' +
+      'Los hosts NS sin IPv6 no pueden responder consultas DNS de resolutores solo-IPv6. ' +
+      'Ambos casos provocan fallos de entrega silenciosos y difíciles de diagnosticar.<br><br>' +
+      '<b>Requisitos gubernamentales obligatorios \u2014 países seleccionados:</b><br>' +
+      '<b>Noruega:</b> <a href="https://lovdata.no/dokument/SF/forskrift/2013-04-05-959">Forskrift om IT-standarder i offentlig forvaltning \u00a712</a> \u2014 IPv6 obligatorio para los servicios públicos desde el 1 de enero de 2023; prórroga máxima hasta el 1 de enero de 2025.<br>' +
+      '<b>EE. UU.:</b> Memorando OMB M-21-07 \u2014 las agencias federales deben operar infraestructura solo-IPv6 para el año fiscal 2025.<br>' +
+      '<b>UE:</b> Marco Europeo de Interoperabilidad / Directiva NIS2 \u2014 promueven la preparación para IPv6 en los servicios públicos de los estados miembros.<br>' +
+      '<b>India:</b> DoT National Telecom Policy 2018 \u2014 IPv6 obligatorio para ISP, administración y entidades del sector público.<br>' +
+      '<b>China:</b> MIIT IPv6 Scale Deployment Action Plan 2017 \u2014 despliegue completo en ISP, administración y grandes plataformas.<br><br>' +
+      'Esta comprobación consulta los registros AAAA del propio dominio, de todos los hosts MX y de todos los hosts NS. ' +
+      '<b>No</b> afecta a la puntuación de seguridad global \u2014 es solo informativa.'
   },
 };

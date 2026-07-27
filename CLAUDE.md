@@ -8,7 +8,7 @@ Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-July-27-2**
+Current version: **2026-July-27-3**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -194,6 +194,7 @@ const resolvedText = iss.textKey
 **Contributor workflow**: external translators submit only `translations/<lang>.js` (copied from `translations/TEMPLATE.js`). The maintainer pastes it into the `STRINGS` block in `index.html` and adds the `<option>` tag on merge. See `translations/CONTRIBUTING.md`.
 
 **Current languages**: `en` (English, default), `ar` (Arabic, RTL), `eo` (Esperanto), `es` (Spanish), `fr` (French), `hi` (Hindi), `no` (Norwegian Bokmål).
+All seven are **complete** as of 2026-July-27-3 — no language relies on the English fallback. When adding a key, add it to every language, and mirror it into `translations/<lang>.js` so the contributor files stay in sync.
 
 ### IPv6 tab details
 - `checkIPv6(domain)` queries NS, MX, domain A+AAAA in one parallel `Promise.allSettled`, then calls `resolveHostIPs()` for each unique NS/MX host.

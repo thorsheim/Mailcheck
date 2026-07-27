@@ -264,6 +264,32 @@ const LANG_FR = {
     PTR_MATCH:           'FCrDNS confirmé \u2014 PTR correspond au nom du serveur MX',
     PTR_MISMATCH:        'PTR présent mais ne correspond pas au nom du serveur MX',
     PTR_MISSING:         'Aucun enregistrement PTR trouvé',
+    // Keys added in later releases — backfilled
+    IPV6_HOST_DETAILS: 'Détail des adresses par hôte',
+    IPV6_NO_AAAA: 'Aucun enregistrement AAAA',
+    IPV6_NO_MX: 'Aucun hôte MX trouvé',
+    IPV6_NO_NS: 'Aucun hôte NS trouvé',
+    IPV6_MANDATORY_TITLE: 'Exigences IPv6 obligatoires',
+    IPV6_MANDATORY_NOTE: 'IPv6 est imposé par la réglementation publique dans les pays suivants :',
+    IPV6_DOMAIN_HAS_IPV6: '✓ Le domaine possède une ou plusieurs adresses IPv6',
+    IPV6_DOMAIN_NO_IPV6: 'Le domaine n’a aucune adresse IPv6 — joignable uniquement en IPv4',
+    IPV6_ALL_MX_HAVE_IPV6: '✓ Tous les hôtes MX ont des adresses IPv6',
+    IPV6_SOME_MX_HAVE_IPV6: 'Certains hôtes MX ont IPv6 — pas tous',
+    IPV6_NO_MX_HAVE_IPV6: 'Aucun hôte MX n’a d’adresse IPv6',
+    IPV6_ALL_NS_HAVE_IPV6: '✓ Tous les hôtes NS ont des adresses IPv6',
+    IPV6_SOME_NS_HAVE_IPV6: 'Certains hôtes NS ont IPv6 — pas tous',
+    IPV6_NO_NS_HAVE_IPV6: 'Aucun hôte NS n’a d’adresse IPv6',
+    IPV6_MX_BADGE_YES: 'IPv6',
+    IPV6_MX_BADGE_NO: 'Sans IPv6',
+    SPF_NO_IP6_MECHS: 'Les hôtes MX/NS prennent en charge IPv6, mais aucune entrée ip6: n’a été trouvée dans l’enregistrement SPF — si ce domaine envoie du courrier en IPv6, ajoutez des mécanismes ip6: pour autoriser ces adresses',
+    SPF_LEGACY_TYPE: 'Ancien type d’enregistrement SPF (type DNS 99) détecté — obsolète depuis RFC 7208 (2014) ; à supprimer',
+    SPF_PROPAGATION_MISMATCH: 'L’enregistrement SPF diffère entre les résolveurs DNS de Cloudflare et de Google — propagation incomplète ou mauvaise configuration',
+    DMARC_PROPAGATION_MISMATCH: 'L’enregistrement DMARC diffère entre les résolveurs DNS de Cloudflare et de Google — propagation incomplète ou mauvaise configuration',
+    DKIM_ROTATION_NOTE: 'Bonne pratique : renouvelez les clés DKIM au moins une fois par an. L’ancienneté d’une clé ne peut pas être déterminée depuis le DNS — vérifiez la politique de rotation auprès de votre fournisseur de messagerie.',
+    CAA_ISSUEMAIL_NOTE: 'Balise issuemail présente — elle contrôle l’émission des certificats S/MIME pour ce domaine (RFC 8657)',
+    RPKI_NS_DIVERSITY: 'Diversité des ASN des serveurs de noms',
+    RPKI_NS_NO_ASN_DATA: 'Aucune donnée ASN disponible pour les serveurs de noms',
+    OVERVIEW_PROVIDERS: 'Infrastructure de messagerie détectée',
   },
 
   // ── d: chaînes dynamiques (fonctions fléchées) ────────────────────────────
@@ -348,6 +374,15 @@ const LANG_FR = {
     BIMI_LOGO_URL:         url => 'URL du logo\u00a0: ' + url,
     BIMI_AUTHORITY_URL:    url => 'URL d\'autorité\u00a0: ' + url,
     PTR_VALUE:             v => 'PTR\u00a0: ' + v,
+    // Keys added in later releases — backfilled
+    IPV6_DOMAIN_SUMMARY: n => n + ' adresse' + (n !== 1 ? 's' : '') + ' IPv6 trouvée' + (n !== 1 ? 's' : '') + ' pour le domaine.',
+    IPV6_MX_SUMMARY: (n, t) => n + '/' + t + ' hôte' + (t !== 1 ? 's' : '') + ' MX disposent d\u2019IPv6.',
+    IPV6_NS_SUMMARY: (n, t) => n + '/' + t + ' hôte' + (t !== 1 ? 's' : '') + ' NS disposent d\u2019IPv6.',
+    SPF_LOOKUP_TOTAL_EXCEED: n => n + ' requêtes DNS au total (y compris les include imbriqués) dépassent la limite de 10 de RFC 7208 — les destinataires renverront SPF PermError',
+    SPF_LOOKUP_TOTAL_HIGH: n => n + ' requêtes DNS au total (y compris les include imbriqués) — proche de la limite de 10 de RFC 7208',
+    SPF_FOUND_LOOKUPS_TOTAL: (direct, total) => 'Enregistrement SPF trouvé. ' + direct + ' directes + ' + total + ' requêtes DNS au total (récursif).',
+    RPKI_NS_SINGLE_ASN: (asn, holder) => 'Tous les serveurs de noms sur un seul ASN (' + asn + (holder ? ' — ' + holder : '') + ') — point unique de défaillance pour le routage DNS',
+    RPKI_NS_MULTI_ASN: n => 'Les serveurs de noms se répartissent sur ' + n + ' ASN différents — bonne résilience de routage',
   },
 
   // ── x: textes d'explication (HTML) ───────────────────────────────────────
@@ -562,5 +597,20 @@ const LANG_FR = {
       'La balise <code>s=</code> contient le nom du s\u00e9lecteur. Dans Gmail\u00a0: menu trois points \u2192 \u00ab\u00a0Afficher l\u2019original\u00a0\u00bb.<br><br>' +
       '<b>Pourquoi en ajouter ici\u00a0?</b> Environ 85 noms de s\u00e9lecteurs courants sont sond\u00e9s automatiquement. ' +
       'Utilisez ce champ pour les s\u00e9lecteurs personnalis\u00e9s ou peu communs.',
+    // Keys added in later releases — backfilled
+    IPV6:
+      '<b>IPv6 (Internet Protocol version 6)</b> est le successeur d\u2019IPv4\u00a0; il utilise des adresses de 128 bits pour résoudre l\u2019épuisement de l\u2019espace d\u2019adressage 32 bits d\u2019IPv4. ' +
+      'Une infrastructure de messagerie sans IPv6 ne peut pas recevoir de courrier d\u2019expéditeurs uniquement IPv6 et risque de devenir injoignable à mesure que l\u2019accès uniquement IPv6 se généralise.<br><br>' +
+      '<b>Pourquoi c\u2019est important pour le courrier\u00a0:</b> les hôtes MX sans enregistrement AAAA ne peuvent pas accepter de courrier provenant de serveurs émetteurs uniquement IPv6. ' +
+      'Les hôtes NS sans IPv6 ne peuvent pas répondre aux requêtes DNS des résolveurs uniquement IPv6. ' +
+      'Dans les deux cas, cela produit des échecs de livraison silencieux et difficiles à diagnostiquer.<br><br>' +
+      '<b>Exigences réglementaires obligatoires \u2014 pays sélectionnés\u00a0:</b><br>' +
+      '<b>Norvège\u00a0:</b> <a href="https://lovdata.no/dokument/SF/forskrift/2013-04-05-959">Forskrift om IT-standarder i offentlig forvaltning \u00a712</a> \u2014 IPv6 obligatoire pour les services publics depuis le 1er janvier 2023\u00a0; report maximal jusqu\u2019au 1er janvier 2025.<br>' +
+      '<b>États-Unis\u00a0:</b> mémorandum OMB M-21-07 \u2014 les agences fédérales doivent exploiter une infrastructure uniquement IPv6 d\u2019ici l\u2019exercice 2025.<br>' +
+      '<b>UE\u00a0:</b> cadre européen d\u2019interopérabilité / directive NIS2 \u2014 encouragent la compatibilité IPv6 des services publics des États membres.<br>' +
+      '<b>Inde\u00a0:</b> DoT National Telecom Policy 2018 \u2014 IPv6 obligatoire pour les FAI, l\u2019administration et le secteur public.<br>' +
+      '<b>Chine\u00a0:</b> MIIT IPv6 Scale Deployment Action Plan 2017 \u2014 déploiement complet chez les FAI, l\u2019administration et les grandes plateformes.<br><br>' +
+      'Cette vérification interroge les enregistrements AAAA du domaine lui-même, de tous les hôtes MX et de tous les hôtes NS. ' +
+      'Elle <b>n\u2019affecte pas</b> la note de sécurité globale \u2014 elle est purement informative.'
   },
 };
