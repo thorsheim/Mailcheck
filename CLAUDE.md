@@ -201,7 +201,9 @@ const resolvedText = iss.textKey
 **Contributor workflow**: external translators submit only `translations/<lang>.js` (copied from `translations/TEMPLATE.js`). The maintainer pastes it into the `STRINGS` block in `index.html` and adds the `<option>` tag on merge. See `translations/CONTRIBUTING.md`.
 
 **Current languages**: `en` (English, default), `es` (Spanish), `fr` (French), `no` (Norwegian Bokmål).
-All four are **complete** — no language relies on the English fallback. When adding a key, add it to every language, and mirror it into `translations/<lang>.js` so the contributor files stay in sync.
+All four are **complete** — no language relies on the English fallback. When adding a key, add it to every language, and mirror it into `translations/<lang>.js` **and `translations/TEMPLATE.js`** so the contributor files stay in sync. TEMPLATE.js is easy to forget because nothing in the app reads it — it had silently drifted 37 keys behind (the entire IPv6 block, plus `SELECTOR_HELP`, the SPF recursive-lookup counts and the RPKI nameserver-diversity keys) before being backfilled on 2026-08-13. A contributor starting from a stale template simply never sees those strings.
+
+To check for drift, parse the `STRINGS` block out of `index.html` and diff the key sets — the three namespaces should total **362 keys** (s=261, d=82, x=19). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses.
 
 **Removed languages**: `eo` (Esperanto), `ar` (Arabic), `hi` (Hindi) were dropped in 2026-July-27-4. Their `STRINGS` blocks and `translations/*.js` files are recoverable from git history at tag/commit `7de8c09`.
 

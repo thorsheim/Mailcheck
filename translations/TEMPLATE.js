@@ -348,6 +348,16 @@ const LANG_TEMPLATE = {
     PTR_MATCH:              '',  // "FCrDNS confirmed — PTR matches MX hostname"
     PTR_MISMATCH:           '',  // "PTR present but does not match MX hostname"
     PTR_MISSING:            '',  // "No PTR record found"
+
+    // ── Later additions ───────────────────────────────────────────────────
+    SPF_LEGACY_TYPE:        '',  // "Legacy SPF record type (DNS type 99) found — deprecated since RFC 7208 (2014); should be removed"
+    SPF_PROPAGATION_MISMATCH: '', // "SPF record differs between Cloudflare and Google DNS resolvers — incomplete propagation or misconfiguration"
+    DMARC_PROPAGATION_MISMATCH: '', // Same as above, for the DMARC record
+    DKIM_ROTATION_NOTE:     '',  // "Best practice: rotate DKIM keys at least annually. Key age cannot be determined from DNS — verify rotation policy with your email provider."
+    CAA_ISSUEMAIL_NOTE:     '',  // "issuemail tag present — controls S/MIME certificate issuance for this domain (RFC 8657)"
+    RPKI_NS_DIVERSITY:      '',  // Section heading "Nameserver ASN diversity"
+    RPKI_NS_NO_ASN_DATA:    '',  // "No ASN data available for nameservers"
+    OVERVIEW_PROVIDERS:     '',  // Overview heading "Detected email infrastructure"
   },
 
   // ── d: dynamic strings (arrow functions) ───────────────────────────────────
@@ -439,9 +449,16 @@ const LANG_TEMPLATE = {
     PTR_VALUE:                v => '',   // "PTR: mail.example.com"
 
     // ── IPv6 tab ──────────────────────────────────────────────────────────
-    IPV6_DOMAIN_SUMMARY:      (v4, v6) => '',   // "Domain: 2 IPv4, 1 IPv6"
-    IPV6_MX_SUMMARY:          (n, t) => '',     // "2 of 3 MX hosts have IPv6"
-    IPV6_NS_SUMMARY:          (n, t) => '',     // "4 of 4 NS hosts have IPv6"
+    IPV6_DOMAIN_SUMMARY:      n => '',         // "1 IPv6 address found for domain."
+    IPV6_MX_SUMMARY:          (n, t) => '',    // "2/3 MX hosts have IPv6."
+    IPV6_NS_SUMMARY:          (n, t) => '',    // "4/4 NS hosts have IPv6."
+
+    // ── Later additions ───────────────────────────────────────────────────
+    SPF_LOOKUP_TOTAL_EXCEED:  n => '',   // "12 total DNS lookups (including nested includes) exceed RFC 7208 limit of 10 — mail receivers will return SPF PermError"
+    SPF_LOOKUP_TOTAL_HIGH:    n => '',   // "9 total DNS lookups (including nested includes) — approaching RFC 7208 limit of 10"
+    SPF_FOUND_LOOKUPS_TOTAL:  (direct, total) => '',  // "SPF record found. 3 direct + 8 total DNS lookups (recursive)."
+    RPKI_NS_SINGLE_ASN:       (asn, holder) => '',    // "All nameservers on a single ASN (AS13335 — Cloudflare) — single point of failure for DNS routing"
+    RPKI_NS_MULTI_ASN:        n => '',   // "Nameservers span 3 different ASNs — good routing resilience"
   },
 
   // ── x: explanation strings (HTML) ──────────────────────────────────────────
@@ -468,5 +485,8 @@ const LANG_TEMPLATE = {
     WHOIS:   '',
     BIMI:    '',
     IPV6:    '',
+    // Not a tab explanation: this is the popover behind the "?" next to the
+    // "Extra DKIM Selectors" input on the main form.
+    SELECTOR_HELP: '',
   },
 };
