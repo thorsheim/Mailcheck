@@ -117,10 +117,7 @@ const LANG_FR = {
 
     DKIM_FOUND_SECTION:  'Sélecteurs trouvés',
     DKIM_DNS_KEY_DETAILS:'Nom DNS et détails de clé',
-    DKIM_PROVIDER_REF:   'Référence fournisseur',
     DKIM_TH_PROVIDER:    'Fournisseur',
-    DKIM_TH_SELECTORS:   'Sélecteurs par défaut',
-    DKIM_TH_INFRA:       'Infrastructure',
     DKIM_TH_PROBED:      'S\u00e9lecteurs test\u00e9s',
     DKIM_PROV_UNKNOWN:   'G\u00e9n\u00e9rique / non sp\u00e9cifique \u00e0 un fournisseur',
     DKIM_DKIM2_TITLE:    'DKIM2\u00a0: la prochaine version de DKIM',

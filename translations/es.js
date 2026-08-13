@@ -116,10 +116,7 @@ const LANG_ES = {
 
     DKIM_FOUND_SECTION:  'Selectores encontrados',
     DKIM_DNS_KEY_DETAILS:'Nombre DNS y detalles de clave',
-    DKIM_PROVIDER_REF:   'Referencia del proveedor',
     DKIM_TH_PROVIDER:    'Proveedor',
-    DKIM_TH_SELECTORS:   'Selectores predeterminados',
-    DKIM_TH_INFRA:       'Infraestructura',
     DKIM_TH_PROBED:      'Selectores probados',
     DKIM_PROV_UNKNOWN:   'Gen\u00e9rico / no espec\u00edfico de proveedor',
     DKIM_DKIM2_TITLE:    'DKIM2: la pr\u00f3xima versi\u00f3n de DKIM',

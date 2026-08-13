@@ -8,7 +8,7 @@ Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-August-13-2**
+Current version: **2026-August-13-3**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -244,7 +244,10 @@ All four are **complete** — no language relies on the English fallback. When a
   Hetzner, Infomaniak, Zoho beyond its `zoho` example) cannot be probed reliably — do not re-add
   year-stamped guesses like `pp2024`.
 - `renderDKIM` renders the probed list as a `.provider-table` grouped by provider, with
-  unattributed selectors collected into a trailing `DKIM_PROV_UNKNOWN` row.
+  unattributed selectors collected into a trailing `DKIM_PROV_UNKNOWN` row. This is the **only**
+  provider table in the tab — the old hardcoded "Provider Reference" table was removed in
+  2026-August-13-3 as redundant, along with its now-orphaned `DKIM_PROVIDER_REF`,
+  `DKIM_TH_SELECTORS` and `DKIM_TH_INFRA` keys. `DKIM_TH_PROVIDER` is still used.
 - The DKIM2 section (`tx('DKIM2')`, title `DKIM_DKIM2_TITLE`) is **informational only** — DKIM2 is
   still an Internet-Draft and nothing in it touches the rating, score bars or grade.
 - `renderDKIM` uses module-level `currentDomain` (set in `runChecks`) for DNS name display.

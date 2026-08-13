@@ -698,8 +698,14 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-August-13-2 &mdash; click for changelog</summary>
+      <summary>Version 2026-August-13-3 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-August-13-3</span>
+          <ul class="cl-changes">
+            <li>Removed the hardcoded &ldquo;Provider Reference&rdquo; table from the DKIM tab &mdash; the probed-selector list already groups every selector under its provider, so the two overlapped</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-August-13-2</span>
           <ul class="cl-changes">
@@ -1102,10 +1108,7 @@ const STRINGS = {
       // DKIM
       DKIM_FOUND_SECTION:  'Found Selectors',
       DKIM_DNS_KEY_DETAILS:'DNS name & key details',
-      DKIM_PROVIDER_REF:   'Provider Reference',
       DKIM_TH_PROVIDER:    'Provider',
-      DKIM_TH_SELECTORS:   'Default Selectors',
-      DKIM_TH_INFRA:       'Infrastructure',
       DKIM_TH_PROBED:      'Selectors probed',
       DKIM_PROV_UNKNOWN:   'Generic / not provider-specific',
       DKIM_DKIM2_TITLE:    'DKIM2 — the next version of DKIM',
@@ -1763,10 +1766,7 @@ const STRINGS = {
       // DKIM
       DKIM_FOUND_SECTION:  'Funne selektorer',
       DKIM_DNS_KEY_DETAILS:'DNS-navn og n\u00f8kkeldetaljer',
-      DKIM_PROVIDER_REF:   'Leverand\u00f8roversikt',
       DKIM_TH_PROVIDER:    'Leverand\u00f8r',
-      DKIM_TH_SELECTORS:   'Standard selektorer',
-      DKIM_TH_INFRA:       'Infrastruktur',
       DKIM_TH_PROBED:      'Selektorer testet',
       DKIM_PROV_UNKNOWN:   'Generisk / ikke leverandørspesifikk',
       DKIM_DKIM2_TITLE:    'DKIM2 — neste versjon av DKIM',
@@ -2408,10 +2408,7 @@ const STRINGS = {
       SPF_NO_RECORD:       'No se encontr\u00f3 registro SPF',
       DKIM_FOUND_SECTION:  'Selectores encontrados',
       DKIM_DNS_KEY_DETAILS:'Nombre DNS y detalles de clave',
-      DKIM_PROVIDER_REF:   'Referencia del proveedor',
       DKIM_TH_PROVIDER:    'Proveedor',
-      DKIM_TH_SELECTORS:   'Selectores predeterminados',
-      DKIM_TH_INFRA:       'Infraestructura',
       DKIM_TH_PROBED:      'Selectores probados',
       DKIM_PROV_UNKNOWN:   'Gen\u00e9rico / no espec\u00edfico de proveedor',
       DKIM_DKIM2_TITLE:    'DKIM2: la pr\u00f3xima versi\u00f3n de DKIM',
@@ -3038,10 +3035,7 @@ const STRINGS = {
 
       DKIM_FOUND_SECTION:  'S\u00e9lecteurs trouv\u00e9s',
       DKIM_DNS_KEY_DETAILS:'Nom DNS et d\u00e9tails de cl\u00e9',
-      DKIM_PROVIDER_REF:   'R\u00e9f\u00e9rence fournisseur',
       DKIM_TH_PROVIDER:    'Fournisseur',
-      DKIM_TH_SELECTORS:   'S\u00e9lecteurs par d\u00e9faut',
-      DKIM_TH_INFRA:       'Infrastructure',
       DKIM_TH_PROBED:      'S\u00e9lecteurs test\u00e9s',
       DKIM_PROV_UNKNOWN:   'G\u00e9n\u00e9rique / non sp\u00e9cifique \u00e0 un fournisseur',
       DKIM_DKIM2_TITLE:    'DKIM2\u00a0: la prochaine version de DKIM',
@@ -6371,48 +6365,6 @@ function renderDKIM(result) {
           body.appendChild(makeIssueList([{ rating: 'good', textKey: 'DKIM_ROTATION_NOTE' }]));
         }
       }
-
-      // Provider reference table
-      const refSection = el('div', 'panel-section');
-      refSection.appendChild(el('div', 'panel-section-title', ts('DKIM_PROVIDER_REF')));
-      const providerRows = [
-        ['Google Workspace',   'google, google2',        'googlemail.com'],
-        ['Microsoft 365',      'selector1, selector2',   'protection.outlook.com'],
-        ['Mailchimp',          'k1, k2, k3',             'dkim1.mcsv.net'],
-        ['Mandrill',           'mte1, mte2, mandrill',   'dkim1.mandrillapp.com'],
-        ['SendGrid',           's1, s2, s3, s4',         'domainkey.u<id>.wl<id>.sendgrid.net'],
-        ['Klaviyo',            'kl, kl2',                'domainkey.u161779.wl030.sendgrid.net'],
-        ['Zendesk',            'zendesk1, zendesk2',     'zendesk1._domainkey.zendesk.com'],
-        ['Salesforce',         'salesforce, sfdc',       'custdkim.salesforce.com'],
-        ['Marketo (Adobe)',    'm1, m2, mkto',           'mktomail.com'],
-        ['HubSpot',            'hs1, hs2',               'hs01a.dkim.hubspotemail.net'],
-        ['Constant Contact',   'ctct1, ctct2',           'dkim1.ccsend.com'],
-        ['Fastmail',           'fm1, fm2, fm3',          'dkim.fmhosted.com'],
-        ['Intercom',           'intercom',               'dkim.intercom.io'],
-        ['Apple iCloud+',      'sig1',                   'at.icloudmailadmin.com'],
-        ['Amazon SES',         'amazonses, ses',         'amazonses.com'],
-        ['Postmark',           'pm',                     'pm.mtasv.net'],
-      ];
-      const tbl = el('table', 'provider-table');
-      const thead = el('thead', null);
-      const hrow = el('tr', null);
-      [ts('DKIM_TH_PROVIDER'), ts('DKIM_TH_SELECTORS'), ts('DKIM_TH_INFRA')].forEach(h => hrow.appendChild(el('th', null, h)));
-      thead.appendChild(hrow);
-      tbl.appendChild(thead);
-      const tbody = el('tbody', null);
-      for (const [prov, sels, infra] of providerRows) {
-        const tr = el('tr', null);
-        tr.appendChild(el('td', null, prov));
-        const selsTd = el('td', null);
-        selsTd.style.fontFamily = 'monospace';
-        selsTd.textContent = sels;
-        tr.appendChild(selsTd);
-        tr.appendChild(el('td', null, infra));
-        tbody.appendChild(tr);
-      }
-      tbl.appendChild(tbody);
-      refSection.appendChild(tbl);
-      body.appendChild(refSection);
 
       addExplanation(body, tx('DKIM'));
 

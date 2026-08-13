@@ -168,10 +168,7 @@ const LANG_TEMPLATE = {
     // DKIM
     DKIM_FOUND_SECTION:     '',  // "Found Selectors"
     DKIM_DNS_KEY_DETAILS:   '',  // "DNS name & key details"
-    DKIM_PROVIDER_REF:      '',  // "Provider Reference"
     DKIM_TH_PROVIDER:       '',  // Table header "Provider"
-    DKIM_TH_SELECTORS:      '',  // Table header "Default Selectors"
-    DKIM_TH_INFRA:          '',  // Table header "Infrastructure"
     DKIM_TH_PROBED:         '',  // Table header "Selectors probed"
     DKIM_PROV_UNKNOWN:      '',  // Provider-column fallback "Generic / not provider-specific"
     DKIM_DKIM2_TITLE:       '',  // Section title "DKIM2 - the next version of DKIM"
