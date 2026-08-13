@@ -8,7 +8,7 @@ Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-July-27-5**
+Current version: **2026-August-13-1**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -50,7 +50,7 @@ Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**
 | PTR | A+AAAA per MX host → PTR per IP | FCrDNS: checks if PTR value matches MX hostname; does not affect grade |
 | DANE | `_25._tcp.<mx-hostname>` TLSA | Checks per-MX-host; requires DNSSEC validation (AD flag) |
 | SPF | `<domain>` TXT | Follows `redirect=` to target domain; returns `allQualifier` |
-| DKIM | `<selector>._domainkey.<domain>` TXT | ~48 auto selectors + custom; capped at 10 parallel |
+| DKIM | `<selector>._domainkey.<domain>` TXT | ~92 auto selectors + custom; capped at 10 parallel |
 | DMARC | `_dmarc.<domain>` TXT | RFC 7489 + RFC 9989 (DMARCbis); parses p=, sp=, pct=, rua=, ruf=, adkim=, aspf=; DNSSEC checked for rua/ruf endpoint domains; DMARCbis sub-analysis attached as `dmarcbis` |
 | BIMI | `default._bimi.<domain>` TXT | Parses l= (logo URL) and a= (authority/VMC); does not affect grade |
 | TLS-RPT | `_smtp._tls.<domain>` TXT | RFC 8460; DNSSEC checked for rua= endpoint domains |
@@ -80,8 +80,12 @@ rateTLSA()
 checkDANE()
 analyzeSPF()        parses SPF record; tracks redirectDomain; skips SPF_MISSING_ALL when redirect present
 checkSPF()          follows redirect= to target domain; returns redirectDomain + redirectRecord in result
-AUTO_SELECTORS      ~48 known DKIM selectors
-SELECTOR_PROVIDER   selector → provider name map (Google, M365, Mailchimp, etc.)
+dsRotationSelectors(monthsBack, monthsAhead)
+                    generates Domeneshop's dsYYYYMM window from the current date (default 16 back,
+                      1 ahead = 18 selectors). Never hardcode this range — see critical bug 8.
+DS_SELECTORS        the generated Domeneshop window, spread into AUTO_SELECTORS
+AUTO_SELECTORS      ~92 known DKIM selectors (74 fixed + 18 generated Domeneshop)
+SELECTOR_PROVIDER   selector → provider name map; DS_SELECTORS are added to it in a trailing loop
 getRSAKeyBits()     DER/SPKI parser — see critical note below
 parseDKIMRecord()
 probeDKIMSelector() returns { selector, ...analysis, ad }
@@ -171,7 +175,8 @@ Three namespaces per language in the `STRINGS` object:
 
 - **`s` (static)** — plain string key→value. Access with `ts('KEY')`.
 - **`d` (dynamic)** — arrow functions for pluralised/interpolated strings. Access with `td('KEY', ...args)`.
-- **`x` (explanations)** — full explanation markup strings for `addExplanation()` (16 keys: DMARC, DMARCBIS, DNSSEC, MX, PTR, DANE, SPF, DKIM, TLSRPT, MTASTS, CAA, RPKI, BIMI, STXT, WHOIS, IPV6). Access with `tx('KEY')`.
+- **`x` (explanations)** — full explanation markup strings for `addExplanation()` (17 keys: DMARC, DMARCBIS, DNSSEC, MX, PTR, DANE, SPF, DKIM, DKIM2, TLSRPT, MTASTS, CAA, RPKI, BIMI, STXT, WHOIS, IPV6). Access with `tx('KEY')`.
+  `safeMarkup()` builds **text nodes**, so HTML entities are *not* decoded — write `<domain>` literally, never `&lt;domain&gt;`.
 
 Lookup order: current language → English fallback → key name as visible fallback.
 
@@ -225,6 +230,23 @@ All four are **complete** — no language relies on the English fallback. When a
 - `probeDKIMSelector(selector, domain)` returns `{ selector, ...analysis, ad }` — the `ad` field
   captures the AD flag from the DoH response for per-selector DNSSEC validation status.
 - `checkDKIM` adds `provider: SELECTOR_PROVIDER[selector] || null` to each found selector object.
+- **Selector list provenance (audited 2026-08-13):** every entry was checked against live DNS across
+  274 domains plus provider documentation. When adding a selector, verify it the same way — a
+  plausible-looking name is not evidence. Two traps found during that audit:
+  - ~15 domains publish a **wildcard TXT under `_domainkey`** (hubspot.com, brevo.com, zendesk.com,
+    gov.uk, yahoo.com, netflix.com …). They answer *every* selector query, so any frequency count
+    must be validated with a nonsense-selector control probe first.
+  - CNAME targets reveal the real owner. `mc1`/`mc2` point at `sendgrid.net` (not Mimecast),
+    `key1`/`key2` at `dkim.hostedemail.link` (Tucows OpenSRS), `scph*` is SparkPost (not Mailchimp),
+    `kl`/`kl2` are Klaviyo riding SendGrid, and `mte1`/`mte2` → `dkim{1,2}.mandrillapp.com` are
+    Mandrill's current pair (bare `mandrill` is the older shared key).
+- Providers whose selector is **admin-chosen with no fixed default** (Mimecast, Proofpoint, OVH,
+  Hetzner, Infomaniak, Zoho beyond its `zoho` example) cannot be probed reliably — do not re-add
+  year-stamped guesses like `pp2024`.
+- `renderDKIM` renders the probed list as a `.provider-table` grouped by provider, with
+  unattributed selectors collected into a trailing `DKIM_PROV_UNKNOWN` row.
+- The DKIM2 section (`tx('DKIM2')`, title `DKIM_DKIM2_TITLE`) is **informational only** — DKIM2 is
+  still an Internet-Draft and nothing in it touches the rating, score bars or grade.
 - `renderDKIM` uses module-level `currentDomain` (set in `runChecks`) for DNS name display.
 
 ### DMARC / TLS-RPT endpoint DNSSEC details
@@ -402,6 +424,13 @@ but the last `mx:` line. RFC 8461 allows multiple `mx:` lines. The parser now pu
 `mx:` values into an array: `policy.mx = [...(policy.mx || []), val]`. All other keys
 remain scalar.
 
+### 8. Domeneshop `dsYYYYMM` selectors must be generated, not hardcoded
+The list was originally a checked-in range (`ds202410` … `ds202606`). Domeneshop rotates keys
+monthly, so a hardcoded window silently stops covering current selectors — by August 2026 the
+committed range had been stale for two months and the checker would have missed every key issued
+after June. `dsRotationSelectors()` derives the window from `new Date()` instead. Do not replace it
+with a literal list.
+
 ## Security
 - All DNS/external data goes through `escapeHtml()` or `textContent` before any DOM insertion.
 - Issue text set via `textContent` (not innerHTML) — `escapeHtml()` not needed on issue strings.
@@ -417,8 +446,11 @@ remain scalar.
 `ratingScore()`: excellent=100, good=75, warning=40, fail=0.
 
 ## Testing notes
-- `gmail.com` — SPF `~all`, DKIM `google`/`selector1`/`selector2`, DMARC p=none
-- `cloudflare.com` — DNSSEC alg 13 (ECDSAP256SHA256); good CAA + RPKI coverage; DMARC p=reject
+- `gmail.com` — SPF `~all`, DMARC p=none. Note: it publishes **no** discoverable DKIM selector —
+  its `20230601`-style selectors are all revoked (`p=` empty), so 0 found is the correct result here
+- `cloudflare.com` — DNSSEC alg 13 (ECDSAP256SHA256); good CAA + RPKI coverage; DMARC p=reject.
+  Also the best DKIM test domain: finds `k1`, `mandrill`, `s1`, `smtpapi`, `m1`, `m2`, `krs`
+  across five providers, exercising the provider-attribution path
 - `dmarcadvisor.com` — SPF redirect= only (no mechanisms, no all); tests redirect following
 - `apple.com` — has BIMI record; tests BIMI tab
 - `fastmail.com` — MTA-STS enforce mode with multiple mx: lines; tests MX match check

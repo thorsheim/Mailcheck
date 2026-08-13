@@ -172,6 +172,9 @@ const LANG_TEMPLATE = {
     DKIM_TH_PROVIDER:       '',  // Table header "Provider"
     DKIM_TH_SELECTORS:      '',  // Table header "Default Selectors"
     DKIM_TH_INFRA:          '',  // Table header "Infrastructure"
+    DKIM_TH_PROBED:         '',  // Table header "Selectors probed"
+    DKIM_PROV_UNKNOWN:      '',  // Provider-column fallback "Generic / not provider-specific"
+    DKIM_DKIM2_TITLE:       '',  // Section title "DKIM2 - the next version of DKIM"
     DKIM_AUTO_TESTED_LABEL: '',  // "selectors automatically tested"
     DKIM_REVOKED:           '',  // "Key revoked (empty p= tag)"
     DKIM_KEY_TYPE:          '',  // "Key type"
@@ -432,6 +435,7 @@ const LANG_TEMPLATE = {
     DANE:    '',
     SPF:     '',
     DKIM:    '',
+    DKIM2:   '',
     TLSRPT:  '',
     MTASTS:  '',
     CAA:     '',

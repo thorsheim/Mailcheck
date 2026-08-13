@@ -698,8 +698,20 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-July-27-5 &mdash; click for changelog</summary>
+      <summary>Version 2026-August-13-1 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-August-13-1</span>
+          <ul class="cl-changes">
+            <li>DKIM selector list audited against live DNS across 274 domains and against provider documentation. Added <code>zendesk1</code>/<code>zendesk2</code>, <code>mte1</code>/<code>mte2</code> (current Mandrill CNAME pair), <code>mailjet</code>, <code>cm</code>, <code>salesforce</code>/<code>sfdc</code>, <code>s3</code>/<code>s4</code>, <code>kl</code>/<code>kl2</code>, <code>m2</code>, <code>mlsend</code>/<code>mlsend2</code>, <code>resend</code>, <code>mailgun</code>, <code>scph0325</code></li>
+            <li>Removed selectors with no evidence of use and no documented basis: <code>pp2021</code>&ndash;<code>pp2024</code>, <code>klaviyo</code>, <code>tuta01</code>/<code>tuta02</code>, <code>mcsv</code>, <code>sendgrid</code>, <code>zmail</code>, <code>sig2</code>, <code>hs3</code>, <code>sp2</code>, <code>ac</code>, <code>iterable</code>, <code>sendinblue</code>/<code>brevo</code>, <code>infomaniak</code>, <code>ovh</code>, <code>hetzner</code></li>
+            <li>Corrected provider attributions: <code>m1</code> is Marketo's documented default (not generic), <code>pic</code>/<code>krs</code> are Mailgun, <code>key1</code>/<code>key2</code> are Tucows OpenSRS (Squarespace, Wix), <code>mc1</code>/<code>mc2</code> were SendGrid rather than Mimecast, and <code>scph*</code> is SparkPost rather than Mailchimp</li>
+            <li>Domeneshop's <code>dsYYYYMM</code> rotation window is now generated from the current date instead of hardcoded &mdash; the checked-in range had already expired in June 2026</li>
+            <li>The probed-selector list at the bottom of the DKIM tab now shows each selector grouped under its provider, instead of hiding the provider in a tooltip</li>
+            <li>New DKIM2 section in the DKIM tab covering the IETF successor standard, with links to the working group drafts</li>
+            <li>Fixed <code>&lt;domain&gt;</code> placeholders rendering as raw HTML entities in the Spanish and French explanation text (the same bug fixed earlier for English and Norwegian)</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-July-27-5</span>
           <ul class="cl-changes">
@@ -1087,6 +1099,9 @@ const STRINGS = {
       DKIM_TH_PROVIDER:    'Provider',
       DKIM_TH_SELECTORS:   'Default Selectors',
       DKIM_TH_INFRA:       'Infrastructure',
+      DKIM_TH_PROBED:      'Selectors probed',
+      DKIM_PROV_UNKNOWN:   'Generic / not provider-specific',
+      DKIM_DKIM2_TITLE:    'DKIM2 — the next version of DKIM',
       DKIM_AUTO_TESTED_LABEL: 'selectors automatically tested',
       DKIM_REVOKED:        'Key revoked (empty p= tag)',
       DKIM_KEY_TYPE:       'Key type',
@@ -1480,6 +1495,34 @@ const STRINGS = {
         '<b>RSA-2048</b> is the minimum recommendation. ' +
         '<b>RSA-1024</b> is weak and should be replaced immediately.<br><br>' +
         '<b>DNSSEC on DKIM records</b> prevents an attacker from substituting your public key in DNS.',
+      DKIM2:
+        'The IETF DKIM working group is developing <b>DKIM2</b>, a successor to DKIM1 ' +
+        '(<a href="https://www.rfc-editor.org/rfc/rfc6376">RFC 6376</a>) that also absorbs the job of ARC ' +
+        '(<a href="https://www.rfc-editor.org/rfc/rfc8617">RFC 8617</a>). It is still an Internet-Draft — ' +
+        'there is nothing to deploy yet, and this checker does not test for it.<br><br>' +
+        '<b>What changes:</b> every hop that handles a message adds its own signature, instead of only the ' +
+        'originating domain signing once. Each signature records the SMTP envelope (<code>MAIL FROM</code> and ' +
+        '<code>RCPT TO</code>) at that hop, building a verifiable chain of custody. Changes made in transit by ' +
+        'mailing lists and forwarders are described by "recipes" carried in the message, so a receiver can ' +
+        'reconstruct the original and still validate the signature. This targets the two failures DKIM1 cannot ' +
+        'handle: forwarding breakage and replay attacks.<br><br>' +
+        '<b>What stays the same:</b> keys are still published in DNS at ' +
+        '<code><selector>._domainkey.<domain></code>, still as <code>v=DKIM1</code> records with ' +
+        '<code>k=</code> and <code>p=</code> tags, so existing key deployments carry over unchanged. ' +
+        '<code>rsa-sha256</code> stays mandatory, <code>ed25519-sha256</code> is recommended, and ' +
+        '<code>rsa-sha1</code> is rejected outright. The <code>h=</code>, <code>n=</code> and <code>s=</code> ' +
+        'record tags are retired.<br><br>' +
+        '<b>Status:</b> <code>draft-ietf-dkim-dkim2-spec</code> is the adopted working group document, ' +
+        'alongside separate drafts for the DNS encoding and for best practices. Independent implementations in ' +
+        'Rust, Python and Go demonstrated interoperability in July 2026. Nothing is an RFC yet, so no action is ' +
+        'required today — but the key hygiene you fix now (Ed25519 or RSA-2048, <code>h=sha256</code>, ' +
+        'DNSSEC) carries straight over to DKIM2.<br><br>' +
+        '<b>Further reading:</b><br>' +
+        '<a href="https://datatracker.ietf.org/wg/dkim/documents/">IETF DKIM working group — all documents</a><br>' +
+        '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-spec/">draft-ietf-dkim-dkim2-spec — core specification</a><br>' +
+        '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-dns/">draft-ietf-dkim-dkim2-dns — domain name specification</a><br>' +
+        '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-bcp/">draft-ietf-dkim-dkim2-bcp — best practices</a><br>' +
+        '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-motivation/">draft-ietf-dkim-dkim2-motivation — rationale and background</a>',
       TLSRPT:
         '<b>TLS-RPT (<a href="https://www.rfc-editor.org/rfc/rfc8460">RFC 8460</a>)</b> enables receiving TLS failure reports from sending mail servers. ' +
         'Published as a TXT record at <code>_smtp._tls.<domain></code>.<br><br>' +
@@ -1717,6 +1760,9 @@ const STRINGS = {
       DKIM_TH_PROVIDER:    'Leverand\u00f8r',
       DKIM_TH_SELECTORS:   'Standard selektorer',
       DKIM_TH_INFRA:       'Infrastruktur',
+      DKIM_TH_PROBED:      'Selektorer testet',
+      DKIM_PROV_UNKNOWN:   'Generisk / ikke leverandørspesifikk',
+      DKIM_DKIM2_TITLE:    'DKIM2 — neste versjon av DKIM',
       DKIM_AUTO_TESTED_LABEL: 'selektorer testet automatisk',
       DKIM_REVOKED:        'N\u00f8kkel tilbakekalt (tom p=-tag)',
       DKIM_KEY_TYPE:       'N\u00f8kkeltype',
@@ -2094,6 +2140,33 @@ const STRINGS = {
         '<b>RSA-2048</b> er minimumsanbefalingen. ' +
         '<b>RSA-1024</b> er svak og b\u00f8r erstattes umiddelbart.<br><br>' +
         '<b>DNSSEC p\u00e5 DKIM-poster</b> forhindrer at en angriper erstatter din offentlige n\u00f8kkel i DNS.',
+      DKIM2:
+        'IETFs DKIM-arbeidsgruppe utvikler <b>DKIM2</b>, en etterf\u00f8lger til DKIM1 ' +
+        '(<a href="https://www.rfc-editor.org/rfc/rfc6376">RFC 6376</a>) som ogs\u00e5 overtar oppgaven til ARC ' +
+        '(<a href="https://www.rfc-editor.org/rfc/rfc8617">RFC 8617</a>). Det er fortsatt et Internet-Draft \u2014 ' +
+        'ingenting skal tas i bruk enn\u00e5, og denne testen sjekker ikke for det.<br><br>' +
+        '<b>Hva endres:</b> hvert ledd som h\u00e5ndterer en melding legger til sin egen signatur, i stedet for at ' +
+        'kun avsenderdomenet signerer \u00e9n gang. Hver signatur registrerer SMTP-konvolutten (<code>MAIL FROM</code> og ' +
+        '<code>RCPT TO</code>) i det leddet, og bygger en verifiserbar sporingskjede. Endringer gjort underveis av ' +
+        'e-postlister og videresendere beskrives med "oppskrifter" som f\u00f8lger meldingen, slik at mottakeren kan ' +
+        'gjenskape originalen og fortsatt validere signaturen. Dette retter seg mot de to problemene DKIM1 ikke ' +
+        'kan h\u00e5ndtere: \u00f8delagt videresending og replay-angrep.<br><br>' +
+        '<b>Hva forblir likt:</b> n\u00f8kler publiseres fortsatt i DNS p\u00e5 ' +
+        '<code><selector>._domainkey.<domene></code>, fortsatt som <code>v=DKIM1</code>-poster med ' +
+        '<code>k=</code>- og <code>p=</code>-tagger, s\u00e5 eksisterende n\u00f8kler videref\u00f8res uendret. ' +
+        '<code>rsa-sha256</code> forblir obligatorisk, <code>ed25519-sha256</code> anbefales, og ' +
+        '<code>rsa-sha1</code> avvises helt. Taggene <code>h=</code>, <code>n=</code> og <code>s=</code> ' +
+        'utg\u00e5r.<br><br>' +
+        '<b>Status:</b> <code>draft-ietf-dkim-dkim2-spec</code> er arbeidsgruppens vedtatte dokument, ved siden av ' +
+        'egne utkast for DNS-koding og beste praksis. Uavhengige implementasjoner i Rust, Python og Go viste ' +
+        'interoperabilitet i juli 2026. Ingenting er RFC enn\u00e5, s\u00e5 ingen tiltak kreves i dag \u2014 men n\u00f8kkelhygienen ' +
+        'du retter opp n\u00e5 (Ed25519 eller RSA-2048, <code>h=sha256</code>, DNSSEC) videref\u00f8res direkte til DKIM2.<br><br>' +
+        '<b>Mer informasjon:</b><br>' +
+        '<a href="https://datatracker.ietf.org/wg/dkim/documents/">IETF DKIM-arbeidsgruppen \u2014 alle dokumenter</a><br>' +
+        '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-spec/">draft-ietf-dkim-dkim2-spec \u2014 kjernespesifikasjonen</a><br>' +
+        '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-dns/">draft-ietf-dkim-dkim2-dns \u2014 domenenavnspesifikasjon</a><br>' +
+        '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-bcp/">draft-ietf-dkim-dkim2-bcp \u2014 beste praksis</a><br>' +
+        '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-motivation/">draft-ietf-dkim-dkim2-motivation \u2014 bakgrunn og begrunnelse</a>',
       TLSRPT:
         '<b>TLS-RPT (<a href="https://www.rfc-editor.org/rfc/rfc8460">RFC 8460</a>)</b> gj\u00f8r det mulig \u00e5 motta TLS-feilrapporter fra avsendende e-postservere. ' +
         'Publiseres som en TXT-post p\u00e5 <code>_smtp._tls.<domene></code>.<br><br>' +
@@ -2332,6 +2405,9 @@ const STRINGS = {
       DKIM_TH_PROVIDER:    'Proveedor',
       DKIM_TH_SELECTORS:   'Selectores predeterminados',
       DKIM_TH_INFRA:       'Infraestructura',
+      DKIM_TH_PROBED:      'Selectores probados',
+      DKIM_PROV_UNKNOWN:   'Gen\u00e9rico / no espec\u00edfico de proveedor',
+      DKIM_DKIM2_TITLE:    'DKIM2: la pr\u00f3xima versi\u00f3n de DKIM',
       DKIM_AUTO_TESTED_LABEL: 'selectores probados autom\u00e1ticamente',
       DKIM_REVOKED:        'Clave revocada (etiqueta p= vac\u00eda)',
       DKIM_KEY_TYPE:       'Tipo de clave',
@@ -2641,7 +2717,7 @@ const STRINGS = {
         'Los registros MX validados por DNSSEC evitan esto. El DNSSEC de cada nombre de host MX se comprueba en el \u00e1pex de su zona.',
       DANE:
         '<b>DANE</b> (<a href="https://www.rfc-editor.org/rfc/rfc7672">RFC 7672</a>) usa registros TLSA (<a href="https://www.rfc-editor.org/rfc/rfc6698">RFC 6698</a>) para permitir que los servidores de correo verifiquen certificados TLS ' +
-        'sin depender de CAs comerciales. Se consulta en <b>_25._tcp.&lt;mx-hostname&gt;</b>.<br><br>' +
+        'sin depender de CAs comerciales. Se consulta en <b>_25._tcp.<mx-hostname></b>.<br><br>' +
         '<b>C\u00f3digos de uso TLSA:</b> ' +
         '<b>DANE-EE (3)</b> \u2014 anclar al certificado de entidad final (m\u00e1s fuerte). ' +
         '<b>DANE-TA (2)</b> \u2014 anclar a un ancla de confianza. ' +
@@ -2660,7 +2736,7 @@ const STRINGS = {
       DKIM:
         '<b>\u00bfQu\u00e9 es un selector DKIM?</b> DKIM (<a href="https://www.rfc-editor.org/rfc/rfc6376">RFC 6376</a>) usa criptograf\u00eda de clave p\u00fablica para firmar el correo saliente. ' +
         'Un selector (p. ej. <code>google</code>) es una etiqueta que apunta a una clave p\u00fablica DKIM ' +
-        'publicada en <code>&lt;selector&gt;._domainkey.&lt;domain&gt;</code>. ' +
+        'publicada en <code><selector>._domainkey.<domain></code>. ' +
         'Un dominio puede tener varios selectores \u2014 uno por proveedor de correo o para la rotaci\u00f3n de claves.<br><br>' +
         '<b>Encontrar selectores:</b> Busca en la cabecera <code>DKIM-Signature:</code> de cualquier correo recibido. ' +
         'La etiqueta <code>s=</code> contiene el selector. Los selectores personalizados no pueden descubrirse autom\u00e1ticamente.<br><br>' +
@@ -2680,9 +2756,37 @@ const STRINGS = {
         '<b>RSA-2048</b> es la recomendaci\u00f3n m\u00ednima. ' +
         '<b>RSA-1024</b> es d\u00e9bil y debe reemplazarse inmediatamente.<br><br>' +
         '<b>DNSSEC en los registros DKIM</b> evita que un atacante sustituya tu clave p\u00fablica en DNS.',
+      DKIM2:
+        'El grupo de trabajo DKIM del IETF est\u00e1 desarrollando <b>DKIM2</b>, un sucesor de DKIM1 ' +
+        '(<a href="https://www.rfc-editor.org/rfc/rfc6376">RFC 6376</a>) que tambi\u00e9n asume la funci\u00f3n de ARC ' +
+        '(<a href="https://www.rfc-editor.org/rfc/rfc8617">RFC 8617</a>). Todav\u00eda es un Internet-Draft: ' +
+        'a\u00fan no hay nada que implementar, y este verificador no lo comprueba.<br><br>' +
+        '<b>Qu\u00e9 cambia:</b> cada salto que procesa un mensaje a\u00f1ade su propia firma, en lugar de que solo el ' +
+        'dominio de origen firme una vez. Cada firma registra el sobre SMTP (<code>MAIL FROM</code> y ' +
+        '<code>RCPT TO</code>) en ese salto, construyendo una cadena de custodia verificable. Los cambios hechos ' +
+        'en tr\u00e1nsito por listas de correo y reenviadores se describen mediante "recetas" que viajan con el ' +
+        'mensaje, de modo que el receptor puede reconstruir el original y a\u00fan validar la firma. Esto ataca los ' +
+        'dos fallos que DKIM1 no puede resolver: la rotura por reenv\u00edo y los ataques de repetici\u00f3n.<br><br>' +
+        '<b>Qu\u00e9 se mantiene:</b> las claves se siguen publicando en DNS en ' +
+        '<code><selector>._domainkey.<dominio></code>, como registros <code>v=DKIM1</code> con ' +
+        'etiquetas <code>k=</code> y <code>p=</code>, por lo que las claves existentes se conservan sin cambios. ' +
+        '<code>rsa-sha256</code> sigue siendo obligatorio, <code>ed25519-sha256</code> es recomendado y ' +
+        '<code>rsa-sha1</code> se rechaza por completo. Las etiquetas <code>h=</code>, <code>n=</code> y ' +
+        '<code>s=</code> quedan retiradas.<br><br>' +
+        '<b>Estado:</b> <code>draft-ietf-dkim-dkim2-spec</code> es el documento adoptado por el grupo de trabajo, ' +
+        'junto a borradores separados para la codificaci\u00f3n DNS y las buenas pr\u00e1cticas. Implementaciones ' +
+        'independientes en Rust, Python y Go demostraron interoperabilidad en julio de 2026. Nada es a\u00fan un RFC, ' +
+        'as\u00ed que hoy no se requiere ninguna acci\u00f3n, pero la higiene de claves que corrijas ahora (Ed25519 o ' +
+        'RSA-2048, <code>h=sha256</code>, DNSSEC) se traslada directamente a DKIM2.<br><br>' +
+        '<b>M\u00e1s informaci\u00f3n:</b><br>' +
+        '<a href="https://datatracker.ietf.org/wg/dkim/documents/">Grupo de trabajo DKIM del IETF \u2014 todos los documentos</a><br>' +
+        '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-spec/">draft-ietf-dkim-dkim2-spec \u2014 especificaci\u00f3n principal</a><br>' +
+        '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-dns/">draft-ietf-dkim-dkim2-dns \u2014 especificaci\u00f3n de nombres de dominio</a><br>' +
+        '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-bcp/">draft-ietf-dkim-dkim2-bcp \u2014 buenas pr\u00e1cticas</a><br>' +
+        '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-motivation/">draft-ietf-dkim-dkim2-motivation \u2014 justificaci\u00f3n y contexto</a>',
       TLSRPT:
         '<b>TLS-RPT (<a href="https://www.rfc-editor.org/rfc/rfc8460">RFC 8460</a>)</b> permite recibir informes de fallos TLS de los servidores de correo remitentes. ' +
-        'Se publica como un registro TXT en <code>_smtp._tls.&lt;dominio&gt;</code>.<br><br>' +
+        'Se publica como un registro TXT en <code>_smtp._tls.<dominio></code>.<br><br>' +
         '<b>Puntos de notificaci\u00f3n rua=:</b> Los informes se env\u00edan a direcciones <code>mailto:</code> o servicios de agregaci\u00f3n <code>https:</code>. ' +
         'Los puntos HTTPS son excelentes; mailto es bueno.<br><br>' +
         '<b>Contenido de los informes:</b> Datos JSON agregados \u2014 conexiones TLS exitosas, fallos de handshake, ' +
@@ -2693,8 +2797,8 @@ const STRINGS = {
       MTASTS:
         '<b>MTA-STS (<a href="https://www.rfc-editor.org/rfc/rfc8461">RFC 8461</a>)</b> instruye a los servidores remitentes a requerir TLS al entregar a tu dominio ' +
         'y a validar el certificado de tu servidor de correo. ' +
-        'Registro DNS en <code>_mta-sts.&lt;dominio&gt;</code>; ' +
-        'pol\u00edtica en <code>https://mta-sts.&lt;dominio&gt;/.well-known/mta-sts.txt</code>.<br><br>' +
+        'Registro DNS en <code>_mta-sts.<dominio></code>; ' +
+        'pol\u00edtica en <code>https://mta-sts.<dominio>/.well-known/mta-sts.txt</code>.<br><br>' +
         '<b>Modos de pol\u00edtica:</b> <b>enforce</b> \u2014 TLS obligatorio con certificado v\u00e1lido, o entrega rechazada. ' +
         '<b>testing</b> \u2014 recopilar datos TLS-RPT sin aplicar. ' +
         '<b>none</b> \u2014 expl\u00edcitamente desactivado.<br><br>' +
@@ -2772,7 +2876,7 @@ const STRINGS = {
       BIMI:
         '<b>BIMI se considera ampliamente una herramienta de marketing que no aporta ning\u00fan valor de seguridad adicional a nadie. Mostrar un logotipo en un buz\u00f3n de correo para "demostrar" que es el remitente real es como cualquier imagen GIF que diga "100% garantizado". Si aun as\u00ed quieres pagar a las CAs por ello, adelante.</b><br><br>' +
         '<b>BIMI (Brand Indicators for Message Identification)</b> permite a las organizaciones mostrar su logotipo en los clientes de correo que lo admiten (p. ej. Gmail, Apple Mail, Yahoo).<br><br>' +
-        '<b>Registro DNS:</b> Se publica como un registro TXT en <code>default._bimi.&lt;dominio&gt;</code>.<br><br>' +
+        '<b>Registro DNS:</b> Se publica como un registro TXT en <code>default._bimi.<dominio></code>.<br><br>' +
         '<b>l= (URL del logotipo):</b> Una URL que apunta a un archivo SVG del logotipo. Necesario para que BIMI funcione. ' +
         'El SVG debe ser una imagen cuadrada y segura para perfiles, alojada sobre HTTPS.<br><br>' +
         '<b>a= (evidencia de autoridad):</b> Una URL que apunta a un Verified Mark Certificate (VMC) emitido por una CA autorizada (p. ej. DigiCert, Entrust). ' +
@@ -2931,6 +3035,9 @@ const STRINGS = {
       DKIM_TH_PROVIDER:    'Fournisseur',
       DKIM_TH_SELECTORS:   'S\u00e9lecteurs par d\u00e9faut',
       DKIM_TH_INFRA:       'Infrastructure',
+      DKIM_TH_PROBED:      'S\u00e9lecteurs test\u00e9s',
+      DKIM_PROV_UNKNOWN:   'G\u00e9n\u00e9rique / non sp\u00e9cifique \u00e0 un fournisseur',
+      DKIM_DKIM2_TITLE:    'DKIM2\u00a0: la prochaine version de DKIM',
       DKIM_AUTO_TESTED_LABEL: 's\u00e9lecteurs test\u00e9s automatiquement',
       DKIM_REVOKED:        'Cl\u00e9 r\u00e9voqu\u00e9e (balise p= vide)',
       DKIM_KEY_TYPE:       'Type de cl\u00e9',
@@ -3254,7 +3361,7 @@ const STRINGS = {
         'Les enregistrements MX valid\u00e9s par DNSSEC emp\u00eachent cela. Le DNSSEC de chaque nom d\'h\u00f4te MX est v\u00e9rifi\u00e9 au sommet de sa zone.',
       DANE:
         '<b>DANE</b> (<a href="https://www.rfc-editor.org/rfc/rfc7672">RFC 7672</a>) utilise des enregistrements TLSA (<a href="https://www.rfc-editor.org/rfc/rfc6698">RFC 6698</a>) pour permettre aux serveurs de messagerie de v\u00e9rifier les certificats TLS ' +
-        'sans d\u00e9pendre des CA commerciales. Interrog\u00e9 \u00e0 <b>_25._tcp.&lt;mx-hostname&gt;</b>.<br><br>' +
+        'sans d\u00e9pendre des CA commerciales. Interrog\u00e9 \u00e0 <b>_25._tcp.<mx-hostname></b>.<br><br>' +
         '<b>Codes d\'utilisation TLSA\u00a0:</b> ' +
         '<b>DANE-EE (3)</b> \u2014 ancrer au certificat d\'entit\u00e9 finale (le plus fort). ' +
         '<b>DANE-TA (2)</b> \u2014 ancrer \u00e0 une ancre de confiance. ' +
@@ -3273,7 +3380,7 @@ const STRINGS = {
       DKIM:
         '<b>Qu\'est-ce qu\'un s\u00e9lecteur DKIM\u00a0?</b> DKIM (<a href="https://www.rfc-editor.org/rfc/rfc6376">RFC 6376</a>) utilise la cryptographie \u00e0 cl\u00e9 publique pour signer le courrier sortant. ' +
         'Un s\u00e9lecteur (ex. <code>google</code>) est une \u00e9tiquette pointant vers une cl\u00e9 publique DKIM ' +
-        'publi\u00e9e \u00e0 <code>&lt;selector&gt;._domainkey.&lt;domain&gt;</code>. ' +
+        'publi\u00e9e \u00e0 <code><selector>._domainkey.<domain></code>. ' +
         'Un domaine peut avoir plusieurs s\u00e9lecteurs \u2014 un par fournisseur de messagerie ou pour la rotation des cl\u00e9s.<br><br>' +
         '<b>Trouver des s\u00e9lecteurs\u00a0:</b> Recherchez dans l\'en-t\u00eate <code>DKIM-Signature:</code> de tout courrier re\u00e7u. ' +
         'La balise <code>s=</code> contient le s\u00e9lecteur. Les s\u00e9lecteurs personnalis\u00e9s ne peuvent pas \u00eatre d\u00e9couverts automatiquement.<br><br>' +
@@ -3293,9 +3400,39 @@ const STRINGS = {
         '<b>RSA-2048</b> est la recommandation minimale. ' +
         '<b>RSA-1024</b> est faible et doit \u00eatre remplac\u00e9 imm\u00e9diatement.<br><br>' +
         '<b>DNSSEC sur les enregistrements DKIM</b> emp\u00eache un attaquant de substituer votre cl\u00e9 publique dans le DNS.',
+      DKIM2:
+        'Le groupe de travail DKIM de l\u2019IETF d\u00e9veloppe <b>DKIM2</b>, un successeur de DKIM1 ' +
+        '(<a href="https://www.rfc-editor.org/rfc/rfc6376">RFC 6376</a>) qui reprend aussi le r\u00f4le d\u2019ARC ' +
+        '(<a href="https://www.rfc-editor.org/rfc/rfc8617">RFC 8617</a>). Ce n\u2019est encore qu\u2019un Internet-Draft : ' +
+        'il n\u2019y a rien \u00e0 d\u00e9ployer pour l\u2019instant, et ce v\u00e9rificateur ne le teste pas.<br><br>' +
+        '<b>Ce qui change :</b> chaque saut qui traite un message ajoute sa propre signature, au lieu que seul le ' +
+        'domaine d\u2019origine signe une fois. Chaque signature enregistre l\u2019enveloppe SMTP (<code>MAIL FROM</code> et ' +
+        '<code>RCPT TO</code>) \u00e0 ce saut, construisant une cha\u00eene de possession v\u00e9rifiable. Les modifications ' +
+        'apport\u00e9es en transit par les listes de diffusion et les redirecteurs sont d\u00e9crites par des \u00ab recettes \u00bb ' +
+        'transport\u00e9es dans le message, de sorte que le destinataire peut reconstituer l\u2019original et valider malgr\u00e9 ' +
+        'tout la signature. Cela vise les deux \u00e9checs que DKIM1 ne sait pas traiter : la rupture par redirection ' +
+        'et les attaques par rejeu.<br><br>' +
+        '<b>Ce qui ne change pas :</b> les cl\u00e9s restent publi\u00e9es dans le DNS \u00e0 ' +
+        '<code><s\u00e9lecteur>._domainkey.<domaine></code>, toujours sous forme d\u2019enregistrements ' +
+        '<code>v=DKIM1</code> avec les balises <code>k=</code> et <code>p=</code> : les cl\u00e9s existantes sont ' +
+        'conserv\u00e9es telles quelles. <code>rsa-sha256</code> reste obligatoire, <code>ed25519-sha256</code> est ' +
+        'recommand\u00e9 et <code>rsa-sha1</code> est rejet\u00e9 sans appel. Les balises <code>h=</code>, <code>n=</code> ' +
+        'et <code>s=</code> sont retir\u00e9es.<br><br>' +
+        '<b>\u00c9tat d\u2019avancement :</b> <code>draft-ietf-dkim-dkim2-spec</code> est le document adopt\u00e9 par le groupe ' +
+        'de travail, aux c\u00f4t\u00e9s de brouillons distincts pour l\u2019encodage DNS et les bonnes pratiques. Des ' +
+        'impl\u00e9mentations ind\u00e9pendantes en Rust, Python et Go ont d\u00e9montr\u00e9 leur interop\u00e9rabilit\u00e9 en juillet 2026. ' +
+        'Rien n\u2019est encore un RFC, aucune action n\u2019est donc requise aujourd\u2019hui \u2014 mais l\u2019hygi\u00e8ne des cl\u00e9s que ' +
+        'vous corrigez maintenant (Ed25519 ou RSA-2048, <code>h=sha256</code>, DNSSEC) se reporte directement ' +
+        'sur DKIM2.<br><br>' +
+        '<b>Pour aller plus loin :</b><br>' +
+        '<a href="https://datatracker.ietf.org/wg/dkim/documents/">Groupe de travail DKIM de l\u2019IETF \u2014 tous les documents</a><br>' +
+        '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-spec/">draft-ietf-dkim-dkim2-spec \u2014 sp\u00e9cification principale</a><br>' +
+        '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-dns/">draft-ietf-dkim-dkim2-dns \u2014 sp\u00e9cification des noms de domaine</a><br>' +
+        '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-bcp/">draft-ietf-dkim-dkim2-bcp \u2014 bonnes pratiques</a><br>' +
+        '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-motivation/">draft-ietf-dkim-dkim2-motivation \u2014 justification et contexte</a>',
       TLSRPT:
         '<b>TLS-RPT (<a href="https://www.rfc-editor.org/rfc/rfc8460">RFC 8460</a>)</b> permet de recevoir des rapports d\'\u00e9checs TLS des serveurs de messagerie exp\u00e9diteurs. ' +
-        'Publi\u00e9 comme enregistrement TXT \u00e0 <code>_smtp._tls.&lt;domaine&gt;</code>.<br><br>' +
+        'Publi\u00e9 comme enregistrement TXT \u00e0 <code>_smtp._tls.<domaine></code>.<br><br>' +
         '<b>Points de rapport rua=\u00a0:</b> Les rapports sont envoy\u00e9s aux adresses <code>mailto:</code> ou aux services d\'agr\u00e9gation <code>https:</code>. ' +
         'Les points HTTPS sont excellents\u00a0; mailto est bon.<br><br>' +
         '<b>Contenu des rapports\u00a0:</b> Donn\u00e9es JSON agr\u00e9g\u00e9es \u2014 connexions TLS r\u00e9ussies, \u00e9checs de handshake, ' +
@@ -3306,8 +3443,8 @@ const STRINGS = {
       MTASTS:
         '<b>MTA-STS (<a href="https://www.rfc-editor.org/rfc/rfc8461">RFC 8461</a>)</b> indique aux serveurs exp\u00e9diteurs d\'exiger TLS lors de la livraison \u00e0 votre domaine ' +
         'et de valider le certificat de votre serveur de messagerie. ' +
-        'Enregistrement DNS \u00e0 <code>_mta-sts.&lt;domaine&gt;</code>\u00a0; ' +
-        'politique \u00e0 <code>https://mta-sts.&lt;domaine&gt;/.well-known/mta-sts.txt</code>.<br><br>' +
+        'Enregistrement DNS \u00e0 <code>_mta-sts.<domaine></code>\u00a0; ' +
+        'politique \u00e0 <code>https://mta-sts.<domaine>/.well-known/mta-sts.txt</code>.<br><br>' +
         '<b>Modes de politique\u00a0:</b> <b>enforce</b> \u2014 TLS obligatoire avec certificat valide, ou livraison refus\u00e9e. ' +
         '<b>testing</b> \u2014 collecter des donn\u00e9es TLS-RPT sans appliquer. ' +
         '<b>none</b> \u2014 explicitement d\u00e9sactiv\u00e9.<br><br>' +
@@ -3385,7 +3522,7 @@ const STRINGS = {
       BIMI:
         '<b>BIMI est g\u00e9n\u00e9ralement consid\u00e9r\u00e9 comme un outil marketing qui n\'apporte aucune valeur de s\u00e9curit\u00e9 suppl\u00e9mentaire. Afficher un logo dans une bo\u00eete aux lettres pour \u00ab prouver \u00bb que c\'est le vrai exp\u00e9diteur revient \u00e0 afficher un GIF disant \u00ab 100\u00a0% garanti \u00bb. Si vous souhaitez quand m\u00eame payer des CA pour cela, libre \u00e0 vous.</b><br><br>' +
         '<b>BIMI (Brand Indicators for Message Identification)</b> permet aux organisations d\'afficher leur logo dans les clients de messagerie compatibles (ex. Gmail, Apple Mail, Yahoo).<br><br>' +
-        '<b>Enregistrement DNS\u00a0:</b> Publi\u00e9 comme enregistrement TXT \u00e0 <code>default._bimi.&lt;domaine&gt;</code>.<br><br>' +
+        '<b>Enregistrement DNS\u00a0:</b> Publi\u00e9 comme enregistrement TXT \u00e0 <code>default._bimi.<domaine></code>.<br><br>' +
         '<b>l= (URL du logo)\u00a0:</b> Une URL pointant vers un fichier SVG du logo. N\u00e9cessaire pour que BIMI fonctionne. ' +
         'Le SVG doit \u00eatre une image carr\u00e9e et s\u00e9curis\u00e9e pour les profils, h\u00e9berg\u00e9e sur HTTPS.<br><br>' +
         '<b>a= (preuve d\'autorit\u00e9)\u00a0:</b> Une URL pointant vers un Verified Mark Certificate (VMC) \u00e9mis par une CA autoris\u00e9e (ex. DigiCert, Entrust). ' +
@@ -4006,118 +4143,127 @@ async function checkSPF(domain) {
 }
 // ── DKIM ──────────────────────────────────────────────────────────────────────
 
+// Domeneshop rotates its DKIM keys through dsYYYYMM selectors. Generating the
+// window from the current date instead of hardcoding it means the list can never
+// silently expire the way a checked-in range does.
+function dsRotationSelectors(monthsBack = 16, monthsAhead = 1) {
+  const out = [];
+  const now = new Date();
+  for (let i = -monthsBack; i <= monthsAhead; i++) {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + i, 1));
+    out.push('ds' + d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, '0'));
+  }
+  return out;
+}
+const DS_SELECTORS = dsRotationSelectors();
+
 const AUTO_SELECTORS = [
   // Google Workspace
   'google','google2',
   // Microsoft 365 / Exchange Online
   'selector1','selector2',
-  // Apple iCloud / iCloud+
-  'sig1','sig2',
-  // Mailchimp / Mandrill transactional
-  'k1','k2','k3','scph0316','scph1220','mandrill','mcsv',
-  // SendGrid (Twilio)
-  's1','s2','em','smtpapi','sendgrid',
+  // Apple iCloud+ custom email domain (CNAME -> …at.icloudmailadmin.com)
+  'sig1',
+  // Mailchimp (CNAME -> dkim{1,2,3}.mcsv.net)
+  'k1','k2','k3',
+  // Mailchimp Transactional / Mandrill. mte1+mte2 are the current CNAME pair
+  // (-> dkim{1,2}.mandrillapp.com); bare 'mandrill' is the older shared key.
+  'mandrill','mte1','mte2',
+  // SendGrid (Twilio) automated security — s1/s2 rotate, s3/s4 on larger accounts
+  's1','s2','s3','s4','em','smtpapi',
+  // Klaviyo — rides on SendGrid infrastructure
+  'kl','kl2',
   // Amazon SES
   'amazonses','ses',
   // Postmark
   'pm',
-  // Zoho Mail
-  'zoho','zmail',
-  // ProtonMail / Proton
+  // Zoho Mail (selector is user-chosen; 'zoho' is the documented example)
+  'zoho',
+  // Proton Mail
   'protonmail','protonmail2','protonmail3',
-  // Tuta (Tutanota)
-  'tuta01','tuta02',
-  // Fastmail
+  // Fastmail (CNAME -> …dkim.fmhosted.com)
   'fm1','fm2','fm3',
-  // HubSpot
-  'hs1','hs2','hs3',
-  // Brevo / Sendinblue
-  'sendinblue','brevo','mail',
-  // Mimecast
-  'mc1','mc2','mimecast',
-  // Proofpoint
-  'pp','pp2021','pp2022','pp2023','pp2024',
-  // Klaviyo
-  'klaviyo',
-  // SparkPost / Bird
-  'sp1','sp2',
-  // Mailgun
-  'mg','mailo',
-  // Constant Contact
-  'ctct1','ctct2',
-  // Marketo (Adobe)
-  'mkto',
+  // HubSpot (CNAME -> …hs01{a,b}.dkim.hubspotemail.net)
+  'hs1','hs2',
+  // Zendesk (CNAME -> zendesk{1,2}._domainkey.zendesk.com)
+  'zendesk1','zendesk2',
+  // Salesforce Marketing Cloud (CNAME -> ….custdkim.salesforce.com)
+  'salesforce','sfdc',
   // Salesforce Pardot / Account Engagement
   'pardot',
-  // ActiveCampaign
-  'ac',
-  // Intercom
-  'intercom',
+  // Marketo (Adobe) — m1 is the documented default, m2/mkto common alternates
+  'm1','m2','mkto',
+  // Campaign Monitor
+  'cm',
+  // Mailjet
+  'mailjet',
+  // Brevo (Sendinblue)
+  'mail',
+  // Mimecast
+  'mimecast',
+  // Proofpoint
+  'pp',
+  // SparkPost / Bird — scphMMYY is date-stamped and only partially guessable
+  'sp1','scph0316','scph0325','scph1220',
+  // Mailgun
+  'mg','mailgun','pic','krs',
+  // Constant Contact (CNAME -> …dkim{1,2}.ccsend.com)
+  'ctct1','ctct2',
+  // Tucows OpenSRS hosted email (CNAME -> …dkim.hostedemail.link) — Squarespace, Wix
+  'key1','key2',
+  // MailerLite / MailerSend
+  'ml','mlsend','mlsend2',
+  // Resend
+  'resend',
   // Customer.io
   'cio',
-  // Iterable
-  'iterable',
-  // Sailthru / Marigold
+  // Intercom (CNAME -> ….dkim.intercom.io)
+  'intercom',
+  // Sailthru / Marigold (CNAME -> ….sailthrudkim.com)
   'sailthru',
-  // MailerLite
-  'ml',
-  // Infomaniak
-  'infomaniak',
-  // OVH
-  'ovh',
-  // Hetzner
-  'hetzner',
-  // Domeneshop — ds+YYYYMM rotation (18-month window)
-  'ds202410','ds202411','ds202412',
-  'ds202501','ds202502','ds202503','ds202504','ds202505','ds202506',
-  'ds202507','ds202508','ds202509','ds202510','ds202511','ds202512',
-  'ds202601','ds202602','ds202603','ds202604','ds202605','ds202606',
+  // Domeneshop — dsYYYYMM rotation, generated from today's date
+  ...DS_SELECTORS,
   // Generic / legacy / misc
-  'mta','smtp','m1','s1024','s2048','krs','pic',
-  'dk','dkim','default','key1','key2',
+  'mta','smtp','mx','dk','dkim','dkim1','dkim2','default','mailo','s1024','s2048',
 ];
 
 const SELECTOR_PROVIDER = {
   google: 'Google Workspace', google2: 'Google Workspace',
   selector1: 'Microsoft 365', selector2: 'Microsoft 365',
-  sig1: 'Apple iCloud', sig2: 'Apple iCloud',
+  sig1: 'Apple iCloud+',
   k1: 'Mailchimp', k2: 'Mailchimp', k3: 'Mailchimp',
-  scph0316: 'Mailchimp', scph1220: 'Mailchimp',
-  mandrill: 'Mailchimp (Mandrill)', mcsv: 'Mailchimp',
-  s1: 'SendGrid', s2: 'SendGrid', smtpapi: 'SendGrid', em: 'SendGrid', sendgrid: 'SendGrid',
+  mandrill: 'Mailchimp Transactional (Mandrill)',
+  mte1: 'Mailchimp Transactional (Mandrill)', mte2: 'Mailchimp Transactional (Mandrill)',
+  s1: 'SendGrid', s2: 'SendGrid', s3: 'SendGrid', s4: 'SendGrid',
+  smtpapi: 'SendGrid', em: 'SendGrid',
+  kl: 'Klaviyo', kl2: 'Klaviyo',
   amazonses: 'Amazon SES', ses: 'Amazon SES',
   pm: 'Postmark',
-  zoho: 'Zoho Mail', zmail: 'Zoho Mail',
+  zoho: 'Zoho Mail',
   protonmail: 'Proton Mail', protonmail2: 'Proton Mail', protonmail3: 'Proton Mail',
-  tuta01: 'Tuta', tuta02: 'Tuta',
   fm1: 'Fastmail', fm2: 'Fastmail', fm3: 'Fastmail',
-  hs1: 'HubSpot', hs2: 'HubSpot', hs3: 'HubSpot',
-  sendinblue: 'Brevo (Sendinblue)', brevo: 'Brevo (Sendinblue)', mail: 'Brevo / Generic',
-  mc1: 'Mimecast', mc2: 'Mimecast', mimecast: 'Mimecast',
-  pp: 'Proofpoint', pp2021: 'Proofpoint', pp2022: 'Proofpoint', pp2023: 'Proofpoint', pp2024: 'Proofpoint',
-  klaviyo: 'Klaviyo',
-  sp1: 'SparkPost / Bird', sp2: 'SparkPost / Bird',
-  mg: 'Mailgun', mailo: 'Mailgun',
-  ctct1: 'Constant Contact', ctct2: 'Constant Contact',
-  mkto: 'Marketo',
+  hs1: 'HubSpot', hs2: 'HubSpot',
+  zendesk1: 'Zendesk', zendesk2: 'Zendesk',
+  salesforce: 'Salesforce Marketing Cloud', sfdc: 'Salesforce Marketing Cloud',
   pardot: 'Salesforce Pardot',
-  ac: 'ActiveCampaign',
-  intercom: 'Intercom',
+  m1: 'Marketo (Adobe)', m2: 'Marketo (Adobe)', mkto: 'Marketo (Adobe)',
+  cm: 'Campaign Monitor',
+  mailjet: 'Mailjet',
+  mail: 'Brevo (Sendinblue) / generic',
+  mimecast: 'Mimecast',
+  pp: 'Proofpoint',
+  sp1: 'SparkPost / Bird', scph0316: 'SparkPost / Bird',
+  scph0325: 'SparkPost / Bird', scph1220: 'SparkPost / Bird',
+  mg: 'Mailgun', mailgun: 'Mailgun', pic: 'Mailgun', krs: 'Mailgun',
+  ctct1: 'Constant Contact', ctct2: 'Constant Contact',
+  key1: 'Tucows OpenSRS (Squarespace, Wix)', key2: 'Tucows OpenSRS (Squarespace, Wix)',
+  ml: 'MailerLite', mlsend: 'MailerSend', mlsend2: 'MailerSend',
+  resend: 'Resend',
   cio: 'Customer.io',
-  iterable: 'Iterable',
-  sailthru: 'Sailthru',
-  ml: 'MailerLite',
-  infomaniak: 'Infomaniak',
-  ovh: 'OVH',
-  hetzner: 'Hetzner',
-  ds202410: 'Domeneshop', ds202411: 'Domeneshop', ds202412: 'Domeneshop',
-  ds202501: 'Domeneshop', ds202502: 'Domeneshop', ds202503: 'Domeneshop',
-  ds202504: 'Domeneshop', ds202505: 'Domeneshop', ds202506: 'Domeneshop',
-  ds202507: 'Domeneshop', ds202508: 'Domeneshop', ds202509: 'Domeneshop',
-  ds202510: 'Domeneshop', ds202511: 'Domeneshop', ds202512: 'Domeneshop',
-  ds202601: 'Domeneshop', ds202602: 'Domeneshop', ds202603: 'Domeneshop',
-  ds202604: 'Domeneshop', ds202605: 'Domeneshop', ds202606: 'Domeneshop',
+  intercom: 'Intercom',
+  sailthru: 'Sailthru / Marigold',
 };
+for (const sel of DS_SELECTORS) SELECTOR_PROVIDER[sel] = 'Domeneshop';
 
 function base64ToBytes(b64) {
   const bin = atob(b64.replace(/-/g, '+').replace(/_/g, '/'));
@@ -6225,13 +6371,20 @@ function renderDKIM(result) {
       const providerRows = [
         ['Google Workspace',   'google, google2',        'googlemail.com'],
         ['Microsoft 365',      'selector1, selector2',   'protection.outlook.com'],
-        ['Mailchimp',          'k1, k2, k3, scph0316',   'mcsv.net'],
-        ['SendGrid',           's1, s2, em, smtpapi',    'sendgrid.net'],
-        ['Amazon SES',         'amazonses',              'amazonses.com'],
+        ['Mailchimp',          'k1, k2, k3',             'dkim1.mcsv.net'],
+        ['Mandrill',           'mte1, mte2, mandrill',   'dkim1.mandrillapp.com'],
+        ['SendGrid',           's1, s2, s3, s4',         'domainkey.u<id>.wl<id>.sendgrid.net'],
+        ['Klaviyo',            'kl, kl2',                'domainkey.u161779.wl030.sendgrid.net'],
+        ['Zendesk',            'zendesk1, zendesk2',     'zendesk1._domainkey.zendesk.com'],
+        ['Salesforce',         'salesforce, sfdc',       'custdkim.salesforce.com'],
+        ['Marketo (Adobe)',    'm1, m2, mkto',           'mktomail.com'],
+        ['HubSpot',            'hs1, hs2',               'hs01a.dkim.hubspotemail.net'],
+        ['Constant Contact',   'ctct1, ctct2',           'dkim1.ccsend.com'],
+        ['Fastmail',           'fm1, fm2, fm3',          'dkim.fmhosted.com'],
+        ['Intercom',           'intercom',               'dkim.intercom.io'],
+        ['Apple iCloud+',      'sig1',                   'at.icloudmailadmin.com'],
+        ['Amazon SES',         'amazonses, ses',         'amazonses.com'],
         ['Postmark',           'pm',                     'pm.mtasv.net'],
-        ['HubSpot',            'hs1, hs2',               'hubspot.com'],
-        ['Proofpoint',         'pp, pp2022',             'pphosted.com'],
-        ['Mimecast',           'mc1, mc2',               'mimecast.com'],
       ];
       const tbl = el('table', 'provider-table');
       const thead = el('thead', null);
@@ -6256,17 +6409,47 @@ function renderDKIM(result) {
 
       addExplanation(body, tx('DKIM'));
 
-      // Probed selectors expandable list
+      // DKIM2 — successor standard, still an Internet-Draft. Informational only:
+      // nothing here touches the rating or the score.
+      const dkim2Section = el('div', 'panel-section');
+      dkim2Section.appendChild(el('div', 'panel-section-title', ts('DKIM_DKIM2_TITLE')));
+      const dkim2Exp = el('div', 'explanation');
+      safeMarkup(dkim2Exp, tx('DKIM2'));
+      dkim2Section.appendChild(dkim2Exp);
+      body.appendChild(dkim2Section);
+
+      // Probed selectors, grouped by the provider each selector belongs to.
+      // Insertion order of AUTO_SELECTORS decides row order; unattributed
+      // selectors collect into a single trailing row.
       const probeSection = el('div', 'panel-section');
-      const chipWrap = el('div', null);
-      chipWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.3rem;padding:0.4rem 0';
+      const groups = new Map();
+      const unknown = [];
       for (const sel of AUTO_SELECTORS) {
-        const chip = el('span', 'sel-chip', sel);
         const prov = SELECTOR_PROVIDER[sel];
-        if (prov) chip.title = prov;
-        chipWrap.appendChild(chip);
+        if (!prov) { unknown.push(sel); continue; }
+        if (!groups.has(prov)) groups.set(prov, []);
+        groups.get(prov).push(sel);
       }
-      probeSection.appendChild(makeDetails(td('DKIM_AUTO_TESTED', AUTO_SELECTORS.length), chipWrap));
+      if (unknown.length) groups.set(ts('DKIM_PROV_UNKNOWN'), unknown);
+
+      const probeTbl = el('table', 'provider-table');
+      const pThead = el('thead', null);
+      const pHrow = el('tr', null);
+      [ts('DKIM_TH_PROVIDER'), ts('DKIM_TH_PROBED')].forEach(h => pHrow.appendChild(el('th', null, h)));
+      pThead.appendChild(pHrow);
+      probeTbl.appendChild(pThead);
+      const pTbody = el('tbody', null);
+      for (const [prov, sels] of groups) {
+        const tr = el('tr', null);
+        tr.appendChild(el('td', null, prov));
+        const selsTd = el('td', null);
+        selsTd.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.25rem';
+        for (const sel of sels) selsTd.appendChild(el('span', 'sel-chip', sel));
+        tr.appendChild(selsTd);
+        pTbody.appendChild(tr);
+      }
+      probeTbl.appendChild(pTbody);
+      probeSection.appendChild(makeDetails(td('DKIM_AUTO_TESTED', AUTO_SELECTORS.length), probeTbl));
       body.appendChild(probeSection);
     }
   });

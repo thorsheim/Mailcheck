@@ -120,6 +120,9 @@ const LANG_ES = {
     DKIM_TH_PROVIDER:    'Proveedor',
     DKIM_TH_SELECTORS:   'Selectores predeterminados',
     DKIM_TH_INFRA:       'Infraestructura',
+    DKIM_TH_PROBED:      'Selectores probados',
+    DKIM_PROV_UNKNOWN:   'Gen\u00e9rico / no espec\u00edfico de proveedor',
+    DKIM_DKIM2_TITLE:    'DKIM2: la pr\u00f3xima versi\u00f3n de DKIM',
     DKIM_AUTO_TESTED_LABEL: 'selectores probados automáticamente',
     DKIM_REVOKED:        'Clave revocada (etiqueta p= vacía)',
     DKIM_KEY_TYPE:       'Tipo de clave',
@@ -420,7 +423,7 @@ const LANG_ES = {
       'Los registros MX validados por DNSSEC evitan esto. El DNSSEC de cada nombre de host MX se comprueba en el ápex de su zona.',
     DANE:
       '<b>DANE</b> (<a href="https://www.rfc-editor.org/rfc/rfc7672">RFC 7672</a>) usa registros TLSA (<a href="https://www.rfc-editor.org/rfc/rfc6698">RFC 6698</a>) para permitir que los servidores de correo verifiquen certificados TLS ' +
-      'sin depender de CAs comerciales. Se consulta en <b>_25._tcp.&lt;mx-hostname&gt;</b>.<br><br>' +
+      'sin depender de CAs comerciales. Se consulta en <b>_25._tcp.<mx-hostname></b>.<br><br>' +
       '<b>Códigos de uso TLSA:</b> ' +
       '<b>DANE-EE (3)</b> \u2014 anclar al certificado de entidad final (más fuerte). ' +
       '<b>DANE-TA (2)</b> \u2014 anclar a un ancla de confianza. ' +
@@ -439,7 +442,7 @@ const LANG_ES = {
     DKIM:
       '<b>¿Qué es un selector DKIM?</b> DKIM (<a href="https://www.rfc-editor.org/rfc/rfc6376">RFC 6376</a>) usa criptografía de clave pública para firmar el correo saliente. ' +
       'Un selector (p. ej. <code>google</code>) es una etiqueta que apunta a una clave pública DKIM ' +
-      'publicada en <code>&lt;selector&gt;._domainkey.&lt;domain&gt;</code>. ' +
+      'publicada en <code><selector>._domainkey.<domain></code>. ' +
       'Un dominio puede tener varios selectores \u2014 uno por proveedor de correo o para la rotación de claves.<br><br>' +
       '<b>Encontrar selectores:</b> Busca en la cabecera <code>DKIM-Signature:</code> de cualquier correo recibido. ' +
       'La etiqueta <code>s=</code> contiene el selector. Los selectores personalizados no pueden descubrirse automáticamente.<br><br>' +
@@ -459,9 +462,37 @@ const LANG_ES = {
       '<b>RSA-2048</b> es la recomendación mínima. ' +
       '<b>RSA-1024</b> es débil y debe reemplazarse inmediatamente.<br><br>' +
       '<b>DNSSEC en los registros DKIM</b> evita que un atacante sustituya tu clave pública en DNS.',
+    DKIM2:
+      'El grupo de trabajo DKIM del IETF est\u00e1 desarrollando <b>DKIM2</b>, un sucesor de DKIM1 ' +
+      '(<a href="https://www.rfc-editor.org/rfc/rfc6376">RFC 6376</a>) que tambi\u00e9n asume la funci\u00f3n de ARC ' +
+      '(<a href="https://www.rfc-editor.org/rfc/rfc8617">RFC 8617</a>). Todav\u00eda es un Internet-Draft: ' +
+      'a\u00fan no hay nada que implementar, y este verificador no lo comprueba.<br><br>' +
+      '<b>Qu\u00e9 cambia:</b> cada salto que procesa un mensaje a\u00f1ade su propia firma, en lugar de que solo el ' +
+      'dominio de origen firme una vez. Cada firma registra el sobre SMTP (<code>MAIL FROM</code> y ' +
+      '<code>RCPT TO</code>) en ese salto, construyendo una cadena de custodia verificable. Los cambios hechos ' +
+      'en tr\u00e1nsito por listas de correo y reenviadores se describen mediante "recetas" que viajan con el ' +
+      'mensaje, de modo que el receptor puede reconstruir el original y a\u00fan validar la firma. Esto ataca los ' +
+      'dos fallos que DKIM1 no puede resolver: la rotura por reenv\u00edo y los ataques de repetici\u00f3n.<br><br>' +
+      '<b>Qu\u00e9 se mantiene:</b> las claves se siguen publicando en DNS en ' +
+      '<code><selector>._domainkey.<dominio></code>, como registros <code>v=DKIM1</code> con ' +
+      'etiquetas <code>k=</code> y <code>p=</code>, por lo que las claves existentes se conservan sin cambios. ' +
+      '<code>rsa-sha256</code> sigue siendo obligatorio, <code>ed25519-sha256</code> es recomendado y ' +
+      '<code>rsa-sha1</code> se rechaza por completo. Las etiquetas <code>h=</code>, <code>n=</code> y ' +
+      '<code>s=</code> quedan retiradas.<br><br>' +
+      '<b>Estado:</b> <code>draft-ietf-dkim-dkim2-spec</code> es el documento adoptado por el grupo de trabajo, ' +
+      'junto a borradores separados para la codificaci\u00f3n DNS y las buenas pr\u00e1cticas. Implementaciones ' +
+      'independientes en Rust, Python y Go demostraron interoperabilidad en julio de 2026. Nada es a\u00fan un RFC, ' +
+      'as\u00ed que hoy no se requiere ninguna acci\u00f3n, pero la higiene de claves que corrijas ahora (Ed25519 o ' +
+      'RSA-2048, <code>h=sha256</code>, DNSSEC) se traslada directamente a DKIM2.<br><br>' +
+      '<b>M\u00e1s informaci\u00f3n:</b><br>' +
+      '<a href="https://datatracker.ietf.org/wg/dkim/documents/">Grupo de trabajo DKIM del IETF \u2014 todos los documentos</a><br>' +
+      '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-spec/">draft-ietf-dkim-dkim2-spec \u2014 especificaci\u00f3n principal</a><br>' +
+      '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-dns/">draft-ietf-dkim-dkim2-dns \u2014 especificaci\u00f3n de nombres de dominio</a><br>' +
+      '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-bcp/">draft-ietf-dkim-dkim2-bcp \u2014 buenas pr\u00e1cticas</a><br>' +
+      '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-motivation/">draft-ietf-dkim-dkim2-motivation \u2014 justificaci\u00f3n y contexto</a>',
     TLSRPT:
       '<b>TLS-RPT (<a href="https://www.rfc-editor.org/rfc/rfc8460">RFC 8460</a>)</b> permite recibir informes de fallos TLS de los servidores de correo remitentes. ' +
-      'Se publica como un registro TXT en <code>_smtp._tls.&lt;dominio&gt;</code>.<br><br>' +
+      'Se publica como un registro TXT en <code>_smtp._tls.<dominio></code>.<br><br>' +
       '<b>Puntos de notificación rua=:</b> Los informes se envían a direcciones <code>mailto:</code> o servicios de agregación <code>https:</code>. ' +
       'Los puntos HTTPS son excelentes; mailto es bueno.<br><br>' +
       '<b>Contenido de los informes:</b> Datos JSON agregados \u2014 conexiones TLS exitosas, fallos de handshake, ' +
@@ -472,8 +503,8 @@ const LANG_ES = {
     MTASTS:
       '<b>MTA-STS (<a href="https://www.rfc-editor.org/rfc/rfc8461">RFC 8461</a>)</b> instruye a los servidores remitentes a requerir TLS al entregar a tu dominio ' +
       'y a validar el certificado de tu servidor de correo. ' +
-      'Registro DNS en <code>_mta-sts.&lt;dominio&gt;</code>; ' +
-      'política en <code>https://mta-sts.&lt;dominio&gt;/.well-known/mta-sts.txt</code>.<br><br>' +
+      'Registro DNS en <code>_mta-sts.<dominio></code>; ' +
+      'política en <code>https://mta-sts.<dominio>/.well-known/mta-sts.txt</code>.<br><br>' +
       '<b>Modos de política:</b> <b>enforce</b> \u2014 TLS obligatorio con certificado válido, o entrega rechazada. ' +
       '<b>testing</b> \u2014 recopilar datos TLS-RPT sin aplicar. ' +
       '<b>none</b> \u2014 explícitamente desactivado.<br><br>' +
@@ -551,7 +582,7 @@ const LANG_ES = {
     BIMI:
       '<b>BIMI se considera ampliamente una herramienta de marketing que no aporta ningún valor de seguridad adicional a nadie. Mostrar un logotipo en un buzón de correo para "demostrar" que es el remitente real es como cualquier imagen GIF que diga "100% garantizado". Si aun así quieres pagar a las CAs por ello, adelante.</b><br><br>' +
       '<b>BIMI (Brand Indicators for Message Identification)</b> permite a las organizaciones mostrar su logotipo en los clientes de correo que lo admiten (p. ej. Gmail, Apple Mail, Yahoo).<br><br>' +
-      '<b>Registro DNS:</b> Se publica como un registro TXT en <code>default._bimi.&lt;dominio&gt;</code>.<br><br>' +
+      '<b>Registro DNS:</b> Se publica como un registro TXT en <code>default._bimi.<dominio></code>.<br><br>' +
       '<b>l= (URL del logotipo):</b> Una URL que apunta a un archivo SVG del logotipo. Necesario para que BIMI funcione. ' +
       'El SVG debe ser una imagen cuadrada y segura para perfiles, alojada sobre HTTPS.<br><br>' +
       '<b>a= (evidencia de autoridad):</b> Una URL que apunta a un Verified Mark Certificate (VMC) emitido por una CA autorizada (p. ej. DigiCert, Entrust). ' +

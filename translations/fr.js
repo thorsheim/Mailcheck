@@ -121,6 +121,9 @@ const LANG_FR = {
     DKIM_TH_PROVIDER:    'Fournisseur',
     DKIM_TH_SELECTORS:   'Sélecteurs par défaut',
     DKIM_TH_INFRA:       'Infrastructure',
+    DKIM_TH_PROBED:      'S\u00e9lecteurs test\u00e9s',
+    DKIM_PROV_UNKNOWN:   'G\u00e9n\u00e9rique / non sp\u00e9cifique \u00e0 un fournisseur',
+    DKIM_DKIM2_TITLE:    'DKIM2\u00a0: la prochaine version de DKIM',
     DKIM_AUTO_TESTED_LABEL: 'sélecteurs testés automatiquement',
     DKIM_REVOKED:        'Clé révoquée (balise p= vide)',
     DKIM_KEY_TYPE:       'Type de clé',
@@ -444,7 +447,7 @@ const LANG_FR = {
       'Les enregistrements MX validés par DNSSEC empêchent cela. Le DNSSEC de chaque nom d\'hôte MX est vérifié au sommet de sa zone.',
     DANE:
       '<b>DANE</b> (<a href="https://www.rfc-editor.org/rfc/rfc7672">RFC 7672</a>) utilise des enregistrements TLSA (<a href="https://www.rfc-editor.org/rfc/rfc6698">RFC 6698</a>) pour permettre aux serveurs de messagerie de vérifier les certificats TLS ' +
-      'sans dépendre des CA commerciales. Interrogé à <b>_25._tcp.&lt;mx-hostname&gt;</b>.<br><br>' +
+      'sans dépendre des CA commerciales. Interrogé à <b>_25._tcp.<mx-hostname></b>.<br><br>' +
       '<b>Codes d\'utilisation TLSA\u00a0:</b> ' +
       '<b>DANE-EE (3)</b> \u2014 ancrer au certificat d\'entité finale (le plus fort). ' +
       '<b>DANE-TA (2)</b> \u2014 ancrer à une ancre de confiance. ' +
@@ -463,7 +466,7 @@ const LANG_FR = {
     DKIM:
       '<b>Qu\'est-ce qu\'un sélecteur DKIM\u00a0?</b> DKIM (<a href="https://www.rfc-editor.org/rfc/rfc6376">RFC 6376</a>) utilise la cryptographie à clé publique pour signer le courrier sortant. ' +
       'Un sélecteur (ex. <code>google</code>) est une étiquette pointant vers une clé publique DKIM ' +
-      'publiée à <code>&lt;selector&gt;._domainkey.&lt;domain&gt;</code>. ' +
+      'publiée à <code><selector>._domainkey.<domain></code>. ' +
       'Un domaine peut avoir plusieurs sélecteurs \u2014 un par fournisseur de messagerie ou pour la rotation des clés.<br><br>' +
       '<b>Trouver des sélecteurs\u00a0:</b> Recherchez dans l\'en-tête <code>DKIM-Signature:</code> de tout courrier reçu. ' +
       'La balise <code>s=</code> contient le sélecteur. Les sélecteurs personnalisés ne peuvent pas être découverts automatiquement.<br><br>' +
@@ -483,9 +486,39 @@ const LANG_FR = {
       '<b>RSA-2048</b> est la recommandation minimale. ' +
       '<b>RSA-1024</b> est faible et doit être remplacé immédiatement.<br><br>' +
       '<b>DNSSEC sur les enregistrements DKIM</b> empêche un attaquant de substituer votre clé publique dans le DNS.',
+    DKIM2:
+      'Le groupe de travail DKIM de l\u2019IETF d\u00e9veloppe <b>DKIM2</b>, un successeur de DKIM1 ' +
+      '(<a href="https://www.rfc-editor.org/rfc/rfc6376">RFC 6376</a>) qui reprend aussi le r\u00f4le d\u2019ARC ' +
+      '(<a href="https://www.rfc-editor.org/rfc/rfc8617">RFC 8617</a>). Ce n\u2019est encore qu\u2019un Internet-Draft : ' +
+      'il n\u2019y a rien \u00e0 d\u00e9ployer pour l\u2019instant, et ce v\u00e9rificateur ne le teste pas.<br><br>' +
+      '<b>Ce qui change :</b> chaque saut qui traite un message ajoute sa propre signature, au lieu que seul le ' +
+      'domaine d\u2019origine signe une fois. Chaque signature enregistre l\u2019enveloppe SMTP (<code>MAIL FROM</code> et ' +
+      '<code>RCPT TO</code>) \u00e0 ce saut, construisant une cha\u00eene de possession v\u00e9rifiable. Les modifications ' +
+      'apport\u00e9es en transit par les listes de diffusion et les redirecteurs sont d\u00e9crites par des \u00ab recettes \u00bb ' +
+      'transport\u00e9es dans le message, de sorte que le destinataire peut reconstituer l\u2019original et valider malgr\u00e9 ' +
+      'tout la signature. Cela vise les deux \u00e9checs que DKIM1 ne sait pas traiter : la rupture par redirection ' +
+      'et les attaques par rejeu.<br><br>' +
+      '<b>Ce qui ne change pas :</b> les cl\u00e9s restent publi\u00e9es dans le DNS \u00e0 ' +
+      '<code><s\u00e9lecteur>._domainkey.<domaine></code>, toujours sous forme d\u2019enregistrements ' +
+      '<code>v=DKIM1</code> avec les balises <code>k=</code> et <code>p=</code> : les cl\u00e9s existantes sont ' +
+      'conserv\u00e9es telles quelles. <code>rsa-sha256</code> reste obligatoire, <code>ed25519-sha256</code> est ' +
+      'recommand\u00e9 et <code>rsa-sha1</code> est rejet\u00e9 sans appel. Les balises <code>h=</code>, <code>n=</code> ' +
+      'et <code>s=</code> sont retir\u00e9es.<br><br>' +
+      '<b>\u00c9tat d\u2019avancement :</b> <code>draft-ietf-dkim-dkim2-spec</code> est le document adopt\u00e9 par le groupe ' +
+      'de travail, aux c\u00f4t\u00e9s de brouillons distincts pour l\u2019encodage DNS et les bonnes pratiques. Des ' +
+      'impl\u00e9mentations ind\u00e9pendantes en Rust, Python et Go ont d\u00e9montr\u00e9 leur interop\u00e9rabilit\u00e9 en juillet 2026. ' +
+      'Rien n\u2019est encore un RFC, aucune action n\u2019est donc requise aujourd\u2019hui \u2014 mais l\u2019hygi\u00e8ne des cl\u00e9s que ' +
+      'vous corrigez maintenant (Ed25519 ou RSA-2048, <code>h=sha256</code>, DNSSEC) se reporte directement ' +
+      'sur DKIM2.<br><br>' +
+      '<b>Pour aller plus loin :</b><br>' +
+      '<a href="https://datatracker.ietf.org/wg/dkim/documents/">Groupe de travail DKIM de l\u2019IETF \u2014 tous les documents</a><br>' +
+      '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-spec/">draft-ietf-dkim-dkim2-spec \u2014 sp\u00e9cification principale</a><br>' +
+      '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-dns/">draft-ietf-dkim-dkim2-dns \u2014 sp\u00e9cification des noms de domaine</a><br>' +
+      '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-bcp/">draft-ietf-dkim-dkim2-bcp \u2014 bonnes pratiques</a><br>' +
+      '<a href="https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-motivation/">draft-ietf-dkim-dkim2-motivation \u2014 justification et contexte</a>',
     TLSRPT:
       '<b>TLS-RPT (<a href="https://www.rfc-editor.org/rfc/rfc8460">RFC 8460</a>)</b> permet de recevoir des rapports d\'échecs TLS des serveurs de messagerie expéditeurs. ' +
-      'Publié comme enregistrement TXT à <code>_smtp._tls.&lt;domaine&gt;</code>.<br><br>' +
+      'Publié comme enregistrement TXT à <code>_smtp._tls.<domaine></code>.<br><br>' +
       '<b>Points de rapport rua=\u00a0:</b> Les rapports sont envoyés aux adresses <code>mailto:</code> ou aux services d\'agrégation <code>https:</code>. ' +
       'Les points HTTPS sont excellents\u00a0; mailto est bon.<br><br>' +
       '<b>Contenu des rapports\u00a0:</b> Données JSON agrégées \u2014 connexions TLS réussies, échecs de handshake, ' +
@@ -496,8 +529,8 @@ const LANG_FR = {
     MTASTS:
       '<b>MTA-STS (<a href="https://www.rfc-editor.org/rfc/rfc8461">RFC 8461</a>)</b> indique aux serveurs expéditeurs d\'exiger TLS lors de la livraison à votre domaine ' +
       'et de valider le certificat de votre serveur de messagerie. ' +
-      'Enregistrement DNS à <code>_mta-sts.&lt;domaine&gt;</code>\u00a0; ' +
-      'politique à <code>https://mta-sts.&lt;domaine&gt;/.well-known/mta-sts.txt</code>.<br><br>' +
+      'Enregistrement DNS à <code>_mta-sts.<domaine></code>\u00a0; ' +
+      'politique à <code>https://mta-sts.<domaine>/.well-known/mta-sts.txt</code>.<br><br>' +
       '<b>Modes de politique\u00a0:</b> <b>enforce</b> \u2014 TLS obligatoire avec certificat valide, ou livraison refusée. ' +
       '<b>testing</b> \u2014 collecter des données TLS-RPT sans appliquer. ' +
       '<b>none</b> \u2014 explicitement désactivé.<br><br>' +
@@ -575,7 +608,7 @@ const LANG_FR = {
     BIMI:
       '<b>BIMI est généralement considéré comme un outil marketing qui n\'apporte aucune valeur de sécurité supplémentaire. Afficher un logo dans une boîte aux lettres pour « prouver » que c\'est le vrai expéditeur revient à afficher un GIF disant « 100\u00a0% garanti ». Si vous souhaitez quand même payer des CA pour cela, libre à vous.</b><br><br>' +
       '<b>BIMI (Brand Indicators for Message Identification)</b> permet aux organisations d\'afficher leur logo dans les clients de messagerie compatibles (ex. Gmail, Apple Mail, Yahoo).<br><br>' +
-      '<b>Enregistrement DNS\u00a0:</b> Publié comme enregistrement TXT à <code>default._bimi.&lt;domaine&gt;</code>.<br><br>' +
+      '<b>Enregistrement DNS\u00a0:</b> Publié comme enregistrement TXT à <code>default._bimi.<domaine></code>.<br><br>' +
       '<b>l= (URL du logo)\u00a0:</b> Une URL pointant vers un fichier SVG du logo. Nécessaire pour que BIMI fonctionne. ' +
       'Le SVG doit être une image carrée et sécurisée pour les profils, hébergée sur HTTPS.<br><br>' +
       '<b>a= (preuve d\'autorité)\u00a0:</b> Une URL pointant vers un Verified Mark Certificate (VMC) émis par une CA autorisée (ex. DigiCert, Entrust). ' +
