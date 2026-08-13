@@ -698,8 +698,17 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-August-13-3 &mdash; click for changelog</summary>
+      <summary>Version 2026-August-13-4 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-August-13-4</span>
+          <ul class="cl-changes">
+            <li>IPv6 tab: added the <b>Netherlands</b> &mdash; IPv6 has been a comply-or-explain standard since 2010, and a government-wide agreement requires public bodies to be reachable over IPv6 for websites <i>and e-mail</i> since 31 December 2021</li>
+            <li>IPv6 tab: added <b>Germany</b> (Netzstrategie 2030, IT-Planungsrat decision 2019)</li>
+            <li>Corrected the EU entry &mdash; the NIS2 Directive does <b>not</b> require IPv6. The row now points at the ISA&sup2; IPv6 Framework for European Governments, which is guidance rather than a mandate</li>
+            <li>Checked <b>Sweden</b> and <b>Denmark</b>: neither has a binding requirement. Sweden&rsquo;s PTS recommends IPv6 and proposed a requirement in 2022 that was never enacted; Denmark leaves IPv6 out of its technical minimum requirements for state authorities. Both are now named explicitly so the omission is not mistaken for an oversight</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-August-13-3</span>
           <ul class="cl-changes">
@@ -1158,6 +1167,7 @@ const STRINGS = {
       IPV6_NO_NS:             'No NS hosts found',
       IPV6_MANDATORY_TITLE:   'Mandatory IPv6 requirements',
       IPV6_MANDATORY_NOTE:    'IPv6 is required by government regulation in the following countries:',
+      IPV6_NO_MANDATE:        '<b>Checked, no binding requirement:</b> <b>Sweden</b> \u2014 PTS recommends IPv6 and proposed in 2022 that agencies, municipalities and regions be required to support it for websites, e-mail and DNS, but no such regulation has been enacted. <b>Denmark</b> \u2014 IPv6 is not part of the technical minimum requirements for state authorities; the government has stated it was not prioritised.',
       IPV6_DOMAIN_HAS_IPV6:   '\u2713 Domain has IPv6 address(es)',
       IPV6_DOMAIN_NO_IPV6:    'Domain has no IPv6 address \u2014 only reachable over IPv4',
       IPV6_ALL_MX_HAVE_IPV6:  '\u2713 All MX hosts have IPv6 addresses',
@@ -1648,10 +1658,13 @@ const STRINGS = {
         'Both create silent delivery failures that are difficult to diagnose.<br><br>' +
         '<b>Mandatory government requirements \u2014 selected countries:</b><br>' +
         '<b>Norway:</b> <a href="https://lovdata.no/dokument/SF/forskrift/2013-04-05-959">Forskrift om IT-standarder i offentlig forvaltning \u00a712</a> \u2014 IPv6 mandatory for government services from 1 January 2023; maximum extension until 1 January 2025.<br>' +
+        '<b>Netherlands:</b> <a href="https://www.forumstandaardisatie.nl/open-standaarden/ipv6">IPv6 on the Forum Standaardisatie \u201cpas toe of leg uit\u201d (comply-or-explain) list</a> since 2010; a government-wide agreement requires all public bodies to be reachable over IPv6 for <b>websites and e-mail</b> from 31 December 2021.<br>' +
         '<b>USA:</b> OMB Memorandum M-21-07 \u2014 federal agencies must operate IPv6-only infrastructure by FY2025.<br>' +
-        '<b>EU:</b> European Interoperability Framework / NIS2 Directive \u2014 promotes IPv6 readiness for member-state public services.<br>' +
+        '<b>Germany:</b> <a href="https://www.it-planungsrat.de/beschluss/beschluss-2018-42">Netzstrategie 2030 f\u00fcr die \u00f6ffentliche Verwaltung</a> \u2014 IT-Planungsrat decision (2019) introducing IPv6 across public administration networks.<br>' +
         '<b>India:</b> DoT National Telecom Policy 2018 \u2014 IPv6 mandatory for ISPs, government, and public-sector entities.<br>' +
-        '<b>China:</b> MIIT IPv6 Scale Deployment Action Plan 2017 \u2014 full deployment across ISPs, government, and major platforms.<br><br>' +
+        '<b>China:</b> MIIT IPv6 Scale Deployment Action Plan 2017 \u2014 full deployment across ISPs, government, and major platforms.<br>' +
+        '<b>EU:</b> <a href="https://ec.europa.eu/isa2/sites/default/files/ipv6_framework_for_european_governments_0.pdf">IPv6 Framework for European Governments</a> \u2014 guidance for member states, <b>not</b> a binding mandate. Contrary to a common claim, NIS2 does not require IPv6.<br><br>' +
+        '<b>No binding requirement:</b> <b>Sweden</b> \u2014 PTS recommends IPv6 and proposed in 2022 that agencies, municipalities and regions be required to support it for websites, e-mail and DNS, but no regulation has been enacted. <b>Denmark</b> \u2014 IPv6 is not part of the technical minimum requirements for state authorities.<br><br>' +
         'This check queries AAAA records for the domain itself, all MX hosts, and all NS hosts. ' +
         'It does <b>not</b> affect the overall security score \u2014 informational only.',
       SELECTOR_HELP:
@@ -1815,6 +1828,7 @@ const STRINGS = {
       IPV6_NO_NS:             'Ingen NS-verter funnet',
       IPV6_MANDATORY_TITLE:   'Obligatoriske IPv6-krav',
       IPV6_MANDATORY_NOTE:    'IPv6 er p\u00e5krevd ved forskrift i f\u00f8lgende land:',
+      IPV6_NO_MANDATE:        '<b>Sjekket, ingen bindende krav:</b> <b>Sverige</b> \u2014 PTS anbefaler IPv6 og foreslo i 2022 at myndigheter, kommuner og regioner skulle p\u00e5legges \u00e5 st\u00f8tte det for nettsider, e-post og DNS, men ingen slik forskrift er vedtatt. <b>Danmark</b> \u2014 IPv6 inng\u00e5r ikke i de tekniske minimumskravene for statlige myndigheter; regjeringen har opplyst at det ikke har v\u00e6rt prioritert.',
       IPV6_DOMAIN_HAS_IPV6:   '\u2713 Domenet har IPv6-adresse(r)',
       IPV6_DOMAIN_NO_IPV6:    'Domenet har ingen IPv6-adresse \u2014 kun n\u00e5dd via IPv4',
       IPV6_ALL_MX_HAVE_IPV6:  '\u2713 Alle MX-verter har IPv6-adresser',
@@ -2291,10 +2305,13 @@ const STRINGS = {
         'Begge deler kan forårsake lydløse leveringsfeil som er vanskelige å feilsøke.<br><br>' +
         '<b>Obligatoriske myndighetskrav — utvalgte land:</b><br>' +
         '<b>Norge:</b> <a href="https://lovdata.no/dokument/SF/forskrift/2013-04-05-959">Forskrift om IT-standarder i offentlig forvaltning §12</a> \u2014 IPv6 obligatorisk for offentlige tjenester fra 1. januar 2023; maksimal utsettelse til 1. januar 2025.<br>' +
+        '<b>Nederland:</b> <a href="https://www.forumstandaardisatie.nl/open-standaarden/ipv6">IPv6 på Forum Standaardisaties «pas toe of leg uit»-liste</a> siden 2010; en avtale for hele offentlig sektor krever at alle offentlige virksomheter er tilgjengelige over IPv6 for <b>nettsider og e-post</b> fra 31. desember 2021.<br>' +
         '<b>USA:</b> OMB-memo M-21-07 \u2014 føderale etater skal drive IPv6-eksklusiv infrastruktur innen FY2025.<br>' +
-        '<b>EU:</b> Det europeiske interoperabilitetsrammeverket / NIS2-direktivet \u2014 fremmer IPv6-beredskap for offentlig sektor.<br>' +
+        '<b>Tyskland:</b> <a href="https://www.it-planungsrat.de/beschluss/beschluss-2018-42">Netzstrategie 2030 für die öffentliche Verwaltung</a> \u2014 vedtak i IT-Planungsrat (2019) om innføring av IPv6 i offentlig forvaltnings nett.<br>' +
         '<b>India:</b> DoT nasjonal telekomspolicy 2018 \u2014 IPv6 obligatorisk for ISP-er, offentlige og statlige virksomheter.<br>' +
-        '<b>Kina:</b> MIITs handlingsplan for IPv6-skalering 2017 \u2014 full distribusjon hos ISP-er, offentlig sektor og store plattformer.<br><br>' +
+        '<b>Kina:</b> MIITs handlingsplan for IPv6-skalering 2017 \u2014 full distribusjon hos ISP-er, offentlig sektor og store plattformer.<br>' +
+        '<b>EU:</b> <a href="https://ec.europa.eu/isa2/sites/default/files/ipv6_framework_for_european_governments_0.pdf">IPv6 Framework for European Governments</a> \u2014 veiledning for medlemsstatene, <b>ikke</b> et bindende krav. I motsetning til en vanlig påstand stiller ikke NIS2 krav om IPv6.<br><br>' +
+        '<b>Ingen bindende krav:</b> <b>Sverige</b> \u2014 PTS anbefaler IPv6 og foreslo i 2022 at myndigheter, kommuner og regioner skulle pålegges å støtte det for nettsider, e-post og DNS, men ingen forskrift er vedtatt. <b>Danmark</b> \u2014 IPv6 inngår ikke i de tekniske minimumskravene for statlige myndigheter.<br><br>' +
         'Denne sjekken spør etter AAAA-poster for selve domenet, alle MX-verter og alle NS-verter. ' +
         'Det påvirker <b>ikke</b> den samlede sikkerhetsscoren \u2014 kun informativt.',
       SELECTOR_HELP:
@@ -2552,6 +2569,7 @@ const STRINGS = {
       IPV6_NO_NS: 'No se encontraron hosts NS',
       IPV6_MANDATORY_TITLE: 'Requisitos obligatorios de IPv6',
       IPV6_MANDATORY_NOTE: 'IPv6 es obligatorio por normativa gubernamental en los siguientes países:',
+      IPV6_NO_MANDATE: '<b>Comprobado, sin requisito vinculante:</b> <b>Suecia</b>: PTS recomienda IPv6 y propuso en 2022 que se exigiera a organismos, municipios y regiones admitirlo en sitios web, correo electr\u00f3nico y DNS, pero no se ha aprobado ninguna normativa. <b>Dinamarca</b>: IPv6 no forma parte de los requisitos t\u00e9cnicos m\u00ednimos para las autoridades estatales; el gobierno ha declarado que no se prioriz\u00f3.',
       IPV6_DOMAIN_HAS_IPV6: '✓ El dominio tiene dirección(es) IPv6',
       IPV6_DOMAIN_NO_IPV6: 'El dominio no tiene dirección IPv6 — solo accesible por IPv4',
       IPV6_ALL_MX_HAVE_IPV6: '✓ Todos los hosts MX tienen direcciones IPv6',
@@ -2910,10 +2928,13 @@ const STRINGS = {
         'Ambos casos provocan fallos de entrega silenciosos y difíciles de diagnosticar.<br><br>' +
         '<b>Requisitos gubernamentales obligatorios \u2014 países seleccionados:</b><br>' +
         '<b>Noruega:</b> <a href="https://lovdata.no/dokument/SF/forskrift/2013-04-05-959">Forskrift om IT-standarder i offentlig forvaltning \u00a712</a> \u2014 IPv6 obligatorio para los servicios públicos desde el 1 de enero de 2023; prórroga máxima hasta el 1 de enero de 2025.<br>' +
+        '<b>Países Bajos:</b> <a href="https://www.forumstandaardisatie.nl/open-standaarden/ipv6">IPv6 en la lista «pas toe of leg uit» (cumplir o explicar) del Forum Standaardisatie</a> desde 2010; un acuerdo de toda la administración exige que los organismos públicos sean accesibles por IPv6 para <b>sitios web y correo electrónico</b> desde el 31 de diciembre de 2021.<br>' +
         '<b>EE. UU.:</b> Memorando OMB M-21-07 \u2014 las agencias federales deben operar infraestructura solo-IPv6 para el año fiscal 2025.<br>' +
-        '<b>UE:</b> Marco Europeo de Interoperabilidad / Directiva NIS2 \u2014 promueven la preparación para IPv6 en los servicios públicos de los estados miembros.<br>' +
+        '<b>Alemania:</b> <a href="https://www.it-planungsrat.de/beschluss/beschluss-2018-42">Netzstrategie 2030 für die öffentliche Verwaltung</a> \u2014 decisión del IT-Planungsrat (2019) que introduce IPv6 en las redes de la administración pública.<br>' +
         '<b>India:</b> DoT National Telecom Policy 2018 \u2014 IPv6 obligatorio para ISP, administración y entidades del sector público.<br>' +
-        '<b>China:</b> MIIT IPv6 Scale Deployment Action Plan 2017 \u2014 despliegue completo en ISP, administración y grandes plataformas.<br><br>' +
+        '<b>China:</b> MIIT IPv6 Scale Deployment Action Plan 2017 \u2014 despliegue completo en ISP, administración y grandes plataformas.<br>' +
+        '<b>UE:</b> <a href="https://ec.europa.eu/isa2/sites/default/files/ipv6_framework_for_european_governments_0.pdf">IPv6 Framework for European Governments</a> \u2014 orientación para los estados miembros, <b>no</b> un mandato vinculante. En contra de una afirmación habitual, NIS2 no exige IPv6.<br><br>' +
+        '<b>Sin requisito vinculante:</b> <b>Suecia</b>: PTS recomienda IPv6 y propuso en 2022 exigirlo a organismos, municipios y regiones para sitios web, correo y DNS, pero no se ha aprobado normativa. <b>Dinamarca</b>: IPv6 no forma parte de los requisitos técnicos mínimos para las autoridades estatales.<br><br>' +
         'Esta comprobación consulta los registros AAAA del propio dominio, de todos los hosts MX y de todos los hosts NS. ' +
         '<b>No</b> afecta a la puntuación de seguridad global \u2014 es solo informativa.'
     },
@@ -3189,6 +3210,7 @@ const STRINGS = {
       IPV6_NO_NS: 'Aucun hôte NS trouvé',
       IPV6_MANDATORY_TITLE: 'Exigences IPv6 obligatoires',
       IPV6_MANDATORY_NOTE: 'IPv6 est imposé par la réglementation publique dans les pays suivants :',
+      IPV6_NO_MANDATE: '<b>V\u00e9rifi\u00e9, aucune obligation contraignante\u00a0:</b> <b>Su\u00e8de</b>\u00a0: le PTS recommande IPv6 et a propos\u00e9 en 2022 d\u2019imposer aux administrations, communes et r\u00e9gions de le prendre en charge pour les sites web, la messagerie et le DNS, mais aucun r\u00e8glement n\u2019a \u00e9t\u00e9 adopt\u00e9. <b>Danemark</b>\u00a0: IPv6 ne figure pas dans les exigences techniques minimales des autorit\u00e9s de l\u2019\u00c9tat\u00a0; le gouvernement a indiqu\u00e9 que ce n\u2019\u00e9tait pas une priorit\u00e9.',
       IPV6_DOMAIN_HAS_IPV6: '✓ Le domaine possède une ou plusieurs adresses IPv6',
       IPV6_DOMAIN_NO_IPV6: 'Le domaine n’a aucune adresse IPv6 — joignable uniquement en IPv4',
       IPV6_ALL_MX_HAVE_IPV6: '✓ Tous les hôtes MX ont des adresses IPv6',
@@ -3553,10 +3575,13 @@ const STRINGS = {
         'Dans les deux cas, cela produit des échecs de livraison silencieux et difficiles à diagnostiquer.<br><br>' +
         '<b>Exigences réglementaires obligatoires \u2014 pays sélectionnés\u00a0:</b><br>' +
         '<b>Norvège\u00a0:</b> <a href="https://lovdata.no/dokument/SF/forskrift/2013-04-05-959">Forskrift om IT-standarder i offentlig forvaltning \u00a712</a> \u2014 IPv6 obligatoire pour les services publics depuis le 1er janvier 2023\u00a0; report maximal jusqu\u2019au 1er janvier 2025.<br>' +
+        '<b>Pays-Bas\u00a0:</b> <a href="https://www.forumstandaardisatie.nl/open-standaarden/ipv6">IPv6 sur la liste «\u00a0pas toe of leg uit\u00a0» (appliquer ou expliquer) du Forum Standaardisatie</a> depuis 2010\u00a0; un accord valable pour toute l\u2019administration impose que les organismes publics soient joignables en IPv6 pour les <b>sites web et la messagerie</b> depuis le 31 décembre 2021.<br>' +
         '<b>États-Unis\u00a0:</b> mémorandum OMB M-21-07 \u2014 les agences fédérales doivent exploiter une infrastructure uniquement IPv6 d\u2019ici l\u2019exercice 2025.<br>' +
-        '<b>UE\u00a0:</b> cadre européen d\u2019interopérabilité / directive NIS2 \u2014 encouragent la compatibilité IPv6 des services publics des États membres.<br>' +
+        '<b>Allemagne\u00a0:</b> <a href="https://www.it-planungsrat.de/beschluss/beschluss-2018-42">Netzstrategie 2030 für die öffentliche Verwaltung</a> \u2014 décision de l\u2019IT-Planungsrat (2019) introduisant IPv6 dans les réseaux de l\u2019administration publique.<br>' +
         '<b>Inde\u00a0:</b> DoT National Telecom Policy 2018 \u2014 IPv6 obligatoire pour les FAI, l\u2019administration et le secteur public.<br>' +
-        '<b>Chine\u00a0:</b> MIIT IPv6 Scale Deployment Action Plan 2017 \u2014 déploiement complet chez les FAI, l\u2019administration et les grandes plateformes.<br><br>' +
+        '<b>Chine\u00a0:</b> MIIT IPv6 Scale Deployment Action Plan 2017 \u2014 déploiement complet chez les FAI, l\u2019administration et les grandes plateformes.<br>' +
+        '<b>UE\u00a0:</b> <a href="https://ec.europa.eu/isa2/sites/default/files/ipv6_framework_for_european_governments_0.pdf">IPv6 Framework for European Governments</a> \u2014 orientation pour les États membres, et <b>non</b> une obligation contraignante. Contrairement à une idée répandue, NIS2 n\u2019impose pas IPv6.<br><br>' +
+        '<b>Aucune obligation contraignante\u00a0:</b> <b>Suède</b>\u00a0: le PTS recommande IPv6 et a proposé en 2022 de l\u2019imposer aux administrations, communes et régions pour les sites web, la messagerie et le DNS, mais aucun règlement n\u2019a été adopté. <b>Danemark</b>\u00a0: IPv6 ne figure pas dans les exigences techniques minimales des autorités de l\u2019État.<br><br>' +
         'Cette vérification interroge les enregistrements AAAA du domaine lui-même, de tous les hôtes MX et de tous les hôtes NS. ' +
         'Elle <b>n\u2019affecte pas</b> la note de sécurité globale \u2014 elle est purement informative.'
     },
@@ -7015,10 +7040,12 @@ function renderIPv6(result) {
 
     const countryData = [
       { name: 'Norway (mandatory from 2023-01-01, max. extension to 2025-01-01)', law: 'Forskrift om IT-standarder i offentlig forvaltning \u00a712', href: 'https://lovdata.no/dokument/SF/forskrift/2013-04-05-959' },
-      { name: 'USA (2020)',    law: 'OMB Memorandum M-21-07 (Federal IPv6 mandate)',              href: 'https://www.whitehouse.gov/wp-content/uploads/2020/11/M-21-07.pdf' },
-      { name: 'EU (2017)',     law: 'European Interoperability Framework / NIS2 Directive',        href: 'https://joinup.ec.europa.eu/collection/nifo-national-interoperability-framework-observatory/european-interoperability-framework-detail' },
-      { name: 'India (2018)',  law: 'DoT National Telecom Policy 2018 (IPv6 mandate)',             href: 'https://dot.gov.in/sites/default/files/National_Telecom_Policy-2018_0.pdf' },
-      { name: 'China (2017)',  law: 'MIIT IPv6 Scale Deployment Action Plan',                     href: 'https://www.miit.gov.cn/' },
+      { name: 'Netherlands (websites + e-mail from 2021-12-31)', law: 'Forum Standaardisatie \u201cpas toe of leg uit\u201d list (IPv6 since 2010)', href: 'https://www.forumstandaardisatie.nl/open-standaarden/ipv6' },
+      { name: 'USA (2020)',     law: 'OMB Memorandum M-21-07 (Federal IPv6 mandate)',             href: 'https://www.whitehouse.gov/wp-content/uploads/2020/11/M-21-07.pdf' },
+      { name: 'Germany (2019)', law: 'Netzstrategie 2030 f\u00fcr die \u00f6ffentliche Verwaltung (IT-Planungsrat)', href: 'https://www.it-planungsrat.de/beschluss/beschluss-2018-42' },
+      { name: 'India (2018)',   law: 'DoT National Telecom Policy 2018 (IPv6 mandate)',            href: 'https://dot.gov.in/sites/default/files/National_Telecom_Policy-2018_0.pdf' },
+      { name: 'China (2017)',   law: 'MIIT IPv6 Scale Deployment Action Plan',                     href: 'https://www.miit.gov.cn/' },
+      { name: 'EU (2016)',      law: 'IPv6 Framework for European Governments (ISA\u00b2) \u2014 guidance, not a mandate', href: 'https://ec.europa.eu/isa2/sites/default/files/ipv6_framework_for_european_governments_0.pdf' },
     ];
     const tbl = document.createElement('table');
     tbl.className = 'kv-table';
@@ -7038,6 +7065,13 @@ function renderIPv6(result) {
       tbl.appendChild(tr);
     }
     mandSec.appendChild(tbl);
+
+    // Checked and found to have no binding requirement — stated explicitly so the
+    // absence of a row above does not read as "not looked at".
+    const noMandate = el('div', 'card-summary');
+    noMandate.style.marginTop = '0.6rem';
+    safeMarkup(noMandate, ts('IPV6_NO_MANDATE'));
+    mandSec.appendChild(noMandate);
     body.appendChild(mandSec);
 
     addExplanation(body, tx('IPV6'));

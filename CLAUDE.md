@@ -8,7 +8,7 @@ Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-August-13-3**
+Current version: **2026-August-13-4**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -128,8 +128,10 @@ checkIPv6()         queries A+AAAA for domain, NS hosts, MX hosts; returns mxHos
                       with v4/v6 address splits; rating: excellent (all have AAAA), good (some),
                       warning (none); informational only (weight=0)
 renderIPv6()        renders IPv6 tab: summary, issues, per-host address breakdown (collapsible),
-                      mandatory government requirements table (Norway §12 mandatory from 2023-01-01
-                      with max extension to 2025-01-01, USA, EU, India, China), explanation
+                      government requirements table (Norway, Netherlands, USA, Germany, India,
+                      China, EU) + an IPV6_NO_MANDATE note naming countries checked and found to
+                      have none, then the explanation. Country names in the table are deliberately
+                      hardcoded English; only the section title and the note are translated.
 el()                DOM element factory
 clearNode()         safe DOM clearing (replaces innerHTML = '')
 makeSpinner()
@@ -216,6 +218,22 @@ All four are **complete** — no language relies on the English fallback. When a
 - MX tab: `renderMX` reads `lastResults.ipv6` to show a green "IPv6" or amber "No IPv6" badge on each MX host row.
 - SPF tab: `renderSPF` reads `lastResults.ipv6` to show a `SPF_NO_IP6_MECHS` warning when MX/NS hosts have AAAA but no `ip6:` mechanisms appear in the SPF record.
 - Norway regulation: §12 of Forskrift om IT-standarder i offentlig forvaltning — mandatory from **1 January 2023**, with a maximum 2-year extension to **1 January 2025**. Regulation enacted 2013-04-05, lovdata.no link in explanation.
+- **Country list, reviewed 2026-08-13.** Distinguish a *binding requirement* from a strategy or a
+  recommendation — the table is titled "mandatory", so only put real obligations in it:
+  - **Netherlands** is the other email-specific mandate besides Norway: IPv6 has been on Forum
+    Standaardisatie's `pas toe of leg uit` (comply-or-explain) list since 2010, and a government-wide
+    agreement requires public bodies to be reachable over IPv6 for **websites and e-mail** from
+    2021-12-31. Its functional scope names e-mail servers explicitly.
+  - **Germany**: Netzstrategie 2030, an IT-Planungsrat decision (2019) — binding on public
+    administration networks, but a strategy decision rather than a statute.
+  - **Sweden and Denmark have no binding requirement** and must not be added to the table. Sweden:
+    PTS only *recommends* IPv6; its 2022 report (PTS-ER-2022:26) proposed a requirement covering
+    websites, e-mail and DNS, but nothing was enacted. Denmark: IPv6 is absent from the technical
+    minimum requirements for state authorities and the government has said it was not prioritised.
+    Both are named in `IPV6_NO_MANDATE` so the omission does not read as an oversight.
+  - **The EU row does not mandate anything.** The earlier claim that the NIS2 Directive requires
+    IPv6 was wrong — NIS2 contains no IPv6 requirement. The row now points at the ISA² *IPv6
+    Framework for European Governments*, which is guidance. Do not re-add the NIS2 claim.
 - Test: `cloudflare.com` and `gmail.com` → excellent; a domain with IPv6-capable MX but no `ip6:` in SPF → SPF tab shows warning note.
 
 ### SPF redirect details

@@ -269,6 +269,7 @@ const LANG_ES = {
     IPV6_NO_NS: 'No se encontraron hosts NS',
     IPV6_MANDATORY_TITLE: 'Requisitos obligatorios de IPv6',
     IPV6_MANDATORY_NOTE: 'IPv6 es obligatorio por normativa gubernamental en los siguientes países:',
+    IPV6_NO_MANDATE: '<b>Comprobado, sin requisito vinculante:</b> <b>Suecia</b>: PTS recomienda IPv6 y propuso en 2022 que se exigiera a organismos, municipios y regiones admitirlo en sitios web, correo electr\u00f3nico y DNS, pero no se ha aprobado ninguna normativa. <b>Dinamarca</b>: IPv6 no forma parte de los requisitos t\u00e9cnicos m\u00ednimos para las autoridades estatales; el gobierno ha declarado que no se prioriz\u00f3.',
     IPV6_DOMAIN_HAS_IPV6: '✓ El dominio tiene dirección(es) IPv6',
     IPV6_DOMAIN_NO_IPV6: 'El dominio no tiene dirección IPv6 — solo accesible por IPv4',
     IPV6_ALL_MX_HAVE_IPV6: '✓ Todos los hosts MX tienen direcciones IPv6',
@@ -631,10 +632,13 @@ const LANG_ES = {
       'Ambos casos provocan fallos de entrega silenciosos y difíciles de diagnosticar.<br><br>' +
       '<b>Requisitos gubernamentales obligatorios \u2014 países seleccionados:</b><br>' +
       '<b>Noruega:</b> <a href="https://lovdata.no/dokument/SF/forskrift/2013-04-05-959">Forskrift om IT-standarder i offentlig forvaltning \u00a712</a> \u2014 IPv6 obligatorio para los servicios públicos desde el 1 de enero de 2023; prórroga máxima hasta el 1 de enero de 2025.<br>' +
+      '<b>Países Bajos:</b> <a href="https://www.forumstandaardisatie.nl/open-standaarden/ipv6">IPv6 en la lista «pas toe of leg uit» (cumplir o explicar) del Forum Standaardisatie</a> desde 2010; un acuerdo de toda la administración exige que los organismos públicos sean accesibles por IPv6 para <b>sitios web y correo electrónico</b> desde el 31 de diciembre de 2021.<br>' +
       '<b>EE. UU.:</b> Memorando OMB M-21-07 \u2014 las agencias federales deben operar infraestructura solo-IPv6 para el año fiscal 2025.<br>' +
-      '<b>UE:</b> Marco Europeo de Interoperabilidad / Directiva NIS2 \u2014 promueven la preparación para IPv6 en los servicios públicos de los estados miembros.<br>' +
+      '<b>Alemania:</b> <a href="https://www.it-planungsrat.de/beschluss/beschluss-2018-42">Netzstrategie 2030 für die öffentliche Verwaltung</a> \u2014 decisión del IT-Planungsrat (2019) que introduce IPv6 en las redes de la administración pública.<br>' +
       '<b>India:</b> DoT National Telecom Policy 2018 \u2014 IPv6 obligatorio para ISP, administración y entidades del sector público.<br>' +
-      '<b>China:</b> MIIT IPv6 Scale Deployment Action Plan 2017 \u2014 despliegue completo en ISP, administración y grandes plataformas.<br><br>' +
+      '<b>China:</b> MIIT IPv6 Scale Deployment Action Plan 2017 \u2014 despliegue completo en ISP, administración y grandes plataformas.<br>' +
+      '<b>UE:</b> <a href="https://ec.europa.eu/isa2/sites/default/files/ipv6_framework_for_european_governments_0.pdf">IPv6 Framework for European Governments</a> \u2014 orientación para los estados miembros, <b>no</b> un mandato vinculante. En contra de una afirmación habitual, NIS2 no exige IPv6.<br><br>' +
+      '<b>Sin requisito vinculante:</b> <b>Suecia</b>: PTS recomienda IPv6 y propuso en 2022 exigirlo a organismos, municipios y regiones para sitios web, correo y DNS, pero no se ha aprobado normativa. <b>Dinamarca</b>: IPv6 no forma parte de los requisitos técnicos mínimos para las autoridades estatales.<br><br>' +
       'Esta comprobación consulta los registros AAAA del propio dominio, de todos los hosts MX y de todos los hosts NS. ' +
       '<b>No</b> afecta a la puntuación de seguridad global \u2014 es solo informativa.'
   },

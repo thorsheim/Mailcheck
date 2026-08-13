@@ -105,6 +105,7 @@ Missing keys fall back to English automatically, so partial translations are wel
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-August-13-4 | 2026-08-13 | IPv6 government requirements reviewed: added the Netherlands (comply-or-explain since 2010; websites **and e-mail** reachable over IPv6 since 2021-12-31) and Germany (Netzstrategie 2030). Corrected the EU entry — NIS2 does not require IPv6. Sweden and Denmark were checked and have no binding requirement; both are now named explicitly rather than silently absent |
 | 2026-August-13-3 | 2026-08-13 | Removed the hardcoded "Provider Reference" table from the DKIM tab — the probed-selector list already groups every selector under its provider. The orphaned `DKIM_PROVIDER_REF`, `DKIM_TH_SELECTORS` and `DKIM_TH_INFRA` strings were dropped from all four languages and the contributor files |
 | 2026-August-13-2 | 2026-08-13 | Jan Sandtrø added to the acknowledgements — improving the MTA-STS and Security.txt checks, plus many other updates |
 | 2026-August-13-1 | 2026-08-13 | DKIM selector audit against live DNS (274 domains) and provider documentation: 15 new selectors added, 16 unsupported ones removed, and several provider attributions corrected (`m1` → Marketo, `pic`/`krs` → Mailgun, `key1`/`key2` → Tucows OpenSRS, `mc1`/`mc2` → SendGrid not Mimecast). Domeneshop's `dsYYYYMM` window is now generated from the current date rather than hardcoded. The probed-selector list groups selectors under their provider, and a new DKIM2 section links the IETF successor drafts |

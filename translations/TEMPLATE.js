@@ -70,6 +70,7 @@ const LANG_TEMPLATE = {
     PANEL_CAA:              '',
     PANEL_RPKI:             '',
     PANEL_ASPA:             '',
+    PANEL_IPV6:             '',
     PANEL_STXT:             '',  // "Security.txt"
     PANEL_WHOIS:            '',
     PANEL_RECS:             '',  // "Fixes" — the recommendations tab
@@ -232,6 +233,26 @@ const LANG_TEMPLATE = {
 
     // ASPA
     ASPA_NO_DATA:           '',  // "No ASPA data available"
+
+    // ── IPv6 tab ──────────────────────────────────────────────────────────
+    IPV6_HOST_DETAILS:      '',  // "Host address details"
+    IPV6_NO_AAAA:           '',  // "No AAAA records"
+    IPV6_NO_MX:             '',  // "No MX hosts found"
+    IPV6_NO_NS:             '',  // "No NS hosts found"
+    IPV6_MANDATORY_TITLE:   '',  // Section title "Mandatory IPv6 requirements"
+    IPV6_MANDATORY_NOTE:    '',  // "IPv6 is required by government regulation in the following countries:"
+    IPV6_NO_MANDATE:        '',  // "Checked, no binding requirement:" note naming Sweden and Denmark
+    IPV6_DOMAIN_HAS_IPV6:   '',  // "Domain has an AAAA record"
+    IPV6_DOMAIN_NO_IPV6:    '',  // "Domain has no AAAA record"
+    IPV6_ALL_MX_HAVE_IPV6:  '',  // "All MX hosts have IPv6"
+    IPV6_SOME_MX_HAVE_IPV6: '',  // "Some MX hosts have IPv6"
+    IPV6_NO_MX_HAVE_IPV6:   '',  // "No MX hosts have IPv6"
+    IPV6_ALL_NS_HAVE_IPV6:  '',  // "All NS hosts have IPv6"
+    IPV6_SOME_NS_HAVE_IPV6: '',  // "Some NS hosts have IPv6"
+    IPV6_NO_NS_HAVE_IPV6:   '',  // "No NS hosts have IPv6"
+    IPV6_MX_BADGE_YES:      '',  // Badge on an MX row: "IPv6"
+    IPV6_MX_BADGE_NO:       '',  // Badge on an MX row: "No IPv6"
+    SPF_NO_IP6_MECHS:       '',  // SPF warning: MX/NS have AAAA but the record has no ip6: mechanism
 
     // Security.txt
     STXT_FOUND:             '',  // "✓ security.txt found"
@@ -416,6 +437,11 @@ const LANG_TEMPLATE = {
     BIMI_LOGO_URL:          url => '',   // "Logo URL: https://…"
     BIMI_AUTHORITY_URL:     url => '',   // "Authority URL: https://…"
     PTR_VALUE:                v => '',   // "PTR: mail.example.com"
+
+    // ── IPv6 tab ──────────────────────────────────────────────────────────
+    IPV6_DOMAIN_SUMMARY:      (v4, v6) => '',   // "Domain: 2 IPv4, 1 IPv6"
+    IPV6_MX_SUMMARY:          (n, t) => '',     // "2 of 3 MX hosts have IPv6"
+    IPV6_NS_SUMMARY:          (n, t) => '',     // "4 of 4 NS hosts have IPv6"
   },
 
   // ── x: explanation strings (HTML) ──────────────────────────────────────────
@@ -441,5 +467,6 @@ const LANG_TEMPLATE = {
     STXT:    '',  // Security.txt explanation
     WHOIS:   '',
     BIMI:    '',
+    IPV6:    '',
   },
 };
