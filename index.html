@@ -724,8 +724,14 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-August-17-1 &mdash; click for changelog</summary>
+      <summary>Version 2026-August-17-2 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-August-17-2</span>
+          <ul class="cl-changes">
+            <li>New in the RPKI tab: <b>&ldquo;Is your ISP BGP-safe?&rdquo;</b> &mdash; tests whether the network <i>you</i> are browsing from drops RPKI-invalid BGP routes, using the test method behind Cloudflare&rsquo;s <a href="https://isbgpsafeyet.com" target="_blank" rel="noopener noreferrer">isbgpsafeyet.com</a> (MIT-licensed). Two test beacons are fetched &mdash; one covered by a valid ROA, one deliberately invalid; if the invalid one loads within two seconds, your ISP does not filter hijacked routes. Detects Cloudflare WARP, which would mask the ISP. Runs once per page session on the first scan; later scans reuse the result. It measures your connection, not the scanned domain, and never affects any rating, score or grade</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-August-17-1</span>
           <ul class="cl-changes">
@@ -1083,7 +1089,6 @@ const STRINGS = {
       PANEL_CAA:           'CAA',
       PANEL_RPKI:          'RPKI ROA',
       PANEL_ASPA:          'ASPA',
-      PANEL_IPV6:          'IPv6',
       PANEL_STXT:          'Security.txt',
       PANEL_WHOIS:         'WHOIS / RDAP',
       PANEL_RECS:          'Fixes',
@@ -1368,6 +1373,17 @@ const STRINGS = {
       // RPKI nameserver diversity
       RPKI_NS_DIVERSITY:   'Nameserver ASN diversity',
       RPKI_NS_NO_ASN_DATA: 'No ASN data available for nameservers',
+      // ISP BGP safety (isbgpsafeyet.com method)
+      BGP_ISP_TITLE:       'Is your ISP BGP-safe?',
+      BGP_ISP_SAFE:        'Your ISP dropped the RPKI-invalid test route — it filters invalid BGP announcements (route origin validation).',
+      BGP_ISP_UNSAFE:      'Your ISP accepted an RPKI-invalid test route — it does not filter invalid BGP announcements and offers no protection against BGP hijacks.',
+      BGP_ISP_WARP:        'You are connected through Cloudflare WARP, which already protects your traffic from BGP hijacks — but it hides your ISP, so the test cannot measure it. Disconnect WARP and scan again to test your ISP.',
+      BGP_ISP_ERROR:       'The test endpoints could not be reached — result unknown. The test will run again on the next scan.',
+      BGP_ISP_ATTRIBUTION: 'Test method by Cloudflare:',
+      BGP_ISP_BADGE_SAFE:  'Safe',
+      BGP_ISP_BADGE_UNSAFE:'Not safe',
+      BGP_ISP_BADGE_WARP:  'WARP',
+      BGP_ISP_BADGE_ERROR: 'Unknown',
       // Overview provider detection
       OVERVIEW_PROVIDERS:  'Detected email infrastructure',
     },
@@ -1401,6 +1417,7 @@ const STRINGS = {
       TLSA_RECORDS_COUNT:    n => n + ' TLSA records',
       RPKI_SUMMARY:          (valid, total, inv, noRoa) => valid + '/' + total + ' IP' + (total !== 1 ? 's' : '') + ' covered by valid ROA' + (inv > 0 ? ' \u2014 ' + inv + ' invalid' : '') + (noRoa > 0 ? ' \u2014 ' + noRoa + ' no ROA' : ''),
       ASPA_SUMMARY:          (pub, total) => pub + '/' + total + ' ASN' + (total !== 1 ? 's' : '') + ' with published ASPA',
+      BGP_ISP_NOTE:          dom => 'This tests the internet connection you are browsing from — it is unrelated to ' + dom + ' and never affects any rating, score or grade.',
       TLSRPT_ENDPOINT:       uri => 'Reporting endpoint: ' + uri,
       TLSRPT_BAD_URI:        uri => 'Unknown rua= URI scheme: ' + uri,
       MTASTS_MAX_AGE_LOW:    age => 'max_age=' + age + 's is less than 1 day \u2014 consider 604800 (1 week) or more',
@@ -1651,7 +1668,12 @@ const STRINGS = {
         '<b>Invalid</b> \u2014 a ROA exists but does NOT authorize the current announcement: route may be filtered by RPKI-validating routers. ' +
         '<b>No ROA</b> \u2014 no ROA found: prefix is unprotected but can still be routed.<br><br>' +
         'This check resolves IPs for all NS and MX hosts, then queries RIPE Stat to validate each prefix against its origin ASN. ' +
-        'RPKI protects mail infrastructure from BGP route hijacking that could redirect or intercept email traffic.',
+        'RPKI protects mail infrastructure from BGP route hijacking that could redirect or intercept email traffic.<br><br>' +
+        '<b>Is your ISP BGP-safe?</b> tests the connection you are browsing from, not the scanned domain: ' +
+        'it fetches one test resource announced with a valid ROA and one announced from an unauthorized ASN. ' +
+        'If the invalid one loads, your ISP accepts hijacked routes. ' +
+        'Based on Cloudflare\'s <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> (MIT-licensed). ' +
+        'The result is informational only and never affects any score.',
       ASPA:
         '<b>ASPA (Autonomous System Provider Authorization, <a href="https://www.rfc-editor.org/rfc/rfc9582">RFC 9582</a>)</b> lets an AS declare which upstream providers it is authorized to use. ' +
         'Published ASPA records enable route leak detection: if traffic arrives through an unauthorized provider, ASPA-aware routers can reject it.<br><br>' +
@@ -2036,6 +2058,17 @@ const STRINGS = {
       CAA_ISSUEMAIL_NOTE: 'issuemail-tagg til stede — styrer utstedelse av S/MIME-sertifikater for dette domenet (RFC 8657)',
       RPKI_NS_DIVERSITY: 'ASN-spredning for navnetjenere',
       RPKI_NS_NO_ASN_DATA: 'Ingen ASN-data tilgjengelig for navnetjenerne',
+      // ISP BGP safety (isbgpsafeyet.com method)
+      BGP_ISP_TITLE:       'Er internettleverandøren din BGP-trygg?',
+      BGP_ISP_SAFE:        'Internettleverandøren din forkastet den RPKI-ugyldige testruten — den filtrerer ugyldige BGP-annonseringer (validering av ruteopprinnelse).',
+      BGP_ISP_UNSAFE:      'Internettleverandøren din godtok en RPKI-ugyldig testrute — den filtrerer ikke ugyldige BGP-annonseringer og gir ingen beskyttelse mot BGP-kapring.',
+      BGP_ISP_WARP:        'Du er tilkoblet via Cloudflare WARP, som allerede beskytter trafikken din mot BGP-kapring — men den skjuler internettleverandøren din, så testen kan ikke måle den. Koble fra WARP og skann på nytt for å teste internettleverandøren din.',
+      BGP_ISP_ERROR:       'Testendepunktene kunne ikke nås — resultatet er ukjent. Testen kjøres på nytt ved neste skanning.',
+      BGP_ISP_ATTRIBUTION: 'Testmetode fra Cloudflare:',
+      BGP_ISP_BADGE_SAFE:  'Trygg',
+      BGP_ISP_BADGE_UNSAFE:'Ikke trygg',
+      BGP_ISP_BADGE_WARP:  'WARP',
+      BGP_ISP_BADGE_ERROR: 'Ukjent',
       OVERVIEW_PROVIDERS: 'Oppdaget e-postinfrastruktur',
     },
     // ── d: dynamic strings (arrow functions) ─────────────────────────────────
@@ -2065,6 +2098,7 @@ const STRINGS = {
       TLSA_RECORDS_COUNT:    n => n + ' TLSA-poster',
       RPKI_SUMMARY:          (valid, total, inv, noRoa) => valid + '/' + total + ' IP' + (total !== 1 ? 'er' : '') + ' dekket av gyldig ROA' + (inv > 0 ? ' \u2014 ' + inv + ' ugyldig' : '') + (noRoa > 0 ? ' \u2014 ' + noRoa + ' ingen ROA' : ''),
       ASPA_SUMMARY:          (pub, total) => pub + '/' + total + ' ASN' + (total !== 1 ? 'er' : '') + ' med publisert ASPA',
+      BGP_ISP_NOTE:          dom => 'Dette tester internettforbindelsen du surfer fra — den er urelatert til ' + dom + ' og påvirker aldri noen vurdering, poengsum eller karakter.',
       TLSRPT_ENDPOINT:       uri => 'Rapporteringsendepunkt: ' + uri,
       TLSRPT_BAD_URI:        uri => 'Ukjent rua= URI-skjema: ' + uri,
       MTASTS_MAX_AGE_LOW:    age => 'max_age=' + age + 's er under 1 dag \u2014 vurder 604800 (1 uke) eller mer',
@@ -2307,7 +2341,12 @@ const STRINGS = {
         '<b>Ugyldig</b> \u2014 en ROA finnes men autoriserer IKKE gjeldende annonsering: ruten kan filtreres av RPKI-validerende rutere. ' +
         '<b>Ingen ROA</b> \u2014 ingen ROA funnet: prefikset er ubeskyttet men kan fortsatt rutes.<br><br>' +
         'Denne sjekken l\u00f8ser opp IP-adresser for alle NS- og MX-verter og sp\u00f8r RIPE Stat for \u00e5 validere hvert prefiks mot sitt opprinnelses-ASN. ' +
-        'RPKI beskytter e-postinfrastruktur mot BGP-rutekapring som kan omdirigere eller avskj\u00e6re e-posttrafikk.',
+        'RPKI beskytter e-postinfrastruktur mot BGP-rutekapring som kan omdirigere eller avskj\u00e6re e-posttrafikk.<br><br>' +
+        '<b>Er internettleverand\u00f8ren din BGP-trygg?</b> tester forbindelsen du surfer fra, ikke det skannede domenet: ' +
+        'den henter \u00e9n testressurs annonsert med en gyldig ROA og \u00e9n annonsert fra et uautorisert ASN. ' +
+        'Hvis den ugyldige lastes, godtar internettleverand\u00f8ren din kaprede ruter. ' +
+        'Basert p\u00e5 Cloudflares <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> (MIT-lisensiert). ' +
+        'Resultatet er kun til informasjon og p\u00e5virker aldri noen poengsum.',
       ASPA:
         '<b>ASPA (Autonomous System Provider Authorization, <a href="https://www.rfc-editor.org/rfc/rfc9582">RFC 9582</a>)</b> lar et AS erkl\u00e6re hvilke oppstr\u00f8ms-leverand\u00f8rer det er autorisert til \u00e5 bruke. ' +
         'Publiserte ASPA-poster muliggj\u00f8r deteksjon av rutelekk: hvis trafikk ankommer gjennom en uautorisert leverand\u00f8r, kan ASPA-bevisste rutere avvise den.<br><br>' +
@@ -2666,6 +2705,17 @@ const STRINGS = {
       CAA_ISSUEMAIL_NOTE: 'Etiqueta issuemail presente — controla la emisión de certificados S/MIME para este dominio (RFC 8657)',
       RPKI_NS_DIVERSITY: 'Diversidad de ASN de los servidores de nombres',
       RPKI_NS_NO_ASN_DATA: 'No hay datos de ASN disponibles para los servidores de nombres',
+      // ISP BGP safety (isbgpsafeyet.com method)
+      BGP_ISP_TITLE:       '¿Es tu ISP seguro en BGP?',
+      BGP_ISP_SAFE:        'Tu ISP descartó la ruta de prueba RPKI-inválida — filtra anuncios BGP inválidos (validación de origen de ruta).',
+      BGP_ISP_UNSAFE:      'Tu ISP aceptó una ruta de prueba RPKI-inválida — no filtra anuncios BGP inválidos y no ofrece protección contra el secuestro de BGP.',
+      BGP_ISP_WARP:        'Estás conectado a través de Cloudflare WARP, que ya protege tu tráfico contra el secuestro de BGP — pero oculta tu ISP, así que la prueba no puede medirlo. Desconecta WARP y escanea de nuevo para probar tu ISP.',
+      BGP_ISP_ERROR:       'No se pudo contactar con los puntos de prueba — resultado desconocido. La prueba se ejecutará de nuevo en el próximo escaneo.',
+      BGP_ISP_ATTRIBUTION: 'Método de prueba de Cloudflare:',
+      BGP_ISP_BADGE_SAFE:  'Seguro',
+      BGP_ISP_BADGE_UNSAFE:'No seguro',
+      BGP_ISP_BADGE_WARP:  'WARP',
+      BGP_ISP_BADGE_ERROR: 'Desconocido',
       OVERVIEW_PROVIDERS: 'Infraestructura de correo detectada',
     },
     d: {
@@ -2694,6 +2744,7 @@ const STRINGS = {
       TLSA_RECORDS_COUNT:    n => n + ' registro' + (n !== 1 ? 's' : '') + ' TLSA',
       RPKI_SUMMARY:          (valid, total, inv, noRoa) => valid + '/' + total + ' IP' + (total !== 1 ? 's' : '') + ' cubiert' + (total !== 1 ? 'as' : 'a') + ' por ROA v\u00e1lido' + (inv > 0 ? ' \u2014 ' + inv + ' inv\u00e1lid' + (inv !== 1 ? 'as' : 'a') : '') + (noRoa > 0 ? ' \u2014 ' + noRoa + ' sin ROA' : ''),
       ASPA_SUMMARY:          (pub, total) => pub + '/' + total + ' ASN' + (total !== 1 ? 's' : '') + ' con ASPA publicado',
+      BGP_ISP_NOTE:          dom => 'Esto prueba la conexión a internet desde la que navegas — no tiene relación con ' + dom + ' y nunca afecta a ninguna valoración, puntuación o nota.',
       TLSRPT_ENDPOINT:       uri => 'Punto de notificaci\u00f3n: ' + uri,
       TLSRPT_BAD_URI:        uri => 'Esquema de URI rua= desconocido: ' + uri,
       MTASTS_MAX_AGE_LOW:    age => 'max_age=' + age + 's es menor de 1 d\u00eda \u2014 considera 604800 (1 semana) o m\u00e1s',
@@ -2936,7 +2987,12 @@ const STRINGS = {
         '<b>Inv\u00e1lido</b> \u2014 existe una ROA pero NO autoriza el anuncio actual: los routers con validaci\u00f3n RPKI pueden filtrar la ruta. ' +
         '<b>Sin ROA</b> \u2014 no se encontr\u00f3 ninguna ROA: el prefijo no est\u00e1 protegido pero puede enrutarse.<br><br>' +
         'Esta comprobaci\u00f3n resuelve IPs para todos los hosts NS y MX, luego consulta RIPE Stat para validar cada prefijo frente a su ASN de origen. ' +
-        'RPKI protege la infraestructura de correo del secuestro de rutas BGP que podr\u00eda redirigir o interceptar el tr\u00e1fico de correo.',
+        'RPKI protege la infraestructura de correo del secuestro de rutas BGP que podr\u00eda redirigir o interceptar el tr\u00e1fico de correo.<br><br>' +
+        '<b>\u00bfEs tu ISP seguro en BGP?</b> prueba la conexi\u00f3n desde la que navegas, no el dominio escaneado: ' +
+        'obtiene un recurso de prueba anunciado con una ROA v\u00e1lida y otro anunciado desde un ASN no autorizado. ' +
+        'Si el inv\u00e1lido se carga, tu ISP acepta rutas secuestradas. ' +
+        'Basado en <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> de Cloudflare (licencia MIT). ' +
+        'El resultado es solo informativo y nunca afecta a ninguna puntuaci\u00f3n.',
       ASPA:
         '<b>ASPA (Autonomous System Provider Authorization, <a href="https://www.rfc-editor.org/rfc/rfc9582">RFC 9582</a>)</b> permite a un AS declarar qu\u00e9 proveedores upstream est\u00e1 autorizado a utilizar. ' +
         'Los registros ASPA publicados permiten detectar filtraciones de rutas: si el tr\u00e1fico llega a trav\u00e9s de un proveedor no autorizado, los routers compatibles con ASPA pueden rechazarlo.<br><br>' +
@@ -3318,6 +3374,17 @@ const STRINGS = {
       CAA_ISSUEMAIL_NOTE: 'Balise issuemail présente — elle contrôle l’émission des certificats S/MIME pour ce domaine (RFC 8657)',
       RPKI_NS_DIVERSITY: 'Diversité des ASN des serveurs de noms',
       RPKI_NS_NO_ASN_DATA: 'Aucune donnée ASN disponible pour les serveurs de noms',
+      // ISP BGP safety (isbgpsafeyet.com method)
+      BGP_ISP_TITLE:       'Votre FAI est-il sûr en BGP\u00a0?',
+      BGP_ISP_SAFE:        'Votre FAI a rejeté la route de test RPKI-invalide — il filtre les annonces BGP invalides (validation de l\'origine des routes).',
+      BGP_ISP_UNSAFE:      'Votre FAI a accepté une route de test RPKI-invalide — il ne filtre pas les annonces BGP invalides et n\'offre aucune protection contre le détournement BGP.',
+      BGP_ISP_WARP:        'Vous êtes connecté via Cloudflare WARP, qui protège déjà votre trafic contre le détournement BGP — mais il masque votre FAI, la mesure est donc impossible. Déconnectez WARP et relancez l\'analyse pour tester votre FAI.',
+      BGP_ISP_ERROR:       'Les points de test sont injoignables — résultat inconnu. Le test sera relancé à la prochaine analyse.',
+      BGP_ISP_ATTRIBUTION: 'Méthode de test par Cloudflare\u00a0:',
+      BGP_ISP_BADGE_SAFE:  'Sûr',
+      BGP_ISP_BADGE_UNSAFE:'Non sûr',
+      BGP_ISP_BADGE_WARP:  'WARP',
+      BGP_ISP_BADGE_ERROR: 'Inconnu',
       OVERVIEW_PROVIDERS: 'Infrastructure de messagerie détectée',
     },
 
@@ -3348,6 +3415,7 @@ const STRINGS = {
       TLSA_RECORDS_COUNT:    n => n + ' enregistrement' + (n !== 1 ? 's' : '') + ' TLSA',
       RPKI_SUMMARY:          (valid, total, inv, noRoa) => valid + '/' + total + ' IP' + (total !== 1 ? 's' : '') + ' couverte' + (total !== 1 ? 's' : '') + ' par un ROA valide' + (inv > 0 ? ' \u2014 ' + inv + ' invalide' + (inv !== 1 ? 's' : '') : '') + (noRoa > 0 ? ' \u2014 ' + noRoa + ' sans ROA' : ''),
       ASPA_SUMMARY:          (pub, total) => pub + '/' + total + ' ASN' + (total !== 1 ? 's' : '') + ' avec ASPA publi\u00e9',
+      BGP_ISP_NOTE:          dom => 'Ceci teste la connexion internet depuis laquelle vous naviguez \u2014 sans rapport avec ' + dom + ' et sans aucun effet sur les notes ou scores.',
       TLSRPT_ENDPOINT:       uri => 'Point de rapport\u00a0: ' + uri,
       TLSRPT_BAD_URI:        uri => 'Sch\u00e9ma URI rua= inconnu\u00a0: ' + uri,
       MTASTS_MAX_AGE_LOW:    age => 'max_age=' + age + 's est inf\u00e9rieur \u00e0 1 jour \u2014 envisagez 604800 (1 semaine) ou plus',
@@ -3594,7 +3662,12 @@ const STRINGS = {
         '<b>Invalide</b> \u2014 une ROA existe mais n\'autorise PAS l\'annonce actuelle\u00a0: les routeurs avec validation RPKI peuvent filtrer la route. ' +
         '<b>Sans ROA</b> \u2014 aucune ROA trouv\u00e9e\u00a0: le pr\u00e9fixe n\'est pas prot\u00e9g\u00e9 mais peut \u00eatre rout\u00e9.<br><br>' +
         'Cette v\u00e9rification r\u00e9sout les IPs pour tous les h\u00f4tes NS et MX, puis interroge RIPE Stat pour valider chaque pr\u00e9fixe par rapport \u00e0 son ASN d\'origine. ' +
-        'RPKI prot\u00e8ge l\'infrastructure de messagerie contre le d\u00e9tournement de routes BGP qui pourrait rediriger ou intercepter le trafic de messagerie.',
+        'RPKI prot\u00e8ge l\'infrastructure de messagerie contre le d\u00e9tournement de routes BGP qui pourrait rediriger ou intercepter le trafic de messagerie.<br><br>' +
+        '<b>Votre FAI est-il s\u00fbr en BGP\u00a0?</b> teste la connexion depuis laquelle vous naviguez, pas le domaine analys\u00e9\u00a0: ' +
+        'il r\u00e9cup\u00e8re une ressource de test annonc\u00e9e avec une ROA valide et une autre annonc\u00e9e depuis un ASN non autoris\u00e9. ' +
+        'Si la ressource invalide se charge, votre FAI accepte les routes d\u00e9tourn\u00e9es. ' +
+        'Bas\u00e9 sur <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> de Cloudflare (licence MIT). ' +
+        'Le r\u00e9sultat est purement informatif et n\'affecte jamais aucun score.',
       ASPA:
         '<b>ASPA (Autonomous System Provider Authorization, <a href="https://www.rfc-editor.org/rfc/rfc9582">RFC 9582</a>)</b> permet \u00e0 un AS de d\u00e9clarer quels fournisseurs upstream il est autoris\u00e9 \u00e0 utiliser. ' +
         'Les enregistrements ASPA publi\u00e9s permettent de d\u00e9tecter les fuites de routes\u00a0: si le trafic arrive via un fournisseur non autoris\u00e9, les routeurs compatibles ASPA peuvent le rejeter.<br><br>' +
@@ -5779,6 +5852,7 @@ async function resolveHostIPs(host) {
 const rpkiIpCache  = new Map();  // ip  → rpkiLookupIP result
 const aspaAsnCache = new Map();  // asn → aspaLookupASN result
 const asnInfoCache = new Map();  // asn → holder name string | null
+let bgpSafetyPromise = null;     // in-flight/settled ISP BGP-safety test (see checkBGPSafety)
 
 async function rpkiLookupIP(ip) {
   if (rpkiIpCache.has(ip)) { if (scanStats) scanStats.ripeStatCacheHits++; return rpkiIpCache.get(ip); }
@@ -5958,6 +6032,67 @@ async function checkRPKI(domain) {
     return { rating, hosts: hostResults, asnInfo, aspaData, nsAsns };
   } catch (e) {
     return { error: true, rating: 'fail', message: describeFetchError(e) };
+  }
+}
+
+// ── ISP BGP safety (isbgpsafeyet.com method, MIT) ─────────────────────────────
+// Measures the VISITOR's connection, not the scanned domain: does the network
+// you are browsing from drop RPKI-invalid BGP routes? One conclusive result
+// (safe/unsafe/warp) is cached for the page session and reused by later scans;
+// an 'error' result is evicted so the next scan retries. The in-flight promise
+// is cached (not the value) so concurrent scans share one test run.
+// NOT cleared by clearDNSCaches() — same lifetime as rpkiIpCache above.
+const BGP_INVALID_WINDOW_MS = 2000;
+
+function checkBGPSafety() {
+  if (!bgpSafetyPromise) {
+    bgpSafetyPromise = runBGPSafetyTest().then(res => {
+      if (res.status === 'error') bgpSafetyPromise = null;
+      return res;
+    });
+  }
+  return bgpSafetyPromise;
+}
+
+async function runBGPSafetyTest() {
+  try {
+    const uid = Math.floor(Math.random() * 10e10).toString(16);  // upstream verbatim
+    if (scanStats) scanStats.httpRequests += 3;
+
+    // All three start in parallel; starting the invalid fetch early warms the
+    // connection (upstream behaviour). Every fetch carries a deadline.
+    const tracePromise = fetch('https://isbgpsafeyet.com/cdn-cgi/trace',
+        { signal: timeoutSignal(TIMEOUT_HTTP) })
+      .then(r => (r.ok ? r.text() : null), () => null);
+    const validPromise = fetch('https://valid.rpki.isbgpsafeyet.com/' + uid,
+        { signal: timeoutSignal(TIMEOUT_HTTP) })
+      .then(r => r.json());
+    validPromise.catch(() => {});  // early 'warp' return must not leave an unhandled rejection
+    // Any settled HTTP response — regardless of status code or body — means the
+    // RPKI-invalid prefix was routed to us. Only network-level failure/timeout
+    // counts as "dropped". Deliberately no .json() here (upstream's .json()
+    // chain would misreport an unparsable body as safe).
+    const invalidReachable = fetch('https://invalid.rpki.isbgpsafeyet.com/' + uid,
+        { signal: timeoutSignal(TIMEOUT_HTTP) })
+      .then(() => true, () => false);
+
+    // WARP check first: the result would reflect WARP, not the ISP. A failed
+    // trace fetch is non-fatal — proceed without WARP info (deviation from
+    // upstream, which errors out).
+    const trace = await tracePromise;
+    if (trace !== null && !trace.includes('warp=off')) return { status: 'warp' };
+
+    let valid;
+    try { valid = await validPromise; } catch (_) { return { status: 'error' }; }
+    if (!valid || typeof valid.asn === 'undefined') return { status: 'error' };
+
+    // The 2 s decision window opens only once the valid fetch has resolved.
+    // The invalid socket outlives a timer loss but is reaped by its own signal.
+    const windowTimer = new Promise(res => setTimeout(() => res(false), BGP_INVALID_WINDOW_MS));
+    const reachable = await Promise.race([invalidReachable, windowTimer]);
+    return { status: reachable ? 'unsafe' : 'safe', asn: valid.asn, name: valid.name || null };
+  } catch (_) {
+    return { status: 'error' };
   }
 }
 
@@ -7049,6 +7184,57 @@ function renderCAA(result) {
   });
 }
 
+// ISP BGP-safety section (visitor's connection, not the scanned domain).
+// Reads lastResults.bgp from module scope — same pattern as renderMX reading
+// lastResults.ipv6 — so a language switch re-renders it without re-testing.
+// Display only: the rating here never reaches the tab dot, bars or grade.
+function renderBGPSafetySection(body) {
+  const res = lastResults && lastResults.bgp && lastResults.bgp.status === 'fulfilled'
+    ? lastResults.bgp.value : { status: 'error' };
+
+  const BGP_STATUS_RATING = { safe: 'excellent', unsafe: 'fail', warp: 'warning', error: 'warning' };
+  const BGP_STATUS_KEY    = { safe: 'BGP_ISP_SAFE', unsafe: 'BGP_ISP_UNSAFE', warp: 'BGP_ISP_WARP', error: 'BGP_ISP_ERROR' };
+  const BGP_BADGE_KEY     = { safe: 'BGP_ISP_BADGE_SAFE', unsafe: 'BGP_ISP_BADGE_UNSAFE', warp: 'BGP_ISP_BADGE_WARP', error: 'BGP_ISP_BADGE_ERROR' };
+  const rating = BGP_STATUS_RATING[res.status] || 'warning';
+
+  const sec = el('div', 'panel-section');
+  const title = el('div', 'panel-section-title', ts('BGP_ISP_TITLE'));
+  const badge = el('span', 'badge badge-' + rating, ts(BGP_BADGE_KEY[res.status] || 'BGP_ISP_BADGE_ERROR'));
+  badge.style.marginInlineStart = '0.4rem';
+  title.appendChild(badge);
+  sec.appendChild(title);
+
+  sec.appendChild(makeIssueList([{ rating, text: ts(BGP_STATUS_KEY[res.status] || 'BGP_ISP_ERROR') }]));
+
+  if (res.asn) {
+    const ispLine = el('div');
+    ispLine.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;font-size:0.78rem;padding:0.15rem 0 0 0.2rem';
+    ispLine.appendChild(el('span', 'tag-pill', 'AS' + res.asn));
+    if (res.name) {
+      const nameEl = el('span', null, res.name);
+      nameEl.style.color = 'var(--text-muted)';
+      ispLine.appendChild(nameEl);
+    }
+    sec.appendChild(ispLine);
+  }
+
+  const note = el('div', null, td('BGP_ISP_NOTE', currentDomain));
+  note.style.cssText = 'font-size:0.78rem;color:var(--text-muted);margin-block-start:0.5rem';
+  sec.appendChild(note);
+
+  const attrib = el('div', null, ts('BGP_ISP_ATTRIBUTION') + ' ');
+  attrib.style.cssText = 'font-size:0.78rem;color:var(--text-muted);margin-block-start:0.25rem';
+  const link = document.createElement('a');
+  link.textContent = 'isbgpsafeyet.com';
+  link.href = 'https://isbgpsafeyet.com';
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  attrib.appendChild(link);
+  sec.appendChild(attrib);
+
+  body.appendChild(sec);
+}
+
 function renderRPKI(result) {
   const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', messageKey: 'ERR_CHECK_FAILED' };
   setTabResult('rpki', d.rating, body => {
@@ -7155,6 +7341,7 @@ function renderRPKI(result) {
       body.appendChild(nsDivSec);
     }
 
+    renderBGPSafetySection(body);
     addExplanation(body, tx('RPKI'));
   });
 }
@@ -7662,7 +7849,7 @@ function renderStatsPanel(dkim, rpki) {
       dnssec: 'DNSSEC', mx: 'MX', ptr: 'PTR', dane: 'DANE', spf: 'SPF',
       dkim: 'DKIM', dmarc: 'DMARC', bimi: 'BIMI', tlsrpt: 'TLS-RPT',
       mtasts: 'MTA-STS', caa: 'CAA', rpki: 'RPKI', ipv6: 'IPv6',
-      stxt: 'Sec.txt', whois: 'WHOIS',
+      stxt: 'Sec.txt', whois: 'WHOIS', bgp: 'ISP BGP',
     };
     const maxMs = checkEntries[0][1] || 1;
     for (const [name, ms] of checkEntries) {
@@ -7903,7 +8090,7 @@ async function runChecks(domain, customSelectors, opts = {}) {
   if (!skipSecTxt) tabsToLoad.push('security-txt');
   tabsToLoad.forEach(setTabLoading);
 
-  const [dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois] = await Promise.allSettled([
+  const [dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois, bgp] = await Promise.allSettled([
     timed('dnssec',  checkDNSSEC(domain)),
     timed('mx',      checkMX(domain)),
     timed('ptr',     checkPTR(domain)),
@@ -7919,10 +8106,11 @@ async function runChecks(domain, customSelectors, opts = {}) {
     timed('ipv6',    checkIPv6(domain)),
     timed('stxt',    skipSecTxt ? Promise.resolve(SKIPPED) : checkSecurityTxt(domain)),
     timed('whois',   checkWHOIS(domain)),
+    timed('bgp',     checkBGPSafety()),
   ]);
   if (scanStats) scanStats.totalMs = Date.now() - scanStats.startMs;
 
-  lastResults = { dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois };
+  lastResults = { dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois, bgp };
   rerenderAll(lastResults);
 }
 

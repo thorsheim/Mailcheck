@@ -301,6 +301,17 @@ const LANG_ES = {
     CAA_ISSUEMAIL_NOTE: 'Etiqueta issuemail presente — controla la emisión de certificados S/MIME para este dominio (RFC 8657)',
     RPKI_NS_DIVERSITY: 'Diversidad de ASN de los servidores de nombres',
     RPKI_NS_NO_ASN_DATA: 'No hay datos de ASN disponibles para los servidores de nombres',
+    // ISP BGP safety (isbgpsafeyet.com method)
+    BGP_ISP_TITLE:       '¿Es tu ISP seguro en BGP?',
+    BGP_ISP_SAFE:        'Tu ISP descartó la ruta de prueba RPKI-inválida — filtra anuncios BGP inválidos (validación de origen de ruta).',
+    BGP_ISP_UNSAFE:      'Tu ISP aceptó una ruta de prueba RPKI-inválida — no filtra anuncios BGP inválidos y no ofrece protección contra el secuestro de BGP.',
+    BGP_ISP_WARP:        'Estás conectado a través de Cloudflare WARP, que ya protege tu tráfico contra el secuestro de BGP — pero oculta tu ISP, así que la prueba no puede medirlo. Desconecta WARP y escanea de nuevo para probar tu ISP.',
+    BGP_ISP_ERROR:       'No se pudo contactar con los puntos de prueba — resultado desconocido. La prueba se ejecutará de nuevo en el próximo escaneo.',
+    BGP_ISP_ATTRIBUTION: 'Método de prueba de Cloudflare:',
+    BGP_ISP_BADGE_SAFE:  'Seguro',
+    BGP_ISP_BADGE_UNSAFE:'No seguro',
+    BGP_ISP_BADGE_WARP:  'WARP',
+    BGP_ISP_BADGE_ERROR: 'Desconocido',
     OVERVIEW_PROVIDERS: 'Infraestructura de correo detectada',
   },
 
@@ -331,6 +342,7 @@ const LANG_ES = {
     TLSA_RECORDS_COUNT:    n => n + ' registro' + (n !== 1 ? 's' : '') + ' TLSA',
     RPKI_SUMMARY:          (valid, total, inv, noRoa) => valid + '/' + total + ' IP' + (total !== 1 ? 's' : '') + ' cubiert' + (total !== 1 ? 'as' : 'a') + ' por ROA válido' + (inv > 0 ? ' \u2014 ' + inv + ' inválid' + (inv !== 1 ? 'as' : 'a') : '') + (noRoa > 0 ? ' \u2014 ' + noRoa + ' sin ROA' : ''),
     ASPA_SUMMARY:          (pub, total) => pub + '/' + total + ' ASN' + (total !== 1 ? 's' : '') + ' con ASPA publicado',
+    BGP_ISP_NOTE:          dom => 'Esto prueba la conexión a internet desde la que navegas — no tiene relación con ' + dom + ' y nunca afecta a ninguna valoración, puntuación o nota.',
     TLSRPT_ENDPOINT:       uri => 'Punto de notificación: ' + uri,
     TLSRPT_BAD_URI:        uri => 'Esquema de URI rua= desconocido: ' + uri,
     MTASTS_MAX_AGE_LOW:    age => 'max_age=' + age + 's es menor de 1 día \u2014 considera 604800 (1 semana) o más',
@@ -553,7 +565,12 @@ const LANG_ES = {
       '<b>Inválido</b> \u2014 existe una ROA pero NO autoriza el anuncio actual: los routers con validación RPKI pueden filtrar la ruta. ' +
       '<b>Sin ROA</b> \u2014 no se encontró ninguna ROA: el prefijo no está protegido pero puede enrutarse.<br><br>' +
       'Esta comprobación resuelve IPs para todos los hosts NS y MX, luego consulta RIPE Stat para validar cada prefijo frente a su ASN de origen. ' +
-      'RPKI protege la infraestructura de correo del secuestro de rutas BGP que podría redirigir o interceptar el tráfico de correo.',
+      'RPKI protege la infraestructura de correo del secuestro de rutas BGP que podría redirigir o interceptar el tráfico de correo.<br><br>' +
+      '<b>¿Es tu ISP seguro en BGP?</b> prueba la conexión desde la que navegas, no el dominio escaneado: ' +
+      'obtiene un recurso de prueba anunciado con una ROA válida y otro anunciado desde un ASN no autorizado. ' +
+      'Si el inválido se carga, tu ISP acepta rutas secuestradas. ' +
+      'Basado en <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> de Cloudflare (licencia MIT). ' +
+      'El resultado es solo informativo y nunca afecta a ninguna puntuación.',
     ASPA:
       '<b>ASPA (Autonomous System Provider Authorization, <a href="https://www.rfc-editor.org/rfc/rfc9582">RFC 9582</a>)</b> permite a un AS declarar qué proveedores upstream está autorizado a utilizar. ' +
       'Los registros ASPA publicados permiten detectar filtraciones de rutas: si el tráfico llega a través de un proveedor no autorizado, los routers compatibles con ASPA pueden rechazarlo.<br><br>' +

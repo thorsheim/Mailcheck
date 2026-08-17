@@ -370,6 +370,17 @@ const LANG_TEMPLATE = {
     CAA_ISSUEMAIL_NOTE:     '',  // "issuemail tag present — controls S/MIME certificate issuance for this domain (RFC 8657)"
     RPKI_NS_DIVERSITY:      '',  // Section heading "Nameserver ASN diversity"
     RPKI_NS_NO_ASN_DATA:    '',  // "No ASN data available for nameservers"
+    // ISP BGP safety (isbgpsafeyet.com method)
+    BGP_ISP_TITLE:          '',  // "Is your ISP BGP-safe?"
+    BGP_ISP_SAFE:           '',  // "Your ISP dropped the RPKI-invalid test route — it filters invalid BGP announcements (route origin validation)."
+    BGP_ISP_UNSAFE:         '',  // "Your ISP accepted an RPKI-invalid test route — it does not filter invalid BGP announcements and offers no protection against BGP hijacks."
+    BGP_ISP_WARP:           '',  // "You are connected through Cloudflare WARP, which already protects your traffic from BGP hijacks — but it hides your ISP, so the test cannot measure it. Disconnect WARP and scan again to test your ISP."
+    BGP_ISP_ERROR:          '',  // "The test endpoints could not be reached — result unknown. The test will run again on the next scan."
+    BGP_ISP_ATTRIBUTION:    '',  // "Test method by Cloudflare:"
+    BGP_ISP_BADGE_SAFE:     '',  // "Safe"
+    BGP_ISP_BADGE_UNSAFE:   '',  // "Not safe"
+    BGP_ISP_BADGE_WARP:     '',  // "WARP"
+    BGP_ISP_BADGE_ERROR:    '',  // "Unknown"
     OVERVIEW_PROVIDERS:     '',  // Overview heading "Detected email infrastructure"
   },
 
@@ -405,6 +416,7 @@ const LANG_TEMPLATE = {
     TLSA_RECORDS_COUNT:       n => '',   // "2 TLSA records"
     RPKI_SUMMARY: (valid, total, inv, noRoa) => '', // "4/4 IPs covered by valid ROA"
     ASPA_SUMMARY:    (pub, total) => '',  // "2/3 ASNs with published ASPA"
+    BGP_ISP_NOTE:    dom => '',  // "This tests the internet connection you are browsing from — it is unrelated to example.com and never affects any rating, score or grade."
     TLSRPT_ENDPOINT:        uri => '',   // "Reporting endpoint: mailto:tls@example.com"
     TLSRPT_BAD_URI:         uri => '',   // "Unknown rua= URI scheme: …"
     MTASTS_MAX_AGE_LOW:     age => '',   // "max_age=3600s is less than 1 day"

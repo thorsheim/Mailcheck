@@ -303,6 +303,17 @@ const LANG_FR = {
     CAA_ISSUEMAIL_NOTE: 'Balise issuemail présente — elle contrôle l’émission des certificats S/MIME pour ce domaine (RFC 8657)',
     RPKI_NS_DIVERSITY: 'Diversité des ASN des serveurs de noms',
     RPKI_NS_NO_ASN_DATA: 'Aucune donnée ASN disponible pour les serveurs de noms',
+    // ISP BGP safety (isbgpsafeyet.com method)
+    BGP_ISP_TITLE:       'Votre FAI est-il sûr en BGP ?',
+    BGP_ISP_SAFE:        'Votre FAI a rejeté la route de test RPKI-invalide — il filtre les annonces BGP invalides (validation de l\'origine des routes).',
+    BGP_ISP_UNSAFE:      'Votre FAI a accepté une route de test RPKI-invalide — il ne filtre pas les annonces BGP invalides et n\'offre aucune protection contre le détournement BGP.',
+    BGP_ISP_WARP:        'Vous êtes connecté via Cloudflare WARP, qui protège déjà votre trafic contre le détournement BGP — mais il masque votre FAI, la mesure est donc impossible. Déconnectez WARP et relancez l\'analyse pour tester votre FAI.',
+    BGP_ISP_ERROR:       'Les points de test sont injoignables — résultat inconnu. Le test sera relancé à la prochaine analyse.',
+    BGP_ISP_ATTRIBUTION: 'Méthode de test par Cloudflare :',
+    BGP_ISP_BADGE_SAFE:  'Sûr',
+    BGP_ISP_BADGE_UNSAFE:'Non sûr',
+    BGP_ISP_BADGE_WARP:  'WARP',
+    BGP_ISP_BADGE_ERROR: 'Inconnu',
     OVERVIEW_PROVIDERS: 'Infrastructure de messagerie détectée',
   },
 
@@ -333,6 +344,7 @@ const LANG_FR = {
     TLSA_RECORDS_COUNT:    n => n + ' enregistrement' + (n !== 1 ? 's' : '') + ' TLSA',
     RPKI_SUMMARY:          (valid, total, inv, noRoa) => valid + '/' + total + ' IP' + (total !== 1 ? 's' : '') + ' couverte' + (total !== 1 ? 's' : '') + ' par un ROA valide' + (inv > 0 ? ' \u2014 ' + inv + ' invalide' + (inv !== 1 ? 's' : '') : '') + (noRoa > 0 ? ' \u2014 ' + noRoa + ' sans ROA' : ''),
     ASPA_SUMMARY:          (pub, total) => pub + '/' + total + ' ASN' + (total !== 1 ? 's' : '') + ' avec ASPA publié',
+    BGP_ISP_NOTE:          dom => 'Ceci teste la connexion internet depuis laquelle vous naviguez — sans rapport avec ' + dom + ' et sans aucun effet sur les notes ou scores.',
     TLSRPT_ENDPOINT:       uri => 'Point de rapport\u00a0: ' + uri,
     TLSRPT_BAD_URI:        uri => 'Schéma URI rua= inconnu\u00a0: ' + uri,
     MTASTS_MAX_AGE_LOW:    age => 'max_age=' + age + 's est inférieur à 1 jour \u2014 envisagez 604800 (1 semaine) ou plus',
@@ -579,7 +591,12 @@ const LANG_FR = {
       '<b>Invalide</b> \u2014 une ROA existe mais n\'autorise PAS l\'annonce actuelle\u00a0: les routeurs avec validation RPKI peuvent filtrer la route. ' +
       '<b>Sans ROA</b> \u2014 aucune ROA trouvée\u00a0: le préfixe n\'est pas protégé mais peut être routé.<br><br>' +
       'Cette vérification résout les IPs pour tous les hôtes NS et MX, puis interroge RIPE Stat pour valider chaque préfixe par rapport à son ASN d\'origine. ' +
-      'RPKI protège l\'infrastructure de messagerie contre le détournement de routes BGP qui pourrait rediriger ou intercepter le trafic de messagerie.',
+      'RPKI protège l\'infrastructure de messagerie contre le détournement de routes BGP qui pourrait rediriger ou intercepter le trafic de messagerie.<br><br>' +
+      '<b>Votre FAI est-il sûr en BGP ?</b> teste la connexion depuis laquelle vous naviguez, pas le domaine analysé : ' +
+      'il récupère une ressource de test annoncée avec une ROA valide et une autre annoncée depuis un ASN non autorisé. ' +
+      'Si la ressource invalide se charge, votre FAI accepte les routes détournées. ' +
+      'Basé sur <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> de Cloudflare (licence MIT). ' +
+      'Le résultat est purement informatif et n\'affecte jamais aucun score.',
     ASPA:
       '<b>ASPA (Autonomous System Provider Authorization, <a href="https://www.rfc-editor.org/rfc/rfc9582">RFC 9582</a>)</b> permet à un AS de déclarer quels fournisseurs upstream il est autorisé à utiliser. ' +
       'Les enregistrements ASPA publiés permettent de détecter les fuites de routes\u00a0: si le trafic arrive via un fournisseur non autorisé, les routeurs compatibles ASPA peuvent le rejeter.<br><br>' +

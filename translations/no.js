@@ -310,6 +310,17 @@ const LANG_NO = {
     CAA_ISSUEMAIL_NOTE: 'issuemail-tagg til stede — styrer utstedelse av S/MIME-sertifikater for dette domenet (RFC 8657)',
     RPKI_NS_DIVERSITY: 'ASN-spredning for navnetjenere',
     RPKI_NS_NO_ASN_DATA: 'Ingen ASN-data tilgjengelig for navnetjenerne',
+    // ISP BGP safety (isbgpsafeyet.com method)
+    BGP_ISP_TITLE:       'Er internettleverandøren din BGP-trygg?',
+    BGP_ISP_SAFE:        'Internettleverandøren din forkastet den RPKI-ugyldige testruten — den filtrerer ugyldige BGP-annonseringer (validering av ruteopprinnelse).',
+    BGP_ISP_UNSAFE:      'Internettleverandøren din godtok en RPKI-ugyldig testrute — den filtrerer ikke ugyldige BGP-annonseringer og gir ingen beskyttelse mot BGP-kapring.',
+    BGP_ISP_WARP:        'Du er tilkoblet via Cloudflare WARP, som allerede beskytter trafikken din mot BGP-kapring — men den skjuler internettleverandøren din, så testen kan ikke måle den. Koble fra WARP og skann på nytt for å teste internettleverandøren din.',
+    BGP_ISP_ERROR:       'Testendepunktene kunne ikke nås — resultatet er ukjent. Testen kjøres på nytt ved neste skanning.',
+    BGP_ISP_ATTRIBUTION: 'Testmetode fra Cloudflare:',
+    BGP_ISP_BADGE_SAFE:  'Trygg',
+    BGP_ISP_BADGE_UNSAFE:'Ikke trygg',
+    BGP_ISP_BADGE_WARP:  'WARP',
+    BGP_ISP_BADGE_ERROR: 'Ukjent',
     OVERVIEW_PROVIDERS: 'Oppdaget e-postinfrastruktur',
   },
   // ── d: dynamic strings (arrow functions) ─────────────────────────────────
@@ -339,6 +350,7 @@ const LANG_NO = {
     TLSA_RECORDS_COUNT:    n => n + ' TLSA-poster',
     RPKI_SUMMARY:          (valid, total, inv, noRoa) => valid + '/' + total + ' IP' + (total !== 1 ? 'er' : '') + ' dekket av gyldig ROA' + (inv > 0 ? ' \u2014 ' + inv + ' ugyldig' : '') + (noRoa > 0 ? ' \u2014 ' + noRoa + ' ingen ROA' : ''),
     ASPA_SUMMARY:          (pub, total) => pub + '/' + total + ' ASN' + (total !== 1 ? 'er' : '') + ' med publisert ASPA',
+    BGP_ISP_NOTE:          dom => 'Dette tester internettforbindelsen du surfer fra — den er urelatert til ' + dom + ' og påvirker aldri noen vurdering, poengsum eller karakter.',
     TLSRPT_ENDPOINT:       uri => 'Rapporteringsendepunkt: ' + uri,
     TLSRPT_BAD_URI:        uri => 'Ukjent rua= URI-skjema: ' + uri,
     MTASTS_MAX_AGE_LOW:    age => 'max_age=' + age + 's er under 1 dag \u2014 vurder 604800 (1 uke) eller mer',
@@ -581,7 +593,12 @@ const LANG_NO = {
       '<b>Ugyldig</b> \u2014 en ROA finnes men autoriserer IKKE gjeldende annonsering: ruten kan filtreres av RPKI-validerende rutere. ' +
       '<b>Ingen ROA</b> \u2014 ingen ROA funnet: prefikset er ubeskyttet men kan fortsatt rutes.<br><br>' +
       'Denne sjekken l\u00f8ser opp IP-adresser for alle NS- og MX-verter og sp\u00f8r RIPE Stat for \u00e5 validere hvert prefiks mot sitt opprinnelses-ASN. ' +
-      'RPKI beskytter e-postinfrastruktur mot BGP-rutekapring som kan omdirigere eller avskj\u00e6re e-posttrafikk.',
+      'RPKI beskytter e-postinfrastruktur mot BGP-rutekapring som kan omdirigere eller avskj\u00e6re e-posttrafikk.<br><br>' +
+      '<b>Er internettleverand\u00f8ren din BGP-trygg?</b> tester forbindelsen du surfer fra, ikke det skannede domenet: ' +
+      'den henter \u00e9n testressurs annonsert med en gyldig ROA og \u00e9n annonsert fra et uautorisert ASN. ' +
+      'Hvis den ugyldige lastes, godtar internettleverand\u00f8ren din kaprede ruter. ' +
+      'Basert p\u00e5 Cloudflares <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> (MIT-lisensiert). ' +
+      'Resultatet er kun til informasjon og p\u00e5virker aldri noen poengsum.',
     ASPA:
       '<b>ASPA (Autonomous System Provider Authorization, <a href="https://www.rfc-editor.org/rfc/rfc9582">RFC 9582</a>)</b> lar et AS erkl\u00e6re hvilke oppstr\u00f8ms-leverand\u00f8rer det er autorisert til \u00e5 bruke. ' +
       'Publiserte ASPA-poster muliggj\u00f8r deteksjon av rutelekk: hvis trafikk ankommer gjennom en uautorisert leverand\u00f8r, kan ASPA-bevisste rutere avvise den.<br><br>' +

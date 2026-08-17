@@ -8,7 +8,7 @@ Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-August-17-1**
+Current version: **2026-August-17-2**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -81,6 +81,7 @@ Every fan-out is bounded by `parallelLimit()`: `DKIM_CONCURRENCY` 10, `RIPE_CONC
 | MTA-STS | `_mta-sts.<domain>` TXT + HTTPS policy fetch | RFC 8461; collects all `mx:` lines as array; cross-checks against actual MX hosts |
 | CAA | `<domain>` CAA (type 257) | Hex format parsed by `parseCAAData()`; DNSSEC checked for each CA domain; values linkified |
 | RPKI | RIPE Stat `network-info` + `rpki-validation` + `as-overview` + `aspa` | Checks NS+MX host IPs; includes ASPA section |
+| ISP BGP safety | isbgpsafeyet.com `cdn-cgi/trace` + valid/invalid RPKI beacons | Tests the **visitor's** connection, not the domain; renders in the RPKI tab; cached per page session; never scored |
 | IPv6 | `<domain>` A+AAAA, `<domain>` NS → AAAA per NS host, `<domain>` MX → AAAA per MX host | Informational only; does not affect grade |
 | Security.txt | `https://<domain>/.well-known/security.txt` (fallback `/security.txt`) | RFC 9116; parsed fields shown |
 | WHOIS | `https://rdap.org/domain/<domain>` | RDAP JSON; registrar, dates, nameservers, status |
@@ -150,6 +151,16 @@ aspaLookupASN()     RIPE Stat aspa endpoint; normalises provider list
 checkRPKI()         NS+MX hosts → IPs → ROA + ASPA; also fetches asnInfo and provider holder names
 getASPARating()     derives ASPA-specific rating from a checkRPKI() result (excellent/warning)
 renderASPA()        dedicated ASPA tab renderer; reuses r.rpki result
+bgpSafetyPromise    session cache for the ISP BGP-safety test; lives beside the RPKI/ASPA
+                      session caches and is NOT cleared by clearDNSCaches()
+checkBGPSafety()    session-cached wrapper over runBGPSafetyTest ('error' results evicted so
+                      the next scan retries; conclusive safe/unsafe/warp results kept)
+runBGPSafetyTest()  isbgpsafeyet.com method: WARP trace + valid/invalid RPKI beacon fetches;
+                      2 s decision window after the valid fetch resolves; never rejects
+renderBGPSafetySection(body)
+                    ISP BGP-safety section in the RPKI panel; reads lastResults.bgp from
+                      module scope; rendered in all three renderRPKI branches, before the
+                      explanation; its rating is display-only and never aggregated
 checkIPv6()         queries A+AAAA for domain, NS hosts, MX hosts; returns mxHosts/nsHosts arrays
                       with v4/v6 address splits; rating: excellent (all have AAAA), good (some),
                       warning (none); informational only (weight=0)
@@ -198,7 +209,7 @@ scanStats           module-level stats object (null before first scan); reset at
 timed(name, p)      wraps a promise; records elapsed ms into scanStats.checks[name] on settle
 rerenderAll(r)      re-renders all 17 panels from stored results (no DNS re-query)
 runChecks()         orchestrator; accepts opts={skipMTASTS,skipSecTxt}; resets scanStats; wraps all
-                      15 checks in timed(); saves lastResults; calls rerenderAll()
+                      16 checks in timed(); saves lastResults; calls rerenderAll()
 renderStatsPanel(dkim, rpki)
                     appends/replaces <details id="stats-panel"> to #overview-content; reads
                       scanStats for counts and check timings; called at end of renderSummary()
@@ -210,7 +221,7 @@ Three namespaces per language in the `STRINGS` object:
 
 - **`s` (static)** — plain string key→value. Access with `ts('KEY')`.
 - **`d` (dynamic)** — arrow functions for pluralised/interpolated strings. Access with `td('KEY', ...args)`.
-- **`x` (explanations)** — full explanation markup strings for `addExplanation()` (17 keys: DMARC, DMARCBIS, DNSSEC, MX, PTR, DANE, SPF, DKIM, DKIM2, TLSRPT, MTASTS, CAA, RPKI, BIMI, STXT, WHOIS, IPV6). Access with `tx('KEY')`.
+- **`x` (explanations)** — full explanation markup strings for `addExplanation()` (19 keys: DMARC, DMARCBIS, DNSSEC, MX, PTR, DANE, SPF, DKIM, DKIM2, TLSRPT, MTASTS, CAA, RPKI, ASPA, BIMI, STXT, WHOIS, IPV6, SELECTOR_HELP). Access with `tx('KEY')`.
   `safeMarkup()` builds **text nodes**, so HTML entities are *not* decoded — write `<domain>` literally, never `&lt;domain&gt;`.
 
 Lookup order: current language → English fallback → key name as visible fallback.
@@ -236,7 +247,7 @@ const resolvedText = iss.textKey
 **Current languages**: `en` (English, default), `es` (Spanish), `fr` (French), `no` (Norwegian Bokmål).
 All four are **complete** — no language relies on the English fallback. When adding a key, add it to every language, and mirror it into `translations/<lang>.js` **and `translations/TEMPLATE.js`** so the contributor files stay in sync. TEMPLATE.js is easy to forget because nothing in the app reads it — it had silently drifted 37 keys behind (the entire IPv6 block, plus `SELECTOR_HELP`, the SPF recursive-lookup counts and the RPKI nameserver-diversity keys) before being backfilled on 2026-08-13. A contributor starting from a stale template simply never sees those strings.
 
-To check for drift, parse the `STRINGS` block out of `index.html` and diff the key sets — the three namespaces should total **372 keys** (s=274, d=79, x=19). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses.
+To check for drift, parse the `STRINGS` block out of `index.html` and diff the key sets — the three namespaces should total **383 keys** (s=284, d=80, x=19). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
 
 There are now four contributor files — `es.js`, `fr.js`, `no.js` and `TEMPLATE.js` — and all four
 carry the full key set with no value drift from `index.html`.
@@ -375,6 +386,16 @@ rollover.
 - `renderRPKI`: host details section only (NS/MX type tags, IPs, prefix, ASN+holder, ROA badge). ASPA section moved to `renderASPA`.
 - `getASPARating(result)`: derives ASPA rating from `checkRPKI` result — `excellent` if all ASNs published, `warning` otherwise. Used by `renderASPA`, `renderSummary`, `renderRecommendations`.
 - `renderASPA(result)`: reuses `r.rpki` result; renders per-ASN ASPA status (published/no-aspa/error badge) + provider chips with holder names.
+
+### ISP BGP-safety test details (isbgpsafeyet.com method, MIT)
+- Tests the **visitor's connection**, not the scanned domain: fetches `https://isbgpsafeyet.com/cdn-cgi/trace` (WARP detection), `https://valid.rpki.isbgpsafeyet.com/<uid>` and `https://invalid.rpki.isbgpsafeyet.com/<uid>`. All three endpoints send `access-control-allow-origin: *` (verified 2026-08-17).
+- Status model: `safe`/`unsafe`/`warp`/`error` → excellent/fail/warning/warning — **display-only**, never reaches the tab dot, bars or grade. `renderSummary`/`renderRecommendations` use explicit check lists, so `lastResults.bgp` is structurally invisible to them.
+- **Any settled HTTP response on the invalid beacon = unsafe** (regardless of status code or body); only network-level failure/timeout = safe. Deliberate deviation from upstream, whose `.json()` chain would misreport an unparsable body as safe.
+- The 2 s decision window (`BGP_INVALID_WINDOW_MS`) opens only after the valid fetch resolves; the invalid fetch starts earlier (connection warm-up, upstream behaviour) and is reaped by its own `timeoutSignal`.
+- Trace fetch failure is **non-fatal** (deviation from upstream, which errors out); its `r.ok` guard prevents a non-200 body from faking a WARP verdict.
+- Auto-runs once per page session (user decision): first scan runs it, later scans reuse `bgpSafetyPromise`. `error` results are evicted so the next scan retries. `scanStats.httpRequests += 3` only on real runs.
+- Valid-beacon JSON (`{status, asn, name, blackholed}`) supplies the AS pill + ISP holder name shown in the section.
+- Not gated by the skip-CORS checkbox: these endpoints send proper CORS headers, and the checkbox means "skip checks with expected CORS failures", not "no third-party HTTP".
 
 ### CAA details
 - `checkCAA` extracts CA domain names from `issue`/`issuewild` values (part before `;`), runs `checkDNSSEC` on each in parallel, returns `caDnssec` map.
