@@ -51,6 +51,7 @@ const LANG_TEMPLATE = {
     BTN_CHECKING:           '',  // "Checking…" while running
     BTN_COPY_LINK:          '',  // Copy-shareable-link button: "🔗 Copy link"
     BTN_COPIED:             '',  // Confirmation after copying: "✓ Copied!"
+    BTN_COPY_FAILED:        '',  // clipboard unavailable (page not served over https)
     LANG_LABEL:             '',  // "Language" label next to the language picker
     OVERVIEW_PLACEHOLDER:   '',  // Placeholder shown before first check is run
     RUNNING_CHECKS:         '',  // "Running checks…" message
@@ -78,6 +79,7 @@ const LANG_TEMPLATE = {
     // Fixes / Recommendations tab
     RECS_WHAT_TO_FIX:       '',  // Section heading "What to fix"
     RECS_INFORMATIONAL:     '',  // Section heading "Informational"
+    RECS_NOT_SCORED:        '',  // Fixes-tab heading for checks reported but never graded (BIMI)
     RECS_ALL_GOOD:          '',  // "All checks passing"
     RECS_ALL_EXCELLENT:     '',  // "Everything is configured optimally."
 
@@ -95,9 +97,11 @@ const LANG_TEMPLATE = {
     RATING_FAIL:            '',
 
     // Generic errors
-    ERR_INVALID_DOMAIN:     '',  // "does not look like a valid domain."
     ERR_CHECK_FAILED:       '',  // "Check failed"
     ERR_PREFIX:             '',  // "Error: " prefix for error messages
+    ERR_NETWORK:            '',  // "Network error"
+    ERR_TIMEOUT:            '',  // "Timed out" — a request exceeded its deadline
+    ERR_SCAN_FAILED:        '',  // shown when the whole scan fails, not just one check
 
     // Settings / theme
     THEME_LIGHT:            '',  // e.g. "☀ Light"
@@ -117,11 +121,13 @@ const LANG_TEMPLATE = {
     OPT_SKIP_CORS:          '',  // Checkbox label: "Skip MTA-STS and Security.txt checks to avoid CORS issues"
     CHECK_SKIPPED:          '',  // Shown in panel body when a check was skipped: "This check was skipped."
     RATING_SKIP:            '',  // Badge label: "Skipped"
+    RATING_NONE:            '',  // "Not scored" — for checks shown but never graded (BIMI)
 
     // Stats panel (Overview tab — collapsible "Statistics" section)
     STATS_TITLE:            '',  // Panel heading, e.g. "🤓 Statistics"
     STATS_TOTAL_TIME:       '',  // "Total scan time"
     STATS_DOH_REQUESTS:     '',  // "Cloudflare DoH queries"
+    STATS_DOH_CACHE:        '',  // "cached" — suffix for the count of reused DNS answers
     STATS_RIPE_REQUESTS:    '',  // "RIPE Stat API calls"
     STATS_RIPE_CACHE:       '',  // "from cache" (appended to RIPE Stat line, e.g. "12  (4 from cache)")
     STATS_HTTP_FETCHES:     '',  // "HTTP fetches"
@@ -136,12 +142,21 @@ const LANG_TEMPLATE = {
     DNSSEC_RESOLVER_ONLY:   '',  // Validated by resolver but key records unavailable
     DNSSEC_NOT_SIGNED:      '',  // "No DNSKEY records found — domain is not DNSSEC-signed."
     DNSSEC_ALG_DETAILS:     '',  // "Algorithm details" (expandable section label)
+    DNSSEC_ALG_DECIDES:     '',  // pill on the algorithm that set the DNSSEC rating
+    DNSSEC_ALG_WEAKEST_NOTE: '',  // why the weakest algorithm decides. May use <b> and <code>.
 
     // MX
     MX_HOST_DETAILS:        '',  // "MX host details" (expandable section label)
     MX_NO_DNSSEC:           '',  // "No DNSSEC"
     MX_SIGNED_UNVAL:        '',  // "⚠ Signed, unvalidated"
     MX_RRSET_WARN:          '',  // Warning when MX RRset is not DNSSEC-validated
+    MSG_NXDOMAIN:           '',  // "NXDOMAIN — domain does not exist." (shared by MX, DANE, SPF)
+    MX_NO_RECORDS:          '',  // "No MX records found."
+    MX_NULL_CONFIRM:        '',  // "✓ Null MX (RFC 7505) — domain accepts no email."
+    DANE_NOT_APPLICABLE:    '',  // "No MX records — DANE not applicable."
+    DKIM_NO_RECORDS_MSG:    '',  // "No DKIM records found for any known selector."
+    RPKI_NO_HOSTS:          '',  // "No NS or MX records to check."
+    PTR_NO_MX_HOSTS:        '',  // "No MX hosts."
     MX_NULL_SUGGEST:        '',  // Warning suggesting null MX + SPF -all + DMARC p=reject
 
     // DANE
@@ -173,7 +188,6 @@ const LANG_TEMPLATE = {
     DKIM_TH_PROBED:         '',  // Table header "Selectors probed"
     DKIM_PROV_UNKNOWN:      '',  // Provider-column fallback "Generic / not provider-specific"
     DKIM_DKIM2_TITLE:       '',  // Section title "DKIM2 - the next version of DKIM"
-    DKIM_AUTO_TESTED_LABEL: '',  // "selectors automatically tested"
     DKIM_REVOKED:           '',  // "Key revoked (empty p= tag)"
     DKIM_KEY_TYPE:          '',  // "Key type"
     DKIM_KEY_SIZE:          '',  // "Key size"
@@ -222,13 +236,13 @@ const LANG_TEMPLATE = {
     CAA_DNSSEC_NONE:        '',
     CAA_DNSSEC_ERROR:       '',
     CAA_NO_RECORDS_ISSUE:   '',
+    CAA_NXDOMAIN:           '',  // "NXDOMAIN — domain does not exist."
     CAA_ISSUE_PROHIBITED:   '',
     CAA_NO_IODEF:           '',
 
     // RPKI
     RPKI_HOST_DETAILS:      '',  // "Host Details"
     RPKI_NO_IPS:            '',  // "No IPs resolved"
-    RPKI_ASPA_TITLE:        '',  // "ASPA (AS Provider Authorization)"
     RPKI_ASPA_PROVIDERS:    '',  // "Providers:"
 
     // ASPA
@@ -236,7 +250,6 @@ const LANG_TEMPLATE = {
 
     // ── IPv6 tab ──────────────────────────────────────────────────────────
     IPV6_HOST_DETAILS:      '',  // "Host address details"
-    IPV6_NO_AAAA:           '',  // "No AAAA records"
     IPV6_NO_MX:             '',  // "No MX hosts found"
     IPV6_NO_NS:             '',  // "No NS hosts found"
     IPV6_MANDATORY_TITLE:   '',  // Section title "Mandatory IPv6 requirements"
@@ -339,8 +352,8 @@ const LANG_TEMPLATE = {
     BIMI_NO_RECORD:         '',
     BIMI_NO_LOGO:           '',
     BIMI_NO_AUTHORITY:      '',
-    BIMI_LOGO_OK:           '',
-    BIMI_AUTHORITY_OK:      '',
+    BIMI_LOGO_OK:           '',  // "Logo URL" — field label shown before the l= URL
+    BIMI_AUTHORITY_OK:      '',  // "Authority (VMC)" — field label shown before the a= URL
 
     // PTR
     PTR_HOST_DETAILS:       '',  // "Host details"
@@ -378,7 +391,6 @@ const LANG_TEMPLATE = {
     SPF_MULTI_MESSAGE:        n => '',   // "Multiple SPF records (2) — this is a configuration error."
     SPF_LOOKUP_EXCEED:        n => '',   // "11 DNS-lookup mechanisms exceed the RFC limit of 10"
     SPF_LOOKUP_HIGH:          n => '',   // "9 DNS-lookup mechanisms — approaching the RFC limit of 10"
-    SPF_REDIRECT:             v => '',   // "redirect=spf.example.com present"
     SPF_IP4_BROAD:       (v, p) => '',   // "ip4:10.0.0.0 has a very broad range (/8 ≤ /16)"
     SPF_IP6_BROAD:       (v, p) => '',   // "ip6:… has a very broad range"
     SPF_REDIRECT_FOLLOWED:    d => '',   // "✓ redirect= followed — effective policy loaded from: …"
@@ -446,10 +458,8 @@ const LANG_TEMPLATE = {
     DMARCBIS_EXT_ERROR:        (tag, uri, name) => '',
     BIMI_LOGO_URL:          url => '',   // "Logo URL: https://…"
     BIMI_AUTHORITY_URL:     url => '',   // "Authority URL: https://…"
-    PTR_VALUE:                v => '',   // "PTR: mail.example.com"
 
     // ── IPv6 tab ──────────────────────────────────────────────────────────
-    IPV6_DOMAIN_SUMMARY:      n => '',         // "1 IPv6 address found for domain."
     IPV6_MX_SUMMARY:          (n, t) => '',    // "2/3 MX hosts have IPv6."
     IPV6_NS_SUMMARY:          (n, t) => '',    // "4/4 NS hosts have IPv6."
 

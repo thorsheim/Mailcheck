@@ -12,6 +12,7 @@ const LANG_ES = {
     BTN_CHECKING:        'Verificando\u2026',
     BTN_COPY_LINK:       '\uD83D\uDD17 Copiar enlace',
     BTN_COPIED:          '\u2713 \u00a1Copiado!',
+    BTN_COPY_FAILED:     'Error al copiar',
     LANG_LABEL:          'Idioma',
     OVERVIEW_PLACEHOLDER:'Escribe un nombre de dominio como google.com o microsoft.com y haz clic en Verificar. Ten en cuenta que los resultados pueden no ser exactos debido a limitaciones de tu navegador o de la red desde la que realizas la prueba. Las puntuaciones son solo orientativas y no reflejan necesariamente la verdad completa ni el cumplimiento de los estándares aplicables.',
     RUNNING_CHECKS:      'Ejecutando comprobaciones\u2026',
@@ -36,6 +37,7 @@ const LANG_ES = {
 
     RECS_WHAT_TO_FIX:    'Qué corregir',
     RECS_INFORMATIONAL:  'Informativo',
+    RECS_NOT_SCORED:     'Informado, sin puntuar',
     RECS_ALL_GOOD:       'Todas las comprobaciones superadas',
     RECS_ALL_EXCELLENT:  'Todo está configurado de forma óptima.',
 
@@ -50,10 +52,13 @@ const LANG_ES = {
     RATING_WARNING:      'Advertencia',
     RATING_FAIL:         'Fallo',
     RATING_SKIP:         'Omitido',
+    RATING_NONE:         'Sin puntuar',
 
-    ERR_INVALID_DOMAIN:  'no parece un dominio válido.',
     ERR_CHECK_FAILED:    'Comprobación fallida',
     ERR_PREFIX:          'Error: ',
+    ERR_NETWORK:         'Error de red',
+    ERR_TIMEOUT:         'Tiempo de espera agotado',
+    ERR_SCAN_FAILED:     'No se pudo completar el an\u00e1lisis. Comprueba tu conexi\u00f3n de red e int\u00e9ntalo de nuevo.',
 
     THEME_LIGHT:         '\u2600 Claro',
     THEME_DARK:          '\u263D Oscuro',
@@ -74,6 +79,7 @@ const LANG_ES = {
     STATS_TITLE:         '\uD83E\uDD13 Estadísticas',
     STATS_TOTAL_TIME:    'Tiempo total del análisis',
     STATS_DOH_REQUESTS:  'Consultas DoH a Cloudflare',
+    STATS_DOH_CACHE:     'en cach\u00e9',
     STATS_RIPE_REQUESTS: 'Llamadas a la API de RIPE Stat',
     STATS_RIPE_CACHE:    'desde caché',
     STATS_HTTP_FETCHES:  'Peticiones HTTP',
@@ -87,11 +93,20 @@ const LANG_ES = {
     DNSSEC_RESOLVER_ONLY:'DNSSEC validado por el resolver, pero no se pudieron obtener los registros de clave.',
     DNSSEC_NOT_SIGNED:   'No se encontraron registros DNSKEY \u2014 el dominio no está firmado con DNSSEC.',
     DNSSEC_ALG_DETAILS:  'Detalles del algoritmo',
+    DNSSEC_ALG_DECIDES:  'determina la valoraci\u00f3n',
+    DNSSEC_ALG_WEAKEST_NOTE: 'Una zona se firma con <b>todos</b> los algoritmos de su conjunto DNSKEY, y un validador puede basarse en cualquiera de ellos. Por eso la valoraci\u00f3n anterior sigue el algoritmo <b>m\u00e1s d\u00e9bil</b> publicado, no el m\u00e1s fuerte: un conjunto mixto solo es tan fuerte como su eslab\u00f3n m\u00e1s d\u00e9bil. Esto es normal y temporal durante un cambio de algoritmo.',
 
     MX_HOST_DETAILS:     'Detalles del servidor MX',
     MX_NO_DNSSEC:        'Sin DNSSEC',
     MX_SIGNED_UNVAL:     '\u26a0 Firmado, no validado',
     MX_RRSET_WARN:       '\u26a0 El conjunto MX RRset no está validado por DNSSEC \u2014 no se pudo verificar criptográficamente la lista de servidores de correo.',
+    MSG_NXDOMAIN:        'NXDOMAIN \u2014 el dominio no existe.',
+    MX_NO_RECORDS:       'No se encontraron registros MX.',
+    MX_NULL_CONFIRM:     '\u2713 Null MX (RFC 7505) \u2014 el dominio no acepta correo.',
+    DANE_NOT_APPLICABLE: 'Sin registros MX \u2014 DANE no es aplicable.',
+    DKIM_NO_RECORDS_MSG: 'No se encontraron registros DKIM para ning\u00fan selector conocido.',
+    RPKI_NO_HOSTS:       'No hay registros NS ni MX que comprobar.',
+    PTR_NO_MX_HOSTS:     'Sin hosts MX.',
     MX_NULL_SUGGEST:     'Sin registros MX \u2014 considera publicar un registro MX nulo (RFC 7505) junto con SPF \u201c-all\u201d y DMARC p=reject para bloquear completamente el abuso de correo',
 
     DANE_NO_TLSA:        'Sin registro TLSA',
@@ -120,7 +135,6 @@ const LANG_ES = {
     DKIM_TH_PROBED:      'Selectores probados',
     DKIM_PROV_UNKNOWN:   'Gen\u00e9rico / no espec\u00edfico de proveedor',
     DKIM_DKIM2_TITLE:    'DKIM2: la pr\u00f3xima versi\u00f3n de DKIM',
-    DKIM_AUTO_TESTED_LABEL: 'selectores probados automáticamente',
     DKIM_REVOKED:        'Clave revocada (etiqueta p= vacía)',
     DKIM_KEY_TYPE:       'Tipo de clave',
     DKIM_KEY_SIZE:       'Tamaño de clave',
@@ -166,12 +180,12 @@ const LANG_ES = {
     CAA_DNSSEC_NONE:     'no firmado con DNSSEC',
     CAA_DNSSEC_ERROR:    'error: ',
     CAA_NO_RECORDS_ISSUE:'Sin registros CAA \u2014 cualquier autoridad de certificación puede emitir certificados para este dominio',
+    CAA_NXDOMAIN:        'NXDOMAIN \u2014 el dominio no existe.',
     CAA_ISSUE_PROHIBITED:'Emisión de certificados prohibida para todas las CAs (issue ";")',
     CAA_NO_IODEF:        'Sin etiqueta iodef= \u2014 las infracciones de política de CA no serán notificadas',
 
     RPKI_HOST_DETAILS:   'Detalles del host',
     RPKI_NO_IPS:         'No se resolvieron IPs',
-    RPKI_ASPA_TITLE:     'ASPA (Autorización de proveedor de AS)',
     RPKI_ASPA_PROVIDERS: 'Proveedores:',
 
     ASPA_NO_DATA:        'No hay datos ASPA disponibles',
@@ -221,8 +235,8 @@ const LANG_ES = {
     BIMI_NO_RECORD:      'Sin registro BIMI \u2014 el logotipo de marca no se muestra en los clientes de correo compatibles',
     BIMI_NO_LOGO:        'l= (URL del logotipo) ausente o vacío \u2014 necesario para que BIMI funcione',
     BIMI_NO_AUTHORITY:   'a= (evidencia de autoridad) ausente \u2014 se requiere certificado VMC para que Gmail y otros muestren el logotipo',
-    BIMI_LOGO_OK:        'URL del logotipo presente',
-    BIMI_AUTHORITY_OK:   'Evidencia de autoridad (VMC) presente',
+    BIMI_LOGO_OK:        'URL del logotipo',
+    BIMI_AUTHORITY_OK:   'Autoridad (VMC)',
 
     PTR_HOST_DETAILS:    'Detalles del host',
     PTR_NO_MX:           'No hay servidores MX para comprobar registros PTR',
@@ -264,7 +278,6 @@ const LANG_ES = {
     DMARCBIS_URI_NO_MAILTO:    'Sin URI mailto: en rua= — los receptores solo están obligados a admitir mailto:, por lo que otros esquemas pueden ignorarse',
     DMARCBIS_EXT_NONE:         'No hay URIs rua= ni ruf= que autorizar — sin informes agregados no hay visibilidad de los fallos DMARC',
     IPV6_HOST_DETAILS: 'Detalles de direcciones por host',
-    IPV6_NO_AAAA: 'Sin registro AAAA',
     IPV6_NO_MX: 'No se encontraron hosts MX',
     IPV6_NO_NS: 'No se encontraron hosts NS',
     IPV6_MANDATORY_TITLE: 'Requisitos obligatorios de IPv6',
@@ -304,7 +317,6 @@ const LANG_ES = {
     SPF_MULTI_MESSAGE:     n => 'Varios registros SPF (' + n + ') \u2014 esto es un error de configuración.',
     SPF_LOOKUP_EXCEED:     n => n + ' mecanismos de consulta DNS superan el límite RFC de 10 (puede causar SPF PermError)',
     SPF_LOOKUP_HIGH:       n => n + ' mecanismos de consulta DNS \u2014 acercándose al límite RFC de 10',
-    SPF_REDIRECT:          v => 'redirect=' + v + ' presente \u2014 las políticas anidadas no se siguen en esta comprobación',
     SPF_IP4_BROAD:         (v, p) => 'ip4:' + v + ' tiene un rango muy amplio (/' + p + ' \u2264 /16)',
     SPF_IP6_BROAD:         (v, p) => 'ip6:' + v + ' tiene un rango muy amplio (/' + p + ' \u2264 /32)',
     SPF_REDIRECT_FOLLOWED: d => '\u2713 redirect= seguido \u2014 política efectiva cargada desde: ' + d,
@@ -338,7 +350,6 @@ const LANG_ES = {
     DMARC_RUF_URI:         uri => 'Informes forenses (ruf): ' + uri,
     BIMI_LOGO_URL:         url => 'URL del logotipo: ' + url,
     BIMI_AUTHORITY_URL:    url => 'URL de autoridad: ' + url,
-    PTR_VALUE:             v => 'PTR: ' + v,
     // Keys added in later releases — backfilled
     DMARCBIS_TW_AT_AUTHOR:   dom => 'Registro de política publicado en el dominio autor (_dmarc.' + dom + ') — este es el registro que aplican los receptores',
     DMARCBIS_TW_INHERITED:   (dom, tag, val) => 'Sin registro en el dominio autor — los receptores heredan la política publicada en _dmarc.' + dom + ', aplicando ' + tag + '=' + val,
@@ -373,7 +384,6 @@ const LANG_ES = {
     DMARCBIS_EXT_TOO_LONG:   (tag, uri) => tag + '=' + uri + ' — el nombre de autorización supera los límites de longitud del DNS, por lo que la relación no puede confirmarse (RFC 9990 §4 paso 4)',
     DMARCBIS_EXT_UNPARSABLE: (tag, uri) => tag + '=' + uri + ' — no se pudo extraer ningún host de esta URI',
     DMARCBIS_EXT_ERROR:      (tag, uri, name) => tag + '=' + uri + ' — la consulta de ' + name + ' falló; no se pudo confirmar la autorización',
-    IPV6_DOMAIN_SUMMARY: n => n + ' dirección' + (n !== 1 ? 'es' : '') + ' IPv6 encontrada' + (n !== 1 ? 's' : '') + ' para el dominio.',
     IPV6_MX_SUMMARY: (n, t) => n + '/' + t + ' host' + (t !== 1 ? 's' : '') + ' MX con IPv6.',
     IPV6_NS_SUMMARY: (n, t) => n + '/' + t + ' host' + (t !== 1 ? 's' : '') + ' NS con IPv6.',
     SPF_LOOKUP_TOTAL_EXCEED: n => n + ' consultas DNS totales (incluidos los include anidados) superan el límite de 10 de RFC 7208 — los receptores devolverán SPF PermError',
@@ -411,7 +421,8 @@ const LANG_ES = {
       'previniendo el envenenamiento de caché y los ataques de intermediario. ' +
       'El <b>indicador AD</b> (Authentic Data) del resolver de Cloudflare confirma que toda la cadena desde la raíz hasta este dominio está validada.<br><br>' +
       '<b>Calificación de algoritmos</b> según <a href="https://www.rfc-editor.org/rfc/rfc8624">RFC 8624</a>: <b>Ed25519</b> (alg 15) y <b>ECDSA P-256</b> (alg 13) son los más fuertes. ' +
-      'RSA/SHA-256 (alg 8) es aceptable. RSA/SHA-1 (alg 5) y las variantes DSA son débiles o inseguros.<br><br>' +
+      'RSA/SHA-256 (alg 8) es aceptable. RSA/SHA-1 (alg 5) y las variantes DSA son débiles o inseguros. ' +
+      'Cuando una zona publica varios algoritmos se firma con todos y un validador puede usar cualquiera, por lo que la valoración sigue el <b>más débil</b> presente.<br><br>' +
       '<b>DNSSEC habilita DANE:</b> Sin DNS validado por DNSSEC, los registros TLSA no son de confianza \u2014 ' +
       'un atacante podría sustituir registros TLSA falsos.',
     MX:

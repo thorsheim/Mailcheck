@@ -9,7 +9,13 @@ Do not edit `index.html`. The maintainer will integrate your translation when me
 
 ## Step 1 — Copy the template
 
-Copy `translations/TEMPLATE.js` and rename it to your language code:
+Copy `translations/TEMPLATE.js` and rename it to your language code.
+
+Already shipping: `no.js` (Norwegian Bokmål), `es.js` (Spanish), `fr.js` (French). English lives
+in `index.html` and is the reference. To **improve** an existing translation rather than add a
+new one, edit that language's file directly — it is a complete, current copy of what ships.
+
+Otherwise, name your new file for your language:
 
 ```
 translations/fr.js      # French
@@ -78,7 +84,39 @@ DMARC: '<b>DMARC</b> relie SPF et DKIM avec une politique…<br><br>' +
 
 ---
 
-## Step 3 — Open a pull request
+## Step 3 — Check your file before submitting
+
+Your file must define **exactly the same keys** as English — no more, no fewer — and every `d`
+function must take the same number of arguments as the English one. A missing key silently falls
+back to English; a wrong argument count produces a broken string that still parses. From the
+repo root:
+
+```js
+// node check.js  — adjust the language file name on the first line
+const mine = require('./translations/fr.js');   // see note below
+const fs = require('fs');
+const html = fs.readFileSync('index.html', 'utf8').split('\n');
+const o = html.findIndex(l => l.trim() === '<script>');
+const c = html.findIndex(l => l.trim() === '</script>');
+eval(html.slice(o + 1, c).join('\n'));         // defines STRINGS
+for (const ns of ['s', 'd', 'x']) {
+  const en = Object.keys(STRINGS.en[ns]), got = Object.keys(mine[ns] || {});
+  const missing = en.filter(k => !got.includes(k));
+  const extra   = got.filter(k => !en.includes(k));
+  if (missing.length) console.log(ns, 'MISSING:', missing.join(', '));
+  if (extra.length)   console.log(ns, 'UNKNOWN:', extra.join(', '));
+  if (ns === 'd') for (const k of en)
+    if (mine.d[k] && mine.d[k].length !== STRINGS.en.d[k].length)
+      console.log('d.' + k, 'takes', mine.d[k].length, 'args, English takes', STRINGS.en.d[k].length);
+}
+```
+
+(Add `module.exports = LANG_XX;` to the end of your file temporarily, or change `const LANG_XX =`
+to `module.exports =`, so `require` can read it. Remove that before committing.)
+
+---
+
+## Step 4 — Open a pull request
 
 Commit only your language file (e.g. `translations/fr.js`) and open a pull request
 with a title like: `Add French (fr) translation`.

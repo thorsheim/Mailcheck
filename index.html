@@ -4,6 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>DNS Email Security Checker</title>
+<script>
+// Theme must be settled before first paint. :root is the dark palette and
+// .light overrides it, so deciding this in DOMContentLoaded would paint the page
+// dark and then flip it. Stored choice wins; otherwise follow the OS.
+(function () {
+  var stored = null;
+  try { stored = localStorage.getItem('mailcheck-theme'); } catch (e) {}
+  var light = stored ? stored === 'light'
+    : !(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  if (light) document.documentElement.classList.add('light');
+})();
+</script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -127,12 +139,18 @@
   }
   .tab-btn:hover { border-color: var(--accent); color: var(--text); }
   .tab-btn.active { border-color: var(--accent); color: var(--text); background: rgba(99,102,241,.1); }
+  /* The tab bar uses a roving tabindex, so arrow-key movement is only followable
+     if the focused tab is visibly marked. */
+  .tab-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .tab-panel:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .tab-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
   .tab-dot.dot-excellent { background: var(--excellent); }
   .tab-dot.dot-good { background: var(--good); }
   .tab-dot.dot-warning { background: var(--warning); }
   .tab-dot.dot-fail { background: var(--fail); }
   .tab-dot.dot-skip { background: var(--text-muted); opacity: 0.45; }
+  /* Unscored checks (BIMI) — grey, deliberately not a judgement. */
+  .tab-dot.dot-none { background: var(--text-muted); opacity: 0.45; }
 
   /* ── Panels ──────────────────────────────────────────────────────────────── */
   .tab-panel { display: none; }
@@ -157,6 +175,10 @@
   .panel-section-title {
     font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
     letter-spacing: .06em; color: var(--text-muted); margin-bottom: .5rem;
+  }
+  /* Lighter-weight sibling of .panel-section-title, for sub-headings inside a section. */
+  .panel-section-label {
+    font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: .35rem;
   }
   .explanation {
     font-size: 0.84rem; color: var(--text-muted); line-height: 1.7;
@@ -192,6 +214,8 @@
   .badge-good { background: rgba(132,204,22,0.15); color: var(--good); }
   .badge-warning { background: rgba(245,158,11,0.15); color: var(--warning); }
   .badge-fail { background: rgba(239,68,68,0.15); color: var(--fail); }
+  /* Neutral badges: 'skip' (check not run) and 'none' (check not scored). */
+  .badge-skip, .badge-none { background: rgba(139,143,168,0.15); color: var(--text-muted); }
 
   .card-summary { margin-bottom: 0.6rem; color: var(--text-muted); }
   .card-summary b { color: var(--text); }
@@ -483,7 +507,9 @@
     <div class="input-row">
       <div class="input-group domain-group">
         <label for="domain-input" data-i18n="LABEL_DOMAIN">Domain</label>
-        <input type="text" id="domain-input" placeholder="example.com" data-i18n-placeholder="LABEL_DOMAIN" autocomplete="off" spellcheck="false">
+        <!-- No data-i18n-placeholder: the placeholder is a worked example, not a
+             restatement of the label, and "example.com" needs no translation. -->
+        <input type="text" id="domain-input" placeholder="example.com" autocomplete="off" spellcheck="false">
       </div>
       <div class="input-group selector-group">
         <div style="display:flex;align-items:center;gap:0.35rem">
@@ -515,32 +541,32 @@
     <div id="share-row" style="display:none;margin-top:0.45rem">
       <button id="copy-link-btn" style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-size:0.8rem;padding:0.28rem 0.7rem;cursor:pointer" data-i18n="BTN_COPY_LINK">🔗 Copy link</button>
     </div>
-    <div id="input-error"></div>
+    <div id="input-error" role="status" aria-live="polite"></div>
   </div>
 
-  <div id="tab-bar">
-    <button class="tab-btn active" data-tab="overview">Overview</button>
-    <button class="tab-btn" data-tab="dnssec">DNSSEC <span class="tab-dot"></span></button>
-    <button class="tab-btn" data-tab="mx">MX <span class="tab-dot"></span></button>
-    <button class="tab-btn" data-tab="ptr">PTR <span class="tab-dot"></span></button>
-    <button class="tab-btn" data-tab="dane">DANE <span class="tab-dot"></span></button>
-    <button class="tab-btn" data-tab="spf">SPF <span class="tab-dot"></span></button>
-    <button class="tab-btn" data-tab="dkim">DKIM <span class="tab-dot"></span></button>
-    <button class="tab-btn" data-tab="dmarc">DMARC <span class="tab-dot"></span></button>
-    <button class="tab-btn" data-tab="bimi">BIMI <span class="tab-dot"></span></button>
-    <button class="tab-btn" data-tab="tlsrpt">TLS-RPT <span class="tab-dot"></span></button>
-    <button class="tab-btn" data-tab="mtasts">MTA-STS <span class="tab-dot"></span></button>
-    <button class="tab-btn" data-tab="caa">CAA <span class="tab-dot"></span></button>
-    <button class="tab-btn" data-tab="rpki">RPKI <span class="tab-dot"></span></button>
-    <button class="tab-btn" data-tab="aspa">ASPA <span class="tab-dot"></span></button>
-    <button class="tab-btn" data-tab="ipv6">IPv6 <span class="tab-dot"></span></button>
-    <button class="tab-btn" data-tab="security-txt">Security.txt <span class="tab-dot"></span></button>
-    <button class="tab-btn" data-tab="whois">WHOIS <span class="tab-dot"></span></button>
-    <button class="tab-btn" data-tab="recs">Fixes <span class="tab-dot"></span></button>
+  <div id="tab-bar" role="tablist" aria-label="Check results">
+    <button class="tab-btn active" data-tab="overview" role="tab" id="tab-overview" aria-controls="panel-overview" aria-selected="true" tabindex="0">Overview</button>
+    <button class="tab-btn" data-tab="dnssec" role="tab" id="tab-dnssec" aria-controls="panel-dnssec" aria-selected="false" tabindex="-1">DNSSEC <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="mx" role="tab" id="tab-mx" aria-controls="panel-mx" aria-selected="false" tabindex="-1">MX <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="ptr" role="tab" id="tab-ptr" aria-controls="panel-ptr" aria-selected="false" tabindex="-1">PTR <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="dane" role="tab" id="tab-dane" aria-controls="panel-dane" aria-selected="false" tabindex="-1">DANE <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="spf" role="tab" id="tab-spf" aria-controls="panel-spf" aria-selected="false" tabindex="-1">SPF <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="dkim" role="tab" id="tab-dkim" aria-controls="panel-dkim" aria-selected="false" tabindex="-1">DKIM <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="dmarc" role="tab" id="tab-dmarc" aria-controls="panel-dmarc" aria-selected="false" tabindex="-1">DMARC <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="bimi" role="tab" id="tab-bimi" aria-controls="panel-bimi" aria-selected="false" tabindex="-1">BIMI <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="tlsrpt" role="tab" id="tab-tlsrpt" aria-controls="panel-tlsrpt" aria-selected="false" tabindex="-1">TLS-RPT <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="mtasts" role="tab" id="tab-mtasts" aria-controls="panel-mtasts" aria-selected="false" tabindex="-1">MTA-STS <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="caa" role="tab" id="tab-caa" aria-controls="panel-caa" aria-selected="false" tabindex="-1">CAA <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="rpki" role="tab" id="tab-rpki" aria-controls="panel-rpki" aria-selected="false" tabindex="-1">RPKI <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="aspa" role="tab" id="tab-aspa" aria-controls="panel-aspa" aria-selected="false" tabindex="-1">ASPA <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="ipv6" role="tab" id="tab-ipv6" aria-controls="panel-ipv6" aria-selected="false" tabindex="-1">IPv6 <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="security-txt" role="tab" id="tab-security-txt" aria-controls="panel-security-txt" aria-selected="false" tabindex="-1">Security.txt <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="whois" role="tab" id="tab-whois" aria-controls="panel-whois" aria-selected="false" tabindex="-1">WHOIS <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="recs" role="tab" id="tab-recs" aria-controls="panel-recs" aria-selected="false" tabindex="-1">Fixes <span class="tab-dot"></span></button>
   </div>
 
   <div id="tab-panels">
-    <div class="tab-panel active" id="panel-overview">
+    <div class="tab-panel active" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" tabindex="0">
       <div class="panel-body">
         <div id="overview-placeholder" style="color:var(--text-muted);font-size:0.88rem" data-i18n="OVERVIEW_PLACEHOLDER">Type in a domain name like google.com or microsoft.com, and click Check. Please understand that results may not be correct due to limitations in your browser or in the network from which you are testing. Scores are for indicative purposes only, they do not necessarily tell the full truth or show compliance with relevant standards.</div>
         <div id="overview-content" style="display:none">
@@ -556,7 +582,7 @@
       </div>
     </div>
 
-    <div class="tab-panel" id="panel-dnssec">
+    <div class="tab-panel" id="panel-dnssec" role="tabpanel" aria-labelledby="tab-dnssec" tabindex="0">
       <div class="panel-header">
         <span class="panel-icon">&#128272;</span>
         <span class="panel-title" data-i18n="PANEL_DNSSEC">DNSSEC</span>
@@ -564,7 +590,7 @@
       <div class="panel-body"></div>
     </div>
 
-    <div class="tab-panel" id="panel-mx">
+    <div class="tab-panel" id="panel-mx" role="tabpanel" aria-labelledby="tab-mx" tabindex="0">
       <div class="panel-header">
         <span class="panel-icon">&#128235;</span>
         <span class="panel-title" data-i18n="PANEL_MX">MX Records</span>
@@ -572,7 +598,7 @@
       <div class="panel-body"></div>
     </div>
 
-    <div class="tab-panel" id="panel-ptr">
+    <div class="tab-panel" id="panel-ptr" role="tabpanel" aria-labelledby="tab-ptr" tabindex="0">
       <div class="panel-header">
         <span class="panel-icon">&#8644;</span>
         <span class="panel-title" data-i18n="PANEL_PTR">PTR / FCrDNS</span>
@@ -580,7 +606,7 @@
       <div class="panel-body"></div>
     </div>
 
-    <div class="tab-panel" id="panel-dane">
+    <div class="tab-panel" id="panel-dane" role="tabpanel" aria-labelledby="tab-dane" tabindex="0">
       <div class="panel-header">
         <span class="panel-icon">&#128271;</span>
         <span class="panel-title" data-i18n="PANEL_DANE">DANE / TLSA</span>
@@ -588,7 +614,7 @@
       <div class="panel-body"></div>
     </div>
 
-    <div class="tab-panel" id="panel-spf">
+    <div class="tab-panel" id="panel-spf" role="tabpanel" aria-labelledby="tab-spf" tabindex="0">
       <div class="panel-header">
         <span class="panel-icon">&#128737;</span>
         <span class="panel-title" data-i18n="PANEL_SPF">SPF</span>
@@ -596,7 +622,7 @@
       <div class="panel-body"></div>
     </div>
 
-    <div class="tab-panel" id="panel-dkim">
+    <div class="tab-panel" id="panel-dkim" role="tabpanel" aria-labelledby="tab-dkim" tabindex="0">
       <div class="panel-header">
         <span class="panel-icon">&#9998;</span>
         <span class="panel-title" data-i18n="PANEL_DKIM">DKIM</span>
@@ -604,7 +630,7 @@
       <div class="panel-body"></div>
     </div>
 
-    <div class="tab-panel" id="panel-dmarc">
+    <div class="tab-panel" id="panel-dmarc" role="tabpanel" aria-labelledby="tab-dmarc" tabindex="0">
       <div class="panel-header">
         <span class="panel-icon">&#128206;</span>
         <span class="panel-title" data-i18n="PANEL_DMARC">DMARC</span>
@@ -612,7 +638,7 @@
       <div class="panel-body"></div>
     </div>
 
-    <div class="tab-panel" id="panel-bimi">
+    <div class="tab-panel" id="panel-bimi" role="tabpanel" aria-labelledby="tab-bimi" tabindex="0">
       <div class="panel-header">
         <span class="panel-icon">&#127775;</span>
         <span class="panel-title" data-i18n="PANEL_BIMI">BIMI</span>
@@ -620,7 +646,7 @@
       <div class="panel-body"></div>
     </div>
 
-    <div class="tab-panel" id="panel-tlsrpt">
+    <div class="tab-panel" id="panel-tlsrpt" role="tabpanel" aria-labelledby="tab-tlsrpt" tabindex="0">
       <div class="panel-header">
         <span class="panel-icon">&#128228;</span>
         <span class="panel-title" data-i18n="PANEL_TLSRPT">TLS-RPT</span>
@@ -628,7 +654,7 @@
       <div class="panel-body"></div>
     </div>
 
-    <div class="tab-panel" id="panel-mtasts">
+    <div class="tab-panel" id="panel-mtasts" role="tabpanel" aria-labelledby="tab-mtasts" tabindex="0">
       <div class="panel-header">
         <span class="panel-icon">&#128274;</span>
         <span class="panel-title" data-i18n="PANEL_MTASTS">MTA-STS</span>
@@ -636,7 +662,7 @@
       <div class="panel-body"></div>
     </div>
 
-    <div class="tab-panel" id="panel-caa">
+    <div class="tab-panel" id="panel-caa" role="tabpanel" aria-labelledby="tab-caa" tabindex="0">
       <div class="panel-header">
         <span class="panel-icon">&#127698;</span>
         <span class="panel-title" data-i18n="PANEL_CAA">CAA</span>
@@ -644,7 +670,7 @@
       <div class="panel-body"></div>
     </div>
 
-    <div class="tab-panel" id="panel-rpki">
+    <div class="tab-panel" id="panel-rpki" role="tabpanel" aria-labelledby="tab-rpki" tabindex="0">
       <div class="panel-header">
         <span class="panel-icon">&#128247;</span>
         <span class="panel-title" data-i18n="PANEL_RPKI">RPKI ROA</span>
@@ -652,7 +678,7 @@
       <div class="panel-body"></div>
     </div>
 
-    <div class="tab-panel" id="panel-aspa">
+    <div class="tab-panel" id="panel-aspa" role="tabpanel" aria-labelledby="tab-aspa" tabindex="0">
       <div class="panel-header">
         <span class="panel-icon">&#128204;</span>
         <span class="panel-title" data-i18n="PANEL_ASPA">ASPA</span>
@@ -660,7 +686,7 @@
       <div class="panel-body"></div>
     </div>
 
-    <div class="tab-panel" id="panel-ipv6">
+    <div class="tab-panel" id="panel-ipv6" role="tabpanel" aria-labelledby="tab-ipv6" tabindex="0">
       <div class="panel-header">
         <span class="panel-icon">&#127760;</span>
         <span class="panel-title" data-i18n="PANEL_IPV6">IPv6</span>
@@ -668,7 +694,7 @@
       <div class="panel-body"></div>
     </div>
 
-    <div class="tab-panel" id="panel-security-txt">
+    <div class="tab-panel" id="panel-security-txt" role="tabpanel" aria-labelledby="tab-security-txt" tabindex="0">
       <div class="panel-header">
         <span class="panel-icon">&#128220;</span>
         <span class="panel-title" data-i18n="PANEL_STXT">Security.txt</span>
@@ -676,7 +702,7 @@
       <div class="panel-body"></div>
     </div>
 
-    <div class="tab-panel" id="panel-whois">
+    <div class="tab-panel" id="panel-whois" role="tabpanel" aria-labelledby="tab-whois" tabindex="0">
       <div class="panel-header">
         <span class="panel-icon">&#128269;</span>
         <span class="panel-title" data-i18n="PANEL_WHOIS">WHOIS / RDAP</span>
@@ -684,7 +710,7 @@
       <div class="panel-body"></div>
     </div>
 
-    <div class="tab-panel" id="panel-recs">
+    <div class="tab-panel" id="panel-recs" role="tabpanel" aria-labelledby="tab-recs" tabindex="0">
       <div class="panel-header">
         <span class="panel-icon">&#9998;</span>
         <span class="panel-title" data-i18n="PANEL_RECS">Recommendations</span>
@@ -698,8 +724,25 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-August-13-4 &mdash; click for changelog</summary>
+      <summary>Version 2026-August-17-1 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-August-17-1</span>
+          <ul class="cl-changes">
+            <li><b>Grades can move in this release.</b> DNSSEC is now rated on the <b>weakest</b> algorithm a zone publishes rather than the strongest. A zone is signed with every algorithm in its DNSKEY set and a validator may rely on any one of them, so a zone offering both ECDSA P-256 and RSA/SHA-1 is only as strong as the RSA/SHA-1 signatures. Every algorithm is still listed, with the deciding one marked and explained. This can lower both the DNSSEC bar and the MX bar (which inherits each MX host&rsquo;s DNSSEC result) for zones mid-rollover; single-algorithm zones are unaffected</li>
+            <li><b>A hung request can no longer strand a scan.</b> Every outbound request now carries a deadline &mdash; previously only the two HTTPS policy fetches did, so one stalled DNS, RDAP or RIPE Stat request left the spinner running and the Check button disabled with no error and no way out but a reload</li>
+            <li><b>BIMI is visible again</b> in the Overview bars and the Fixes tab, and its panel badge no longer reads the raw string <code>RATING_NONE</code>. It stays deliberately unscored &mdash; now with a proper &ldquo;Not scored&rdquo; label in all four languages</li>
+            <li>SPF: <code>a/24</code> and <code>mx//64</code> are parsed correctly. The <code>/24</code> is a CIDR suffix, not a hostname &mdash; the checker had been treating it as a domain called <code>24</code> and looking it up</li>
+            <li>DKIM: a selector answering with two TXT records no longer has them glued into one unparsable string, and a wildcard <code>v=spf1</code> record under <code>_domainkey</code> is no longer mistaken for a key</li>
+            <li>SPF and DMARC propagation warnings no longer fire on records that match &mdash; the two resolvers&rsquo; answers are now compared as sets rather than by first-record string equality</li>
+            <li>Roughly a third fewer DNS queries per scan: identical lookups are answered once and shared, and every fan-out is bounded rather than opening dozens of connections at once. The security.txt check tries its four candidate URLs concurrently instead of one after another</li>
+            <li>Theme now persists across reloads, follows your system preference on first visit, and no longer flashes dark before switching to light</li>
+            <li>The domain field keeps its <code>example.com</code> hint, which the translation pass had been overwriting with the field label</li>
+            <li>PTR results are labelled in words instead of a bare tick or warning glyph; the Back button now works; the copy-link button degrades gracefully when the clipboard is unavailable</li>
+            <li>Tab bar is now a proper ARIA tablist with arrow-key navigation and a visible focus ring; validation errors are announced to screen readers</li>
+            <li>Every remaining hardcoded English string in the check results is translated, including the NXDOMAIN, no-MX and no-DKIM messages. <code>translations/no.js</code> now exists so Norwegian can be contributed like any other language</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-August-13-4</span>
           <ul class="cl-changes">
@@ -1046,6 +1089,7 @@ const STRINGS = {
       PANEL_RECS:          'Fixes',
       RECS_WHAT_TO_FIX:    'What to fix',
       RECS_INFORMATIONAL:  'Informational',
+      RECS_NOT_SCORED:     'Reported, not scored',
       RECS_ALL_GOOD:       'All checks passing',
       RECS_ALL_EXCELLENT:  'Everything is configured optimally.',
       GRADE_TITLE:         'Overall Grade',
@@ -1057,9 +1101,11 @@ const STRINGS = {
       RATING_GOOD:         'Good',
       RATING_WARNING:      'Warning',
       RATING_FAIL:         'Fail',
-      ERR_INVALID_DOMAIN:  'does not look like a valid domain.',
       ERR_CHECK_FAILED:    'Check failed',
       ERR_PREFIX:          'Error: ',
+      ERR_NETWORK:         'Network error',
+      ERR_TIMEOUT:         'Timed out',
+      ERR_SCAN_FAILED:     'The scan could not be completed. Check your network connection and try again.',
       THEME_LIGHT:         '\u2600 Light',
       THEME_DARK:          '\u263D Dark',
       THEME_TO_DARK:       'Switch to dark theme',
@@ -1076,13 +1122,16 @@ const STRINGS = {
       OPT_SKIP_CORS:       'Skip MTA-STS and Security.txt checks to avoid CORS issues',
       CHECK_SKIPPED:       'This check was skipped.',
       RATING_SKIP:         'Skipped',
+      RATING_NONE:         'Not scored',
       // Share link
       BTN_COPY_LINK:       '\uD83D\uDD17 Copy link',
       BTN_COPIED:          '\u2713 Copied!',
+      BTN_COPY_FAILED:     'Copy failed',
       // Stats panel
       STATS_TITLE:         '\uD83E\uDD13 Statistics',
       STATS_TOTAL_TIME:    'Total scan time',
       STATS_DOH_REQUESTS:  'Cloudflare DoH queries',
+      STATS_DOH_CACHE:     'cached',
       STATS_RIPE_REQUESTS: 'RIPE Stat API calls',
       STATS_RIPE_CACHE:    'from cache',
       STATS_HTTP_FETCHES:  'HTTP fetches',
@@ -1096,11 +1145,20 @@ const STRINGS = {
       DNSSEC_RESOLVER_ONLY:'DNSSEC validated by resolver, but key records could not be retrieved.',
       DNSSEC_NOT_SIGNED:   'No DNSKEY records found \u2014 domain is not DNSSEC-signed.',
       DNSSEC_ALG_DETAILS:  'Algorithm details',
+      DNSSEC_ALG_DECIDES:  'sets the rating',
+      DNSSEC_ALG_WEAKEST_NOTE: 'A zone is signed with <b>every</b> algorithm in its DNSKEY set, and a validator may rely on any one of them. The rating above therefore follows the <b>weakest</b> algorithm published, not the strongest \u2014 a mixed set is only as strong as its weakest member. This is normal and temporary during an algorithm rollover.',
       // MX
       MX_HOST_DETAILS:     'MX host details',
       MX_NO_DNSSEC:        'No DNSSEC',
       MX_SIGNED_UNVAL:     '\u26a0 Signed, unvalidated',
       MX_RRSET_WARN:       '\u26a0 MX RRset not DNSSEC-validated \u2014 the list of mail servers could not be cryptographically verified.',
+      MSG_NXDOMAIN:        'NXDOMAIN \u2014 domain does not exist.',
+      MX_NO_RECORDS:       'No MX records found.',
+      MX_NULL_CONFIRM:     '\u2713 Null MX (RFC 7505) \u2014 domain accepts no email.',
+      DANE_NOT_APPLICABLE: 'No MX records \u2014 DANE not applicable.',
+      DKIM_NO_RECORDS_MSG: 'No DKIM records found for any known selector.',
+      RPKI_NO_HOSTS:       'No NS or MX records to check.',
+      PTR_NO_MX_HOSTS:     'No MX hosts.',
       // DANE
       DANE_NO_TLSA:        'No TLSA record',
       DANE_TLSA_UNVAL:     '\u26a0 TLSA found, not DNSSEC-validated',
@@ -1121,7 +1179,6 @@ const STRINGS = {
       DKIM_TH_PROBED:      'Selectors probed',
       DKIM_PROV_UNKNOWN:   'Generic / not provider-specific',
       DKIM_DKIM2_TITLE:    'DKIM2 — the next version of DKIM',
-      DKIM_AUTO_TESTED_LABEL: 'selectors automatically tested',
       DKIM_REVOKED:        'Key revoked (empty p= tag)',
       DKIM_KEY_TYPE:       'Key type',
       DKIM_KEY_SIZE:       'Key size',
@@ -1155,14 +1212,12 @@ const STRINGS = {
       // RPKI
       RPKI_HOST_DETAILS:   'Host Details',
       RPKI_NO_IPS:         'No IPs resolved',
-      RPKI_ASPA_TITLE:     'ASPA (AS Provider Authorization)',
       RPKI_ASPA_PROVIDERS: 'Providers:',
       // ASPA
       ASPA_NO_DATA:        'No ASPA data available',
       // IPv6
       PANEL_IPV6:             'IPv6',
       IPV6_HOST_DETAILS:      'Per-host address details',
-      IPV6_NO_AAAA:           'No AAAA record',
       IPV6_NO_MX:             'No MX hosts found',
       IPV6_NO_NS:             'No NS hosts found',
       IPV6_MANDATORY_TITLE:   'Mandatory IPv6 requirements',
@@ -1220,6 +1275,7 @@ const STRINGS = {
       MTASTS_MODE_NONE:    'Policy mode: none \u2014 MTA-STS is explicitly disabled',
       // CAA issue keys
       CAA_NO_RECORDS_ISSUE:'No CAA records \u2014 any certificate authority can issue certificates for this domain',
+      CAA_NXDOMAIN:        'NXDOMAIN \u2014 domain does not exist.',
       CAA_ISSUE_PROHIBITED:'Certificate issuance prohibited for all CAs (issue ";")',
       CAA_NO_IODEF:        'No iodef= tag \u2014 CA policy violations will not be reported',
       // Security.txt issue keys
@@ -1288,8 +1344,8 @@ const STRINGS = {
       BIMI_NO_RECORD:      'No BIMI record \u2014 brand logo not displayed in supporting email clients',
       BIMI_NO_LOGO:        'l= (logo URL) missing or empty \u2014 required for BIMI to function',
       BIMI_NO_AUTHORITY:   'a= (authority evidence) absent \u2014 VMC certificate required for Gmail and other providers to display logo',
-      BIMI_LOGO_OK:        'Logo URL present',
-      BIMI_AUTHORITY_OK:   'Authority evidence (VMC) present',
+      BIMI_LOGO_OK:        'Logo URL',
+      BIMI_AUTHORITY_OK:   'Authority (VMC)',
       // PTR issue keys
       PTR_HOST_DETAILS:    'Host details',
       PTR_NO_MX:           'No MX hosts to check PTR records for',
@@ -1331,7 +1387,6 @@ const STRINGS = {
       SPF_MULTI_MESSAGE:     n => 'Multiple SPF records (' + n + ') \u2014 this is a configuration error.',
       SPF_LOOKUP_EXCEED:     n => n + ' DNS-lookup mechanisms exceed the RFC limit of 10 (may cause SPF PermError)',
       SPF_LOOKUP_HIGH:       n => n + ' DNS-lookup mechanisms \u2014 approaching the RFC limit of 10',
-      SPF_REDIRECT:          v => 'redirect=' + v + ' present \u2014 nested policies not followed in this check',
       SPF_IP4_BROAD:         (v, p) => 'ip4:' + v + ' has a very broad range (/' + p + ' \u2264 /16)',
       SPF_IP6_BROAD:         (v, p) => 'ip6:' + v + ' has a very broad range (/' + p + ' \u2264 /32)',
       SPF_REDIRECT_FOLLOWED: d => '\u2713 redirect= followed \u2014 effective policy loaded from: ' + d,
@@ -1399,8 +1454,6 @@ const STRINGS = {
       DMARCBIS_EXT_ERROR:      (tag, uri, name) => tag + '=' + uri + ' — the lookup for ' + name + ' failed; authorization could not be confirmed',
       BIMI_LOGO_URL:         url => 'Logo URL: ' + url,
       BIMI_AUTHORITY_URL:    url => 'Authority URL: ' + url,
-      PTR_VALUE:             v => 'PTR: ' + v,
-      IPV6_DOMAIN_SUMMARY:   n => n + ' IPv6 address' + (n !== 1 ? 'es' : '') + ' found for domain.',
       IPV6_MX_SUMMARY:       (n, t) => n + '/' + t + ' MX host' + (t !== 1 ? 's' : '') + ' have IPv6.',
       IPV6_NS_SUMMARY:       (n, t) => n + '/' + t + ' NS host' + (t !== 1 ? 's' : '') + ' have IPv6.',
       // SPF recursive lookup count
@@ -1466,7 +1519,8 @@ const STRINGS = {
         'preventing cache poisoning and man-in-the-middle attacks. ' +
         'The <b>AD flag</b> (Authentic Data) from Cloudflare\'s resolver confirms the entire chain from root to this domain is validated.<br><br>' +
         '<b>Algorithm ratings</b> follow <a href="https://www.rfc-editor.org/rfc/rfc8624">RFC 8624</a>: <b>Ed25519</b> (alg 15) and <b>ECDSA P-256</b> (alg 13) are the strongest. ' +
-        'RSA/SHA-256 (alg 8) is acceptable. RSA/SHA-1 (alg 5) and DSA variants are weak or broken.<br><br>' +
+        'RSA/SHA-256 (alg 8) is acceptable. RSA/SHA-1 (alg 5) and DSA variants are weak or broken. '  +
+        'When a zone publishes several algorithms it is signed with all of them and a validator may use any one, so the rating follows the <b>weakest</b> one present.<br><br>' +
         '<b>DNSSEC enables DANE:</b> Without DNSSEC-validated DNS, TLSA records cannot be trusted \u2014 ' +
         'an attacker could substitute fake TLSA records.',
       MX:
@@ -1708,6 +1762,7 @@ const STRINGS = {
       PANEL_RECS:          'Rettinger',
       RECS_WHAT_TO_FIX:    'Hva som b\u00f8r fikses',
       RECS_INFORMATIONAL:  'Informasjon',
+      RECS_NOT_SCORED:     'Rapportert, ikke poengsatt',
       RECS_ALL_GOOD:       'Alle sjekker best\u00e5tt',
       RECS_ALL_EXCELLENT:  'Alt er konfigurert optimalt.',
       GRADE_TITLE:         'Samlet karakter',
@@ -1719,9 +1774,11 @@ const STRINGS = {
       RATING_GOOD:         'God',
       RATING_WARNING:      'Advarsel',
       RATING_FAIL:         'Feil',
-      ERR_INVALID_DOMAIN:  'ser ikke ut som et gyldig domene.',
       ERR_CHECK_FAILED:    'Sjekk mislyktes',
       ERR_PREFIX:          'Feil: ',
+      ERR_NETWORK:         'Nettverksfeil',
+      ERR_TIMEOUT:         'Tidsavbrudd',
+      ERR_SCAN_FAILED:     'Skanningen kunne ikke fullf\u00f8res. Sjekk nettverkstilkoblingen og pr\u00f8v igjen.',
       THEME_LIGHT:         '\u2600 Lyst',
       THEME_DARK:          '\u263D M\u00f8rkt',
       THEME_TO_DARK:       'Bytt til m\u00f8rkt tema',
@@ -1738,13 +1795,16 @@ const STRINGS = {
       OPT_SKIP_CORS:       'Hopp over MTA-STS- og Security.txt-sjekker for \u00e5 unng\u00e5 CORS-problemer',
       CHECK_SKIPPED:       'Denne sjekken ble hoppet over.',
       RATING_SKIP:         'Hoppet over',
+      RATING_NONE:         'Ikke poengsatt',
       // Share link
       BTN_COPY_LINK:       '\uD83D\uDD17 Kopier lenke',
       BTN_COPIED:          '\u2713 Kopiert!',
+      BTN_COPY_FAILED:     'Kopiering mislyktes',
       // Stats panel
       STATS_TITLE:         '\uD83E\uDD13 Statistikk',
       STATS_TOTAL_TIME:    'Total skanningstid',
       STATS_DOH_REQUESTS:  'Cloudflare DoH-foresp\u00f8rsler',
+      STATS_DOH_CACHE:     'bufret',
       STATS_RIPE_REQUESTS: 'RIPE Stat API-kall',
       STATS_RIPE_CACHE:    'fra cache',
       STATS_HTTP_FETCHES:  'HTTP-hentinger',
@@ -1758,11 +1818,20 @@ const STRINGS = {
       DNSSEC_RESOLVER_ONLY:'DNSSEC validert av resolver, men n\u00f8kkelposter kunne ikke hentes.',
       DNSSEC_NOT_SIGNED:   'Ingen DNSKEY-poster funnet \u2014 domenet er ikke DNSSEC-signert.',
       DNSSEC_ALG_DETAILS:  'Algoritmedetaljer',
+      DNSSEC_ALG_DECIDES:  'avgj\u00f8r vurderingen',
+      DNSSEC_ALG_WEAKEST_NOTE: 'En sone signeres med <b>alle</b> algoritmene i DNSKEY-settet, og en validator kan bruke hvilken som helst av dem. Vurderingen over f\u00f8lger derfor den <b>svakeste</b> algoritmen som publiseres, ikke den sterkeste \u2014 et blandet sett er bare s\u00e5 sterkt som det svakeste leddet. Dette er normalt og midlertidig under et algoritmebytte.',
       // MX
       MX_HOST_DETAILS:     'MX-vertsdetaljer',
       MX_NO_DNSSEC:        'Ingen DNSSEC',
       MX_SIGNED_UNVAL:     '\u26a0 Signert, ikke validert',
       MX_RRSET_WARN:       '\u26a0 MX RRset ikke DNSSEC-validert \u2014 listen over e-postservere kunne ikke verifiseres kryptografisk.',
+      MSG_NXDOMAIN:        'NXDOMAIN \u2014 domenet finnes ikke.',
+      MX_NO_RECORDS:       'Ingen MX-oppf\u00f8ringer funnet.',
+      MX_NULL_CONFIRM:     '\u2713 Null MX (RFC 7505) \u2014 domenet tar ikke imot e-post.',
+      DANE_NOT_APPLICABLE: 'Ingen MX-oppf\u00f8ringer \u2014 DANE er ikke aktuelt.',
+      DKIM_NO_RECORDS_MSG: 'Ingen DKIM-oppf\u00f8ringer funnet for noen kjent selektor.',
+      RPKI_NO_HOSTS:       'Ingen NS- eller MX-oppf\u00f8ringer \u00e5 sjekke.',
+      PTR_NO_MX_HOSTS:     'Ingen MX-verter.',
       // DANE
       DANE_NO_TLSA:        'Ingen TLSA-post',
       DANE_TLSA_UNVAL:     '\u26a0 TLSA funnet, ikke DNSSEC-validert',
@@ -1783,7 +1852,6 @@ const STRINGS = {
       DKIM_TH_PROBED:      'Selektorer testet',
       DKIM_PROV_UNKNOWN:   'Generisk / ikke leverandørspesifikk',
       DKIM_DKIM2_TITLE:    'DKIM2 — neste versjon av DKIM',
-      DKIM_AUTO_TESTED_LABEL: 'selektorer testet automatisk',
       DKIM_REVOKED:        'N\u00f8kkel tilbakekalt (tom p=-tag)',
       DKIM_KEY_TYPE:       'N\u00f8kkeltype',
       DKIM_KEY_SIZE:       'N\u00f8kkelst\u00f8rrelse',
@@ -1817,13 +1885,11 @@ const STRINGS = {
       // RPKI
       RPKI_HOST_DETAILS:   'Vertsdetaljer',
       RPKI_NO_IPS:         'Ingen IP-adresser l\u00f8st opp',
-      RPKI_ASPA_TITLE:     'ASPA (AS-leverand\u00f8rautorisasjon)',
       RPKI_ASPA_PROVIDERS: 'Leverand\u00f8rer:',
       // ASPA
       ASPA_NO_DATA:        'Ingen ASPA-data tilgjengelig',
       // IPv6
       IPV6_HOST_DETAILS:      'Adressedetaljer per vert',
-      IPV6_NO_AAAA:           'Ingen AAAA-post',
       IPV6_NO_MX:             'Ingen MX-verter funnet',
       IPV6_NO_NS:             'Ingen NS-verter funnet',
       IPV6_MANDATORY_TITLE:   'Obligatoriske IPv6-krav',
@@ -1881,6 +1947,7 @@ const STRINGS = {
       MTASTS_MODE_NONE:    'Policy-modus: none \u2014 MTA-STS er eksplisitt deaktivert',
       // CAA issue keys
       CAA_NO_RECORDS_ISSUE:'Ingen CAA-poster \u2014 enhver sertifiseringsinstans kan utstede sertifikater for dette domenet',
+      CAA_NXDOMAIN:        'NXDOMAIN \u2014 domenet finnes ikke.',
       CAA_ISSUE_PROHIBITED:'Sertifikatutstedelse forbudt for alle CAer (issue ";")',
       CAA_NO_IODEF:        'Ingen iodef=-tag \u2014 CA-policybrudd vil ikke rapporteres',
       // Security.txt issue keys
@@ -1949,8 +2016,8 @@ const STRINGS = {
       BIMI_NO_RECORD:      'Ingen BIMI-post \u2014 merkevarelogo vises ikke i st\u00f8ttede e-postklienter',
       BIMI_NO_LOGO:        'l= (logo-URL) mangler eller er tom \u2014 p\u00e5krevd for at BIMI skal fungere',
       BIMI_NO_AUTHORITY:   'a= (autoritetsdokumentasjon) mangler \u2014 VMC-sertifikat kreves av Gmail og andre leverand\u00f8rer for \u00e5 vise logoen',
-      BIMI_LOGO_OK:        'Logo-URL til stede',
-      BIMI_AUTHORITY_OK:   'Autoritetsdokumentasjon (VMC) til stede',
+      BIMI_LOGO_OK:        'Logo-URL',
+      BIMI_AUTHORITY_OK:   'Autoritet (VMC)',
       // PTR issue keys
       PTR_HOST_DETAILS:    'Vertsdetaljer',
       PTR_NO_MX:           'Ingen MX-verter \u00e5 sjekke PTR-poster for',
@@ -1984,7 +2051,6 @@ const STRINGS = {
       SPF_MULTI_MESSAGE:     n => 'Flere SPF-poster (' + n + ') \u2014 dette er en konfigurasjonsfeil.',
       SPF_LOOKUP_EXCEED:     n => n + ' DNS-oppslagsmekanismer overskrider RFC-grensen p\u00e5 10 (kan f\u00f8re til SPF PermError)',
       SPF_LOOKUP_HIGH:       n => n + ' DNS-oppslagsmekanismer \u2014 n\u00e6rmer seg RFC-grensen p\u00e5 10',
-      SPF_REDIRECT:          v => 'redirect=' + v + ' funnet \u2014 nestede policyer f\u00f8lges ikke i denne sjekken',
       SPF_IP4_BROAD:         (v, p) => 'ip4:' + v + ' har et sv\u00e6rt bredt omr\u00e5de (/' + p + ' \u2264 /16)',
       SPF_IP6_BROAD:         (v, p) => 'ip6:' + v + ' har et sv\u00e6rt bredt omr\u00e5de (/' + p + ' \u2264 /32)',
       SPF_REDIRECT_FOLLOWED: d => '\u2713 redirect= fulgt \u2014 effektiv policy lastet fra: ' + d,
@@ -2052,8 +2118,6 @@ const STRINGS = {
       DMARCBIS_EXT_ERROR:      (tag, uri, name) => tag + '=' + uri + ' — oppslaget for ' + name + ' feilet; autorisasjon kunne ikke bekreftes',
       BIMI_LOGO_URL:         url => 'Logo-URL: ' + url,
       BIMI_AUTHORITY_URL:    url => 'Autoritets-URL: ' + url,
-      PTR_VALUE:             v => 'PTR: ' + v,
-      IPV6_DOMAIN_SUMMARY:   n => n + ' IPv6-adresse' + (n !== 1 ? 'r' : '') + ' funnet for domenet.',
       IPV6_MX_SUMMARY:       (n, t) => n + '/' + t + ' MX-vert' + (t !== 1 ? 'er' : '') + ' har IPv6.',
       IPV6_NS_SUMMARY:       (n, t) => n + '/' + t + ' NS-vert' + (t !== 1 ? 'er' : '') + ' har IPv6.',
       // Keys added in later releases — backfilled
@@ -2112,7 +2176,8 @@ const STRINGS = {
         'og beskytter mot cache-forgiftning og mann-i-midten-angrep. ' +
         '<b>AD-flagget</b> (Authentic Data) fra Cloudflares resolver bekrefter at hele kjeden fra rot til dette domenet er validert.<br><br>' +
         '<b>Algoritmerangeringer</b> f\u00f8lger <a href="https://www.rfc-editor.org/rfc/rfc8624">RFC 8624</a>: <b>Ed25519</b> (alg 15) og <b>ECDSA P-256</b> (alg 13) er de sterkeste. ' +
-        'RSA/SHA-256 (alg 8) er akseptabel. RSA/SHA-1 (alg 5) og DSA-varianter er svake eller brutte.<br><br>' +
+        'RSA/SHA-256 (alg 8) er akseptabel. RSA/SHA-1 (alg 5) og DSA-varianter er svake eller brutte. ' +
+        'N\u00e5r en sone publiserer flere algoritmer, signeres den med alle, og en validator kan bruke hvilken som helst \u2014 derfor f\u00f8lger vurderingen den <b>svakeste</b> som finnes.<br><br>' +
         '<b>DNSSEC aktiverer DANE:</b> Uten DNSSEC-validert DNS kan ikke TLSA-poster stoles p\u00e5 \u2014 ' +
         'en angriper kunne erstatte falske TLSA-poster.',
       MX:
@@ -2333,6 +2398,7 @@ const STRINGS = {
       BTN_CHECKING:        'Verificando\u2026',
       BTN_COPY_LINK:       '\uD83D\uDD17 Copiar enlace',
       BTN_COPIED:          '\u2713 \u00a1Copiado!',
+      BTN_COPY_FAILED:     'Error al copiar',
       LANG_LABEL:          'Idioma',
       OVERVIEW_PLACEHOLDER:'Escribe un nombre de dominio como google.com o microsoft.com y haz clic en Verificar. Ten en cuenta que los resultados pueden no ser exactos debido a limitaciones de tu navegador o de la red desde la que realizas la prueba. Las puntuaciones son solo orientativas y no reflejan necesariamente la verdad completa ni el cumplimiento de los est\u00e1ndares aplicables.',
       RUNNING_CHECKS:      'Ejecutando comprobaciones\u2026',
@@ -2356,6 +2422,7 @@ const STRINGS = {
       PANEL_RECS:          'Correcciones',
       RECS_WHAT_TO_FIX:    'Qu\u00e9 corregir',
       RECS_INFORMATIONAL:  'Informativo',
+      RECS_NOT_SCORED:     'Informado, sin puntuar',
       RECS_ALL_GOOD:       'Todas las comprobaciones superadas',
       RECS_ALL_EXCELLENT:  'Todo est\u00e1 configurado de forma \u00f3ptima.',
       GRADE_TITLE:         'Calificaci\u00f3n global',
@@ -2368,9 +2435,12 @@ const STRINGS = {
       RATING_WARNING:      'Advertencia',
       RATING_FAIL:         'Fallo',
       RATING_SKIP:         'Omitido',
-      ERR_INVALID_DOMAIN:  'no parece un dominio v\u00e1lido.',
+      RATING_NONE:         'Sin puntuar',
       ERR_CHECK_FAILED:    'Comprobaci\u00f3n fallida',
       ERR_PREFIX:          'Error: ',
+      ERR_NETWORK:         'Error de red',
+      ERR_TIMEOUT:         'Tiempo de espera agotado',
+      ERR_SCAN_FAILED:     'No se pudo completar el an\u00e1lisis. Comprueba tu conexi\u00f3n de red e int\u00e9ntalo de nuevo.',
       THEME_LIGHT:         '\u2600 Claro',
       THEME_DARK:          '\u263D Oscuro',
       THEME_TO_DARK:       'Cambiar a tema oscuro',
@@ -2388,6 +2458,7 @@ const STRINGS = {
       STATS_TITLE:         '\uD83E\uDD13 Estad\u00edsticas',
       STATS_TOTAL_TIME:    'Tiempo total del an\u00e1lisis',
       STATS_DOH_REQUESTS:  'Consultas DoH a Cloudflare',
+      STATS_DOH_CACHE:     'en cach\u00e9',
       STATS_RIPE_REQUESTS: 'Llamadas a la API de RIPE Stat',
       STATS_RIPE_CACHE:    'desde cach\u00e9',
       STATS_HTTP_FETCHES:  'Peticiones HTTP',
@@ -2400,10 +2471,19 @@ const STRINGS = {
       DNSSEC_RESOLVER_ONLY:'DNSSEC validado por el resolver, pero no se pudieron obtener los registros de clave.',
       DNSSEC_NOT_SIGNED:   'No se encontraron registros DNSKEY \u2014 el dominio no est\u00e1 firmado con DNSSEC.',
       DNSSEC_ALG_DETAILS:  'Detalles del algoritmo',
+      DNSSEC_ALG_DECIDES:  'determina la valoraci\u00f3n',
+      DNSSEC_ALG_WEAKEST_NOTE: 'Una zona se firma con <b>todos</b> los algoritmos de su conjunto DNSKEY, y un validador puede basarse en cualquiera de ellos. Por eso la valoraci\u00f3n anterior sigue el algoritmo <b>m\u00e1s d\u00e9bil</b> publicado, no el m\u00e1s fuerte: un conjunto mixto solo es tan fuerte como su eslab\u00f3n m\u00e1s d\u00e9bil. Esto es normal y temporal durante un cambio de algoritmo.',
       MX_HOST_DETAILS:     'Detalles del servidor MX',
       MX_NO_DNSSEC:        'Sin DNSSEC',
       MX_SIGNED_UNVAL:     '\u26a0 Firmado, no validado',
       MX_RRSET_WARN:       '\u26a0 El conjunto MX RRset no est\u00e1 validado por DNSSEC \u2014 no se pudo verificar criptogr\u00e1ficamente la lista de servidores de correo.',
+      MSG_NXDOMAIN:        'NXDOMAIN \u2014 el dominio no existe.',
+      MX_NO_RECORDS:       'No se encontraron registros MX.',
+      MX_NULL_CONFIRM:     '\u2713 Null MX (RFC 7505) \u2014 el dominio no acepta correo.',
+      DANE_NOT_APPLICABLE: 'Sin registros MX \u2014 DANE no es aplicable.',
+      DKIM_NO_RECORDS_MSG: 'No se encontraron registros DKIM para ning\u00fan selector conocido.',
+      RPKI_NO_HOSTS:       'No hay registros NS ni MX que comprobar.',
+      PTR_NO_MX_HOSTS:     'Sin hosts MX.',
       MX_NULL_SUGGEST:     'Sin registros MX \u2014 considera publicar un registro MX nulo (RFC 7505) junto con SPF \u201c-all\u201d y DMARC p=reject para bloquear completamente el abuso de correo',
       DANE_NO_TLSA:        'Sin registro TLSA',
       DANE_TLSA_UNVAL:     '\u26a0 TLSA encontrado, no validado por DNSSEC',
@@ -2429,7 +2509,6 @@ const STRINGS = {
       DKIM_TH_PROBED:      'Selectores probados',
       DKIM_PROV_UNKNOWN:   'Gen\u00e9rico / no espec\u00edfico de proveedor',
       DKIM_DKIM2_TITLE:    'DKIM2: la pr\u00f3xima versi\u00f3n de DKIM',
-      DKIM_AUTO_TESTED_LABEL: 'selectores probados autom\u00e1ticamente',
       DKIM_REVOKED:        'Clave revocada (etiqueta p= vac\u00eda)',
       DKIM_KEY_TYPE:       'Tipo de clave',
       DKIM_KEY_SIZE:       'Tama\u00f1o de clave',
@@ -2472,11 +2551,11 @@ const STRINGS = {
       CAA_DNSSEC_NONE:     'no firmado con DNSSEC',
       CAA_DNSSEC_ERROR:    'error: ',
       CAA_NO_RECORDS_ISSUE:'Sin registros CAA \u2014 cualquier autoridad de certificaci\u00f3n puede emitir certificados para este dominio',
+      CAA_NXDOMAIN:        'NXDOMAIN \u2014 el dominio no existe.',
       CAA_ISSUE_PROHIBITED:'Emisi\u00f3n de certificados prohibida para todas las CAs (issue ";")',
       CAA_NO_IODEF:        'Sin etiqueta iodef= \u2014 las infracciones de pol\u00edtica de CA no ser\u00e1n notificadas',
       RPKI_HOST_DETAILS:   'Detalles del host',
       RPKI_NO_IPS:         'No se resolvieron IPs',
-      RPKI_ASPA_TITLE:     'ASPA (Autorizaci\u00f3n de proveedor de AS)',
       RPKI_ASPA_PROVIDERS: 'Proveedores:',
       ASPA_NO_DATA:        'No hay datos ASPA disponibles',
       STXT_FOUND:          '\u2713 security.txt encontrado',
@@ -2555,8 +2634,8 @@ const STRINGS = {
       BIMI_NO_RECORD:      'Sin registro BIMI \u2014 el logotipo de marca no se muestra en los clientes de correo compatibles',
       BIMI_NO_LOGO:        'l= (URL del logotipo) ausente o vac\u00edo \u2014 necesario para que BIMI funcione',
       BIMI_NO_AUTHORITY:   'a= (evidencia de autoridad) ausente \u2014 se requiere certificado VMC para que Gmail y otros muestren el logotipo',
-      BIMI_LOGO_OK:        'URL del logotipo presente',
-      BIMI_AUTHORITY_OK:   'Evidencia de autoridad (VMC) presente',
+      BIMI_LOGO_OK:        'URL del logotipo',
+      BIMI_AUTHORITY_OK:   'Autoridad (VMC)',
       PTR_HOST_DETAILS:    'Detalles del host',
       PTR_NO_MX:           'No hay servidores MX para comprobar registros PTR',
       PTR_MATCH:           'FCrDNS confirmado \u2014 PTR coincide con el nombre del servidor MX',
@@ -2564,7 +2643,6 @@ const STRINGS = {
       PTR_MISSING:         'No se encontr\u00f3 registro PTR',
       // Keys added in later releases — backfilled
       IPV6_HOST_DETAILS: 'Detalles de direcciones por host',
-      IPV6_NO_AAAA: 'Sin registro AAAA',
       IPV6_NO_MX: 'No se encontraron hosts MX',
       IPV6_NO_NS: 'No se encontraron hosts NS',
       IPV6_MANDATORY_TITLE: 'Requisitos obligatorios de IPv6',
@@ -2602,7 +2680,6 @@ const STRINGS = {
       SPF_MULTI_MESSAGE:     n => 'Varios registros SPF (' + n + ') \u2014 esto es un error de configuraci\u00f3n.',
       SPF_LOOKUP_EXCEED:     n => n + ' mecanismos de consulta DNS superan el l\u00edmite RFC de 10 (puede causar SPF PermError)',
       SPF_LOOKUP_HIGH:       n => n + ' mecanismos de consulta DNS \u2014 acerc\u00e1ndose al l\u00edmite RFC de 10',
-      SPF_REDIRECT:          v => 'redirect=' + v + ' presente \u2014 las pol\u00edticas anidadas no se siguen en esta comprobaci\u00f3n',
       SPF_IP4_BROAD:         (v, p) => 'ip4:' + v + ' tiene un rango muy amplio (/' + p + ' \u2264 /16)',
       SPF_IP6_BROAD:         (v, p) => 'ip6:' + v + ' tiene un rango muy amplio (/' + p + ' \u2264 /32)',
       SPF_REDIRECT_FOLLOWED: d => '\u2713 redirect= seguido \u2014 pol\u00edtica efectiva cargada desde: ' + d,
@@ -2670,9 +2747,7 @@ const STRINGS = {
       DMARCBIS_EXT_ERROR:      (tag, uri, name) => tag + '=' + uri + ' — la consulta de ' + name + ' falló; no se pudo confirmar la autorización',
       BIMI_LOGO_URL:         url => 'URL del logotipo: ' + url,
       BIMI_AUTHORITY_URL:    url => 'URL de autoridad: ' + url,
-      PTR_VALUE:             v => 'PTR: ' + v,
       // Keys added in later releases — backfilled
-      IPV6_DOMAIN_SUMMARY: n => n + ' dirección' + (n !== 1 ? 'es' : '') + ' IPv6 encontrada' + (n !== 1 ? 's' : '') + ' para el dominio.',
       IPV6_MX_SUMMARY: (n, t) => n + '/' + t + ' host' + (t !== 1 ? 's' : '') + ' MX con IPv6.',
       IPV6_NS_SUMMARY: (n, t) => n + '/' + t + ' host' + (t !== 1 ? 's' : '') + ' NS con IPv6.',
       SPF_LOOKUP_TOTAL_EXCEED: n => n + ' consultas DNS totales (incluidos los include anidados) superan el límite de 10 de RFC 7208 — los receptores devolverán SPF PermError',
@@ -2729,7 +2804,8 @@ const STRINGS = {
         'previniendo el envenenamiento de cach\u00e9 y los ataques de intermediario. ' +
         'El <b>indicador AD</b> (Authentic Data) del resolver de Cloudflare confirma que toda la cadena desde la ra\u00edz hasta este dominio est\u00e1 validada.<br><br>' +
         '<b>Calificaci\u00f3n de algoritmos</b> seg\u00fan <a href="https://www.rfc-editor.org/rfc/rfc8624">RFC 8624</a>: <b>Ed25519</b> (alg 15) y <b>ECDSA P-256</b> (alg 13) son los m\u00e1s fuertes. ' +
-        'RSA/SHA-256 (alg 8) es aceptable. RSA/SHA-1 (alg 5) y las variantes DSA son d\u00e9biles o inseguros.<br><br>' +
+        'RSA/SHA-256 (alg 8) es aceptable. RSA/SHA-1 (alg 5) y las variantes DSA son d\u00e9biles o inseguros. ' +
+        'Cuando una zona publica varios algoritmos se firma con todos y un validador puede usar cualquiera, por lo que la valoraci\u00f3n sigue el <b>m\u00e1s d\u00e9bil</b> presente.<br><br>' +
         '<b>DNSSEC habilita DANE:</b> Sin DNS validado por DNSSEC, los registros TLSA no son de confianza \u2014 ' +
         'un atacante podr\u00eda sustituir registros TLSA falsos.',
       MX:
@@ -2951,6 +3027,7 @@ const STRINGS = {
       BTN_CHECKING:        'V\u00e9rification\u2026',
       BTN_COPY_LINK:       '\uD83D\uDD17 Copier le lien',
       BTN_COPIED:          '\u2713 Copi\u00e9\u00a0!',
+      BTN_COPY_FAILED:     '\u00c9chec de la copie',
       LANG_LABEL:          'Langue',
       OVERVIEW_PLACEHOLDER:'Saisissez un nom de domaine comme google.com ou microsoft.com, puis cliquez sur V\u00e9rifier. Notez que les r\u00e9sultats peuvent ne pas \u00eatre exacts en raison des limitations de votre navigateur ou du r\u00e9seau depuis lequel vous effectuez le test. Les scores sont fournis \u00e0 titre indicatif uniquement et ne refl\u00e8tent pas n\u00e9cessairement la r\u00e9alit\u00e9 compl\u00e8te ni la conformit\u00e9 aux normes applicables.',
       RUNNING_CHECKS:      'V\u00e9rifications en cours\u2026',
@@ -2976,6 +3053,7 @@ const STRINGS = {
 
       RECS_WHAT_TO_FIX:    'Quoi corriger',
       RECS_INFORMATIONAL:  'Informatif',
+      RECS_NOT_SCORED:     'Signal\u00e9, non not\u00e9',
       RECS_ALL_GOOD:       'Toutes les v\u00e9rifications r\u00e9ussies',
       RECS_ALL_EXCELLENT:  'Tout est configur\u00e9 de mani\u00e8re optimale.',
 
@@ -2990,10 +3068,13 @@ const STRINGS = {
       RATING_WARNING:      'Avertissement',
       RATING_FAIL:         '\u00c9chec',
       RATING_SKIP:         'Ignor\u00e9',
+      RATING_NONE:         'Non not\u00e9',
 
-      ERR_INVALID_DOMAIN:  'ne ressemble pas \u00e0 un domaine valide.',
       ERR_CHECK_FAILED:    'V\u00e9rification \u00e9chou\u00e9e',
       ERR_PREFIX:          'Erreur\u00a0: ',
+      ERR_NETWORK:         'Erreur r\u00e9seau',
+      ERR_TIMEOUT:         'D\u00e9lai d\u00e9pass\u00e9',
+      ERR_SCAN_FAILED:     'L\u2019analyse n\u2019a pas pu \u00eatre men\u00e9e \u00e0 son terme. V\u00e9rifiez votre connexion r\u00e9seau et r\u00e9essayez.',
 
       THEME_LIGHT:         '\u2600 Clair',
       THEME_DARK:          '\u263D Sombre',
@@ -3014,6 +3095,7 @@ const STRINGS = {
       STATS_TITLE:         '\uD83E\uDD13 Statistiques',
       STATS_TOTAL_TIME:    'Dur\u00e9e totale de l\'analyse',
       STATS_DOH_REQUESTS:  'Requ\u00eates DoH Cloudflare',
+      STATS_DOH_CACHE:     'en cache',
       STATS_RIPE_REQUESTS: 'Appels API RIPE Stat',
       STATS_RIPE_CACHE:    'depuis le cache',
       STATS_HTTP_FETCHES:  'Requ\u00eates HTTP',
@@ -3027,11 +3109,20 @@ const STRINGS = {
       DNSSEC_RESOLVER_ONLY:'DNSSEC valid\u00e9 par le r\u00e9solveur, mais les enregistrements de cl\u00e9 n\'ont pu \u00eatre r\u00e9cup\u00e9r\u00e9s.',
       DNSSEC_NOT_SIGNED:   'Aucun enregistrement DNSKEY trouv\u00e9 \u2014 le domaine n\'est pas sign\u00e9 DNSSEC.',
       DNSSEC_ALG_DETAILS:  'D\u00e9tails de l\'algorithme',
+      DNSSEC_ALG_DECIDES:  'd\u00e9termine la note',
+      DNSSEC_ALG_WEAKEST_NOTE: 'Une zone est sign\u00e9e avec <b>tous</b> les algorithmes de son jeu DNSKEY, et un validateur peut s\u2019appuyer sur n\u2019importe lequel. La note ci-dessus suit donc l\u2019algorithme le <b>plus faible</b> publi\u00e9, et non le plus fort \u2014 un jeu mixte ne vaut que son maillon le plus faible. C\u2019est normal et temporaire pendant un changement d\u2019algorithme.',
 
       MX_HOST_DETAILS:     'D\u00e9tails des serveurs MX',
       MX_NO_DNSSEC:        'Sans DNSSEC',
       MX_SIGNED_UNVAL:     '\u26a0 Sign\u00e9, non valid\u00e9',
       MX_RRSET_WARN:       '\u26a0 Le RRset MX n\'est pas valid\u00e9 par DNSSEC \u2014 la liste des serveurs de messagerie n\'a pas pu \u00eatre v\u00e9rifi\u00e9e cryptographiquement.',
+      MSG_NXDOMAIN:        'NXDOMAIN \u2014 le domaine n\u2019existe pas.',
+      MX_NO_RECORDS:       'Aucun enregistrement MX trouv\u00e9.',
+      MX_NULL_CONFIRM:     '\u2713 Null MX (RFC 7505) \u2014 le domaine n\u2019accepte aucun courrier.',
+      DANE_NOT_APPLICABLE: 'Aucun enregistrement MX \u2014 DANE sans objet.',
+      DKIM_NO_RECORDS_MSG: 'Aucun enregistrement DKIM trouv\u00e9 pour un s\u00e9lecteur connu.',
+      RPKI_NO_HOSTS:       'Aucun enregistrement NS ou MX \u00e0 v\u00e9rifier.',
+      PTR_NO_MX_HOSTS:     'Aucun h\u00f4te MX.',
       MX_NULL_SUGGEST:     'Aucun enregistrement MX \u2014 envisagez de publier un enregistrement MX nul (RFC 7505) accompagn\u00e9 de SPF \u201c-all\u201d et DMARC p=reject pour bloquer compl\u00e8tement les abus de messagerie',
 
       DANE_NO_TLSA:        'Aucun enregistrement TLSA',
@@ -3060,7 +3151,6 @@ const STRINGS = {
       DKIM_TH_PROBED:      'S\u00e9lecteurs test\u00e9s',
       DKIM_PROV_UNKNOWN:   'G\u00e9n\u00e9rique / non sp\u00e9cifique \u00e0 un fournisseur',
       DKIM_DKIM2_TITLE:    'DKIM2\u00a0: la prochaine version de DKIM',
-      DKIM_AUTO_TESTED_LABEL: 's\u00e9lecteurs test\u00e9s automatiquement',
       DKIM_REVOKED:        'Cl\u00e9 r\u00e9voqu\u00e9e (balise p= vide)',
       DKIM_KEY_TYPE:       'Type de cl\u00e9',
       DKIM_KEY_SIZE:       'Taille de cl\u00e9',
@@ -3106,12 +3196,12 @@ const STRINGS = {
       CAA_DNSSEC_NONE:     'non sign\u00e9 DNSSEC',
       CAA_DNSSEC_ERROR:    'erreur\u00a0: ',
       CAA_NO_RECORDS_ISSUE:'Aucun enregistrement CAA \u2014 n\'importe quelle autorit\u00e9 de certification peut \u00e9mettre des certificats pour ce domaine',
+      CAA_NXDOMAIN:        'NXDOMAIN \u2014 le domaine n\u2019existe pas.',
       CAA_ISSUE_PROHIBITED:'\u00c9mission de certificats interdite pour toutes les CA (issue ";")',
       CAA_NO_IODEF:        'Aucune balise iodef= \u2014 les violations de politique CA ne seront pas signal\u00e9es',
 
       RPKI_HOST_DETAILS:   'D\u00e9tails de l\'h\u00f4te',
       RPKI_NO_IPS:         'Aucune IP r\u00e9solue',
-      RPKI_ASPA_TITLE:     'ASPA (Autorisation de fournisseur AS)',
       RPKI_ASPA_PROVIDERS: 'Fournisseurs\u00a0:',
 
       ASPA_NO_DATA:        'Aucune donn\u00e9e ASPA disponible',
@@ -3195,8 +3285,8 @@ const STRINGS = {
       BIMI_NO_RECORD:      'Aucun enregistrement BIMI \u2014 le logo de marque ne s\'affiche pas dans les clients de messagerie compatibles',
       BIMI_NO_LOGO:        'l= (URL du logo) absent ou vide \u2014 n\u00e9cessaire pour que BIMI fonctionne',
       BIMI_NO_AUTHORITY:   'a= (preuve d\'autorit\u00e9) absent \u2014 un certificat VMC est requis pour que Gmail et d\'autres affichent le logo',
-      BIMI_LOGO_OK:        'URL du logo pr\u00e9sente',
-      BIMI_AUTHORITY_OK:   'Preuve d\'autorit\u00e9 (VMC) pr\u00e9sente',
+      BIMI_LOGO_OK:        'URL du logo',
+      BIMI_AUTHORITY_OK:   'Autorit\u00e9 (VMC)',
 
       PTR_HOST_DETAILS:    'D\u00e9tails de l\'h\u00f4te',
       PTR_NO_MX:           'Aucun serveur MX pour v\u00e9rifier les enregistrements PTR',
@@ -3205,7 +3295,6 @@ const STRINGS = {
       PTR_MISSING:         'Aucun enregistrement PTR trouv\u00e9',
       // Keys added in later releases — backfilled
       IPV6_HOST_DETAILS: 'Détail des adresses par hôte',
-      IPV6_NO_AAAA: 'Aucun enregistrement AAAA',
       IPV6_NO_MX: 'Aucun hôte MX trouvé',
       IPV6_NO_NS: 'Aucun hôte NS trouvé',
       IPV6_MANDATORY_TITLE: 'Exigences IPv6 obligatoires',
@@ -3245,7 +3334,6 @@ const STRINGS = {
       SPF_MULTI_MESSAGE:     n => 'Plusieurs enregistrements SPF (' + n + ') \u2014 il s\'agit d\'une erreur de configuration.',
       SPF_LOOKUP_EXCEED:     n => n + ' m\u00e9canismes de requ\u00eate DNS d\u00e9passent la limite RFC de 10 (peut provoquer un SPF PermError)',
       SPF_LOOKUP_HIGH:       n => n + ' m\u00e9canismes de requ\u00eate DNS \u2014 approchant la limite RFC de 10',
-      SPF_REDIRECT:          v => 'redirect=' + v + ' pr\u00e9sent',
       SPF_IP4_BROAD:         (v, p) => 'ip4:' + v + ' a une plage tr\u00e8s large (/' + p + ' \u2264 /16)',
       SPF_IP6_BROAD:         (v, p) => 'ip6:' + v + ' a une plage tr\u00e8s large (/' + p + ' \u2264 /32)',
       SPF_REDIRECT_FOLLOWED: d => '\u2713 redirect= suivi \u2014 politique effective charg\u00e9e depuis\u00a0: ' + d,
@@ -3313,9 +3401,7 @@ const STRINGS = {
       DMARCBIS_EXT_ERROR:      (tag, uri, name) => tag + '=' + uri + ' — la requête pour ' + name + ' a échoué ; l’autorisation n’a pas pu être confirmée',
       BIMI_LOGO_URL:         url => 'URL du logo\u00a0: ' + url,
       BIMI_AUTHORITY_URL:    url => 'URL d\'autorit\u00e9\u00a0: ' + url,
-      PTR_VALUE:             v => 'PTR\u00a0: ' + v,
       // Keys added in later releases — backfilled
-      IPV6_DOMAIN_SUMMARY: n => n + ' adresse' + (n !== 1 ? 's' : '') + ' IPv6 trouvée' + (n !== 1 ? 's' : '') + ' pour le domaine.',
       IPV6_MX_SUMMARY: (n, t) => n + '/' + t + ' hôte' + (t !== 1 ? 's' : '') + ' MX disposent d\u2019IPv6.',
       IPV6_NS_SUMMARY: (n, t) => n + '/' + t + ' hôte' + (t !== 1 ? 's' : '') + ' NS disposent d\u2019IPv6.',
       SPF_LOOKUP_TOTAL_EXCEED: n => n + ' requêtes DNS au total (y compris les include imbriqués) dépassent la limite de 10 de RFC 7208 — les destinataires renverront SPF PermError',
@@ -3374,7 +3460,8 @@ const STRINGS = {
         'emp\u00eachant l\'empoisonnement de cache et les attaques de l\'homme du milieu. ' +
         'L\'<b>indicateur AD</b> (Authentic Data) du r\u00e9solveur Cloudflare confirme que toute la cha\u00eene depuis la racine jusqu\'à ce domaine est valid\u00e9e.<br><br>' +
         '<b>\u00c9valuation des algorithmes</b> selon <a href="https://www.rfc-editor.org/rfc/rfc8624">RFC 8624</a>\u00a0: <b>Ed25519</b> (alg 15) et <b>ECDSA P-256</b> (alg 13) sont les plus forts. ' +
-        'RSA/SHA-256 (alg 8) est acceptable. RSA/SHA-1 (alg 5) et les variantes DSA sont faibles ou non s\u00e9curis\u00e9s.<br><br>' +
+        'RSA/SHA-256 (alg 8) est acceptable. RSA/SHA-1 (alg 5) et les variantes DSA sont faibles ou non s\u00e9curis\u00e9s. ' +
+        'Lorsqu\u2019une zone publie plusieurs algorithmes, elle est sign\u00e9e avec tous et un validateur peut utiliser n\u2019importe lequel\u00a0: la note suit donc le <b>plus faible</b> pr\u00e9sent.<br><br>' +
         '<b>DNSSEC active DANE\u00a0:</b> Sans DNS valid\u00e9 par DNSSEC, les enregistrements TLSA ne sont pas fiables \u2014 ' +
         'un attaquant pourrait substituer de faux enregistrements TLSA.',
       MX:
@@ -3593,8 +3680,11 @@ const STRINGS = {
 <script>
 'use strict';
 
-/* Security note: All DNS data uses textContent (never innerHTML). Issue strings use
-   textContent. Explanations use safeMarkup() which only allows <b>, <code>, <br> tags. */
+/* Security note: no HTML is ever parsed from data. Every node is built with
+   el()/createElement and every string is assigned through textContent, so DNS
+   and HTTP responses can never become markup — there is no escaping step to
+   forget. Explanations go through safeMarkup(), a whitelist parser that emits
+   text nodes and only <b>, <code>, <br> and <a href="https://…"> elements. */
 
 // A language stored by an older build may no longer exist (languages can be
 // removed); fall back to English and rewrite the preference so the <select>
@@ -3626,12 +3716,6 @@ function applyI18n() {
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
 
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-
 const RATINGS = ['excellent', 'good', 'warning', 'fail'];
 
 function worstRating(a, b) {
@@ -3657,26 +3741,106 @@ function uriHostname(uri) {
   try { return new URL(uri).hostname.toLowerCase(); } catch (_) { return null; }
 }
 
-// ── DNS-over-HTTPS ────────────────────────────────────────────────────────────
+// ── Network ───────────────────────────────────────────────────────────────────
 
-async function dohQuery(name, type) {
-  if (scanStats) scanStats.dohRequests++;
-  const url = 'https://cloudflare-dns.com/dns-query?name=' + encodeURIComponent(name) + '&type=' + encodeURIComponent(type);
-  const resp = await fetch(url, { headers: { Accept: 'application/dns-json' } });
-  if (!resp.ok) throw new Error('DoH HTTP ' + resp.status);
+// Every outbound request goes through here. Without a deadline a single hung
+// socket leaves its promise pending forever, and because runChecks() awaits
+// Promise.allSettled that would strand the whole scan: spinner up, Check button
+// disabled, no error, no way out but a reload.
+const TIMEOUT_DOH  = 8000;   // DNS-over-HTTPS — should answer in well under a second
+const TIMEOUT_HTTP = 10000;  // RIPE Stat, RDAP, policy files
+
+// Concurrency caps. Every fan-out runs through parallelLimit rather than a bare
+// Promise.all, so a domain with many hosts cannot queue hundreds of requests at
+// once. These are ceilings for the pathological case, not throttles for the
+// normal one — a browser already limits connections per origin, so on a typical
+// domain the cap is not the binding constraint.
+//
+// RIPE Stat is the slow one: measured response times for a single
+// rpki-validation call range from ~100 ms to well over a minute, and each IP
+// costs two sequential calls. That latency is why TIMEOUT_HTTP matters — an
+// unbounded, untimed version of this code was observed taking 61 s on one run,
+// which in the browser is a scan that never finishes.
+const DKIM_CONCURRENCY = 10;
+const RIPE_CONCURRENCY = 16;
+const SPF_CONCURRENCY  = 6;
+const DNS_CONCURRENCY  = 12;  // host A/AAAA resolution (2 queries per host)
+
+function timeoutSignal(ms) {
+  // AbortSignal.timeout is unavailable on older browsers; fall back to a manual
+  // controller rather than sending no signal at all.
+  if (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) return AbortSignal.timeout(ms);
+  const ac = new AbortController();
+  setTimeout(() => ac.abort(new DOMException('TimeoutError', 'TimeoutError')), ms);
+  return ac.signal;
+}
+
+// Normalises the two failure modes the check functions special-case, so every
+// caller can rely on e.message being something a user can read.
+function describeFetchError(e) {
+  if (e && (e.name === 'TimeoutError' || e.name === 'AbortError')) return ts('ERR_TIMEOUT');
+  if (e && e.message === 'Failed to fetch') return ts('ERR_NETWORK');
+  return (e && e.message) || String(e);
+}
+
+async function fetchJSON(url, { timeout = TIMEOUT_HTTP, headers, label = 'HTTP' } = {}) {
+  let resp;
+  try {
+    resp = await fetch(url, { headers, signal: timeoutSignal(timeout) });
+  } catch (e) {
+    throw new Error(describeFetchError(e));
+  }
+  if (!resp.ok) throw new Error(label + ' ' + resp.status);
   return resp.json();
 }
 
-async function dohQueryGoogle(name, type) {
+// ── DNS-over-HTTPS ────────────────────────────────────────────────────────────
+
+// One scan asks for the same name/type repeatedly — <domain> MX alone is needed
+// by six different checks. The cache is per scan (cleared in runChecks) so a
+// re-run always sees fresh DNS, and it stores the in-flight promise rather than
+// the settled value so concurrent callers share a single request.
+const dohCache = new Map();
+
+function clearDNSCaches() {
+  dohCache.clear();
+  dnssecCache.clear();
+}
+
+function dohQuery(name, type) {
+  const key = String(name).toLowerCase() + '|' + type;
+  const hit = dohCache.get(key);
+  if (hit) { if (scanStats) scanStats.dohCacheHits++; return hit; }
+
+  if (scanStats) scanStats.dohRequests++;
+  const url = 'https://cloudflare-dns.com/dns-query?name=' + encodeURIComponent(name) + '&type=' + encodeURIComponent(type);
+  const p = fetchJSON(url, { headers: { Accept: 'application/dns-json' }, timeout: TIMEOUT_DOH, label: 'DoH HTTP' });
+  // A rejected lookup must not be cached — the next caller should retry.
+  p.catch(() => dohCache.delete(key));
+  dohCache.set(key, p);
+  return p;
+}
+
+function dohQueryGoogle(name, type) {
   if (scanStats) scanStats.dohRequests++;
   const url = 'https://dns.google/resolve?name=' + encodeURIComponent(name) + '&type=' + encodeURIComponent(type);
-  const resp = await fetch(url, { headers: { Accept: 'application/dns-json' } });
-  if (!resp.ok) throw new Error('Google DoH HTTP ' + resp.status);
-  return resp.json();
+  return fetchJSON(url, { headers: { Accept: 'application/dns-json' }, timeout: TIMEOUT_DOH, label: 'Google DoH HTTP' });
 }
 
 function parseTxtData(data) {
   return data.replace(/^"|"$/g, '').replace(/"\s*"/g, '');
+}
+
+// Compare what two resolvers returned for the same name. A DNS RRset is a set,
+// not a list: resolvers may return the records in any order, and whitespace
+// around the segment joins can differ. Comparing resp[0] to resp[0] verbatim
+// therefore reports "not yet propagated" for records that match perfectly.
+function sameRecordSet(a, b) {
+  const norm = list => (list || [])
+    .map(t => t.trim().replace(/\s+/g, ' ').toLowerCase())
+    .sort();
+  const x = norm(a), y = norm(b);
+  return x.length === y.length && x.every((v, i) => v === y[i]);
 }
 
 // ── DNSSEC ────────────────────────────────────────────────────────────────────
@@ -3711,7 +3875,21 @@ const ALG_INFO = {
   16: { name: 'Ed448',               rating: 'excellent' },
 };
 
-async function checkDNSSEC(domain) {
+// checkDNSSEC is called for the domain itself, every MX host, every SPF
+// mechanism target, every DMARC/TLS-RPT reporting endpoint and every CAA CA —
+// with heavy overlap between those sets. Memoise for the lifetime of one scan.
+const dnssecCache = new Map();
+
+function checkDNSSEC(domain) {
+  const key = String(domain).toLowerCase();
+  const hit = dnssecCache.get(key);
+  if (hit) return hit;
+  const p = checkDNSSECUncached(domain);
+  dnssecCache.set(key, p);
+  return p;
+}
+
+async function checkDNSSECUncached(domain) {
   try {
     const [dnskeyResp, soaResp] = await Promise.all([
       dohQuery(domain, 'DNSKEY'),
@@ -3756,9 +3934,25 @@ async function checkDNSSEC(domain) {
       return { algNum, ...info, isKSK: (flags & 1) !== 0 };
     });
 
-    let algRating = hasDNSKEY ? 'fail' : 'warning';
-    for (const a of algorithms) {
-      if (RATINGS.indexOf(a.rating) < RATINGS.indexOf(algRating)) algRating = a.rating;
+    // The rating follows the WEAKEST algorithm in the DNSKEY RRset, not the
+    // strongest. RFC 6781 §4.1.4 requires a multi-algorithm zone to be signed
+    // with every algorithm it publishes, and a validator is free to pick any one
+    // of them — so a zone offering both ECDSA P-256 and RSA/SHA-1 is only as
+    // strong as the RSA/SHA-1 signatures an attacker can target. Reporting the
+    // best one read as a clean bill of health for a zone that had not finished
+    // its rollover. Every algorithm is still listed in the panel, with the
+    // deciding one marked.
+    let algRating, weakestAlg = null;
+    if (algorithms.length === 0) {
+      // AD set but no DNSKEY visible at this name — unchanged from before.
+      algRating = 'warning';
+    } else {
+      algRating = 'excellent';
+      for (const a of algorithms) {
+        const worse = worstRating(algRating, a.rating);
+        if (worse !== algRating) { algRating = worse; weakestAlg = a; }
+      }
+      if (!weakestAlg) weakestAlg = algorithms[0];   // all algorithms rate equally
     }
 
     let rating;
@@ -3768,9 +3962,9 @@ async function checkDNSSEC(domain) {
     else if (hasDNSKEY)                   rating = 'warning';
     else                                  rating = 'fail';
 
-    return { rating, ad, hasDNSKEY, algorithms, message: null };
+    return { rating, ad, hasDNSKEY, algorithms, weakestAlg, message: null };
   } catch (e) {
-    return { error: true, rating: 'fail', message: e.message === 'Failed to fetch' ? 'Network error' : e.message };
+    return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
 }
 
@@ -3780,10 +3974,10 @@ async function checkMX(domain) {
   try {
     const mxResp = await dohQuery(domain, 'MX');
     const adMX = mxResp.AD === true;
-    if (mxResp.Status === 3) return { rating: 'fail', adMX, hosts: [], message: 'NXDOMAIN \u2014 domain does not exist.' };
+    if (mxResp.Status === 3) return { rating: 'fail', adMX, hosts: [], messageKey: 'MSG_NXDOMAIN' };
 
     const mxRecords = (mxResp.Answer || []).filter(r => r.type === 15);
-    if (mxRecords.length === 0) return { rating: 'fail', adMX, hosts: [], message: 'No MX records found.' };
+    if (mxRecords.length === 0) return { rating: 'fail', adMX, hosts: [], messageKey: 'MX_NO_RECORDS' };
 
     const mxParsed = mxRecords.map(r => {
       const parts = r.data.trim().split(/\s+/);
@@ -3811,7 +4005,7 @@ async function checkMX(domain) {
 
     return { rating, adMX, hosts, message: null };
   } catch (e) {
-    return { error: true, rating: 'fail', message: e.message === 'Failed to fetch' ? 'Network error' : e.message };
+    return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
 }
 
@@ -3845,10 +4039,10 @@ function rateTLSA(rec) {
 async function checkDANE(domain) {
   try {
     const mxResp = await dohQuery(domain, 'MX');
-    if (mxResp.Status === 3) return { rating: 'fail', hosts: [], message: 'NXDOMAIN \u2014 domain does not exist.' };
+    if (mxResp.Status === 3) return { rating: 'fail', hosts: [], messageKey: 'MSG_NXDOMAIN' };
 
     const mxRecords = (mxResp.Answer || []).filter(r => r.type === 15);
-    if (mxRecords.length === 0) return { rating: 'warning', hosts: [], message: 'No MX records \u2014 DANE not applicable.' };
+    if (mxRecords.length === 0) return { rating: 'warning', hosts: [], messageKey: 'DANE_NOT_APPLICABLE' };
 
     const mxHosts = mxRecords.map(r => {
       const parts = r.data.trim().split(/\s+/);
@@ -3899,11 +4093,39 @@ async function checkDANE(domain) {
 
     return { rating, hosts, message: null };
   } catch (e) {
-    return { error: true, rating: 'fail', message: e.message === 'Failed to fetch' ? 'Network error' : e.message };
+    return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
 }
 
 // ── SPF ───────────────────────────────────────────────────────────────────────
+
+// RFC 7208 §5.3 — "a" and "mx" take an optional dual-cidr-length suffix
+// ("/24", "//64" or "/24//64") which is NOT part of the domain name.
+const SPF_DUAL_CIDR = /\/\/?\d{1,3}(?:\/\/\d{1,3})?$/;
+
+// Splits one SPF term into qualifier, mechanism, value and CIDR suffix.
+// Treating "/" as a name/value separator (as a single regex is tempted to)
+// turns `a/24` into a lookup for the domain "24", and drops `a//64` on the
+// floor entirely — including from the 10-lookup budget it counts against.
+function parseSPFTerm(term) {
+  const m = term.toLowerCase().match(/^([+\-~?]?)([a-z0-9]+)(.*)$/);
+  if (!m) return null;
+  const [, qual, mech, rest] = m;
+  let val = null, cidr = null;
+  if (rest.startsWith(':') || rest.startsWith('=')) {
+    val = rest.slice(1);
+  } else if (rest.startsWith('/')) {
+    cidr = rest;             // e.g. "a/24" — dual-cidr with no domain-spec
+  } else if (rest) {
+    return null;             // unparsable trailing junk
+  }
+  // ip4:/ip6: keep their prefix length; it is part of the address, not a suffix.
+  if (val && (mech === 'a' || mech === 'mx')) {
+    const c = val.match(SPF_DUAL_CIDR);
+    if (c) { cidr = c[0]; val = val.slice(0, -c[0].length); }
+  }
+  return { qual, mech, val: val || null, cidr };
+}
 
 async function countSPFLookupsFull(record, domain, depth, visited) {
   if (depth === undefined) depth = 0;
@@ -3914,25 +4136,25 @@ async function countSPFLookupsFull(record, domain, depth, visited) {
   let count = 0;
   const subTargets = [];
   for (const term of terms) {
-    const m = term.toLowerCase().match(/^([+\-~?]?)(\w+)(?:[:/=](.*))?$/);
-    if (!m) continue;
-    const [,, mech, val] = m;
+    const parsed = parseSPFTerm(term);
+    if (!parsed) continue;
+    const { mech, val } = parsed;
     if (['a', 'mx', 'ptr', 'exists', 'include'].includes(mech)) count++;
     if (mech === 'include' && val) subTargets.push(val);
     if (mech === 'redirect' && val) { count++; subTargets.push(val); }
   }
-  const subResults = await Promise.allSettled(
-    subTargets.map(async target => {
-      try {
-        const resp = await dohQuery(target, 'TXT');
-        const spfRecs = (resp.Answer || []).filter(r => r.type === 16)
-          .map(r => parseTxtData(r.data)).filter(t => t.toLowerCase().startsWith('v=spf1'));
-        if (spfRecs.length === 1)
-          return countSPFLookupsFull(spfRecs[0], target, depth + 1, new Set(visited));
-      } catch (_) {}
-      return 0;
-    })
-  );
+  // Bounded: a deep include: chain branches at every level, so an unbounded
+  // Promise.allSettled here can put a large burst of DoH queries in flight.
+  const subResults = await parallelLimit(subTargets.map(target => async () => {
+    try {
+      const resp = await dohQuery(target, 'TXT');
+      const spfRecs = (resp.Answer || []).filter(r => r.type === 16)
+        .map(r => parseTxtData(r.data)).filter(t => t.toLowerCase().startsWith('v=spf1'));
+      if (spfRecs.length === 1)
+        return countSPFLookupsFull(spfRecs[0], target, depth + 1, new Set(visited));
+    } catch (_) {}
+    return 0;
+  }), SPF_CONCURRENCY);
   for (const r of subResults) if (r.status === 'fulfilled') count += r.value;
   return count;
 }
@@ -3945,9 +4167,9 @@ function analyzeSPF(record, domain) {
   const ipAddresses = [], ipPrefixes = [], dnsNames = [];
 
   for (const term of terms) {
-    const m = term.toLowerCase().match(/^([+\-~?]?)(\w+)(?:[:/=](.*))?$/);
-    if (!m) continue;
-    const [, qual, mech, val] = m;
+    const parsed = parseSPFTerm(term);
+    if (!parsed) continue;
+    const { qual, mech, val } = parsed;
 
     if (mech === 'all') { hasAll = true; allQualifier = qual || '+'; }
     if (mech === 'ptr') {
@@ -3983,9 +4205,11 @@ function analyzeSPF(record, domain) {
       if (val.includes('/')) ipPrefixes.push({ mech, val, qual });
       else ipAddresses.push({ mech, val, qual });
     } else if (['include', 'a', 'mx', 'exists', 'redirect'].includes(mech)) {
+      // No value on a/mx means "this domain" — including the `a/24` form, whose
+      // /24 is a CIDR suffix rather than a domain (see parseSPFTerm).
       const checkDomain = val || ((mech === 'a' || mech === 'mx') ? domain : null);
       if (checkDomain && !checkDomain.includes('%')) {
-        dnsNames.push({ mech, val: val || null, checkDomain, qual });
+        dnsNames.push({ mech, val: val || null, checkDomain, qual, cidr: parsed.cidr || null });
       }
     }
   }
@@ -4028,7 +4252,7 @@ async function checkSPF(domain) {
     ]);
 
     const resp = txtRes.status === 'fulfilled' ? txtRes.value : { Status: -1, Answer: [] };
-    if (resp.Status === 3) return { rating: 'fail', records: [], issues: [], message: 'NXDOMAIN — domain does not exist.' };
+    if (resp.Status === 3) return { rating: 'fail', records: [], issues: [], messageKey: 'MSG_NXDOMAIN' };
 
     const hasLegacySpf = spfTypeRes.status === 'fulfilled' &&
       (spfTypeRes.value.Answer || []).some(r => r.type === 99);
@@ -4102,7 +4326,7 @@ async function checkSPF(domain) {
             if (googleResp) {
               const googleSpf = (googleResp.Answer || []).filter(r => r.type === 16)
                 .map(r => parseTxtData(r.data)).filter(t => t.toLowerCase().startsWith('v=spf1'));
-              if ((googleSpf[0] || '') !== spfRecords[0]) {
+              if (!sameRecordSet(googleSpf, spfRecords)) {
                 effectiveIssues.push({ rating: 'warning', textKey: 'SPF_PROPAGATION_MISMATCH' });
                 redirAnalysis.rating = worstRating(redirAnalysis.rating, 'warning');
               }
@@ -4156,7 +4380,7 @@ async function checkSPF(domain) {
     if (googleResp) {
       const googleSpf = (googleResp.Answer || []).filter(r => r.type === 16)
         .map(r => parseTxtData(r.data)).filter(t => t.toLowerCase().startsWith('v=spf1'));
-      if ((googleSpf[0] || '') !== spfRecords[0]) {
+      if (!sameRecordSet(googleSpf, spfRecords)) {
         analysis.issues.push({ rating: 'warning', textKey: 'SPF_PROPAGATION_MISMATCH' });
         analysis.rating = worstRating(analysis.rating, 'warning');
       }
@@ -4164,7 +4388,7 @@ async function checkSPF(domain) {
 
     return { rating: analysis.rating, records: spfRecords, issues: analysis.issues, lookupCount: analysis.lookupCount, totalLookupCount, mechanisms: analysis.mechanisms, allQualifier: analysis.allQualifier, message: null };
   } catch (e) {
-    return { error: true, rating: 'fail', message: e.message === 'Failed to fetch' ? 'Network error' : e.message };
+    return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
 }
 // ── DKIM ──────────────────────────────────────────────────────────────────────
@@ -4425,12 +4649,18 @@ async function probeDKIMSelector(selector, domain) {
   try {
     const resp = await dohQuery(name, 'TXT');
     if (resp.Status === 3) return null;
+    // parseTxtData already joins the segments *within* one TXT record. These are
+    // separate records, so pick one rather than concatenating — gluing two
+    // distinct keys together produces a record that parses as neither.
+    // A DKIM record is identified by p= or k=; v= alone would also match the
+    // wildcard `v=spf1` TXT that some zones publish under *._domainkey.
     const txts = (resp.Answer || [])
       .filter(r => r.type === 16)
       .map(r => parseTxtData(r.data))
-      .filter(t => /[pkvt]=/i.test(t));
+      .filter(t => /(^|;)\s*[pk]\s*=/i.test(t));
     if (txts.length === 0) return null;
-    const rawRecord = txts.join('');
+    // Prefer an explicitly versioned record; otherwise take the first.
+    const rawRecord = txts.find(t => /^\s*v\s*=\s*DKIM1/i.test(t)) || txts[0];
     const analysis = parseDKIMRecord(rawRecord);
     const ad = resp.AD === true;
     return { selector, ...analysis, ad, rawRecord };
@@ -4440,18 +4670,18 @@ async function probeDKIMSelector(selector, domain) {
 async function checkDKIM(domain, customSelectors) {
   try {
     const allSelectors = [...new Set([...AUTO_SELECTORS, ...customSelectors])];
-    const results = await parallelLimit(allSelectors.map(sel => () => probeDKIMSelector(sel, domain)), 10);
+    const results = await parallelLimit(allSelectors.map(sel => () => probeDKIMSelector(sel, domain)), DKIM_CONCURRENCY);
     const found = results
       .filter(r => r.status === 'fulfilled' && r.value !== null)
       .map(r => ({ ...r.value, provider: SELECTOR_PROVIDER[r.value.selector] || null }));
     if (found.length === 0) {
-      return { rating: 'fail', found: [], testedCount: allSelectors.length, message: 'No DKIM records found for any known selector.' };
+      return { rating: 'fail', found: [], testedCount: allSelectors.length, messageKey: 'DKIM_NO_RECORDS_MSG' };
     }
     let rating = 'excellent';
     for (const r of found) rating = worstRating(rating, r.rating);
     return { rating, found, testedCount: allSelectors.length, rotationNote: true, message: null };
   } catch (e) {
-    return { error: true, rating: 'fail', message: e.message === 'Failed to fetch' ? 'Network error' : e.message };
+    return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
 }
 
@@ -4977,7 +5207,7 @@ async function checkDMARC(domain) {
     if (endpointHosts.length > 0) {
       const dsResults = await Promise.allSettled(endpointHosts.map(h => checkDNSSEC(h)));
       endpointHosts.forEach((h, i) => {
-        endpointDnssec[h] = dsResults[i].status === 'fulfilled' ? dsResults[i].value : { error: true, rating: 'fail', message: 'Check failed' };
+        endpointDnssec[h] = dsResults[i].status === 'fulfilled' ? dsResults[i].value : { error: true, rating: 'fail', messageKey: 'ERR_CHECK_FAILED' };
       });
     }
 
@@ -4986,7 +5216,7 @@ async function checkDMARC(domain) {
     if (googleDmarc) {
       const gTxts = (googleDmarc.Answer || []).filter(r => r.type === 16)
         .map(r => parseTxtData(r.data)).filter(t => /^v=DMARC1/i.test(t));
-      if ((gTxts[0] || '') !== record) {
+      if (!sameRecordSet(gTxts, txts)) {
         issues.push({ rating: 'warning', textKey: 'DMARC_PROPAGATION_MISMATCH' });
         rating = worstRating(rating, 'warning');
       }
@@ -4997,7 +5227,7 @@ async function checkDMARC(domain) {
 
     return { rating, record, parsed, pct, issues, endpointDnssec, dmarcbis };
   } catch (e) {
-    return { error: true, rating: 'fail', message: e.message === 'Failed to fetch' ? 'Network error' : e.message };
+    return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
 }
 
@@ -5047,13 +5277,13 @@ async function checkTLSRPT(domain) {
     if (endpointHosts.length > 0) {
       const dsResults = await Promise.allSettled(endpointHosts.map(h => checkDNSSEC(h)));
       endpointHosts.forEach((h, i) => {
-        endpointDnssec[h] = dsResults[i].status === 'fulfilled' ? dsResults[i].value : { error: true, rating: 'fail', message: 'Check failed' };
+        endpointDnssec[h] = dsResults[i].status === 'fulfilled' ? dsResults[i].value : { error: true, rating: 'fail', messageKey: 'ERR_CHECK_FAILED' };
       });
     }
 
     return { rating, record, rua, issues, endpointDnssec };
   } catch (e) {
-    return { error: true, rating: 'fail', message: e.message === 'Failed to fetch' ? 'Network error' : e.message };
+    return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
 }
 
@@ -5086,7 +5316,7 @@ async function checkMTASTS(domain) {
     let policyError = null;
     try {
       if (scanStats) scanStats.httpRequests++;
-      const pResp = await fetch(policyUrl, { signal: AbortSignal.timeout(8000) });
+      const pResp = await fetch(policyUrl, { signal: timeoutSignal(TIMEOUT_HTTP) });
       if (pResp.ok) {
         const text = await pResp.text();
         const lines = text.split(/\r?\n/).filter(Boolean);
@@ -5107,7 +5337,8 @@ async function checkMTASTS(domain) {
         policyError = 'Policy file returned HTTP ' + pResp.status;
       }
     } catch (fe) {
-      policyError = fe.name === 'TimeoutError' ? 'Policy file fetch timed out'
+      policyError = (fe.name === 'TimeoutError' || fe.name === 'AbortError')
+                  ? 'Policy file fetch timed out'
                   : 'Policy file not accessible (CORS or network error)';
     }
     const corsBlocked = policyError === 'Policy file not accessible (CORS or network error)';
@@ -5177,7 +5408,7 @@ async function checkMTASTS(domain) {
 
     return { rating, record, policy, policyUrl, issues, corsBlocked };
   } catch (e) {
-    return { error: true, rating: 'fail', message: e.message === 'Failed to fetch' ? 'Network error' : e.message };
+    return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
 }
 
@@ -5203,7 +5434,7 @@ async function checkCAA(domain) {
   try {
     const resp = await dohQuery(domain, 'CAA');
     if (resp.Status === 3) {
-      return { rating: 'warning', records: [], parsed: [], issues: [{ rating: 'warning', text: 'NXDOMAIN' }] };
+      return { rating: 'warning', records: [], parsed: [], issues: [{ rating: 'warning', textKey: 'CAA_NXDOMAIN' }] };
     }
 
     const rawRecords = (resp.Answer || []).filter(r => r.type === 257);
@@ -5261,7 +5492,7 @@ async function checkCAA(domain) {
 
     return { rating, records: rawRecords, parsed, issues, caDnssec };
   } catch (e) {
-    return { error: true, rating: 'fail', message: e.message === 'Failed to fetch' ? 'Network error' : e.message };
+    return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
 }
 
@@ -5276,19 +5507,27 @@ async function checkSecurityTxt(domain) {
     ...(wwwBase ? [wwwBase + '/.well-known/security.txt', wwwBase + '/security.txt'] : []),
   ];
 
-  let text = null;
-  let fetchedUrl = null;
-  let corsBlocked = false;
-  for (const url of urls) {
+  // All four candidates are tried concurrently rather than one after another:
+  // sequentially they cost up to 4 x the timeout, and this whole check runs
+  // inside the parallel scan, so it would dominate the wall-clock time.
+  // Priority still follows `urls` order — the first *successful* entry wins,
+  // not the first to answer.
+  const attempts = await Promise.all(urls.map(async url => {
     try {
       if (scanStats) scanStats.httpRequests++;
-      const resp = await fetch(url, { signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined });
-      if (resp.ok) { text = await resp.text(); fetchedUrl = url; break; }
+      const resp = await fetch(url, { signal: timeoutSignal(TIMEOUT_HTTP) });
+      if (!resp.ok) return { url, text: null, cors: false };
+      return { url, text: await resp.text(), cors: false };
     } catch (e) {
       // TypeError usually means CORS or network failure; track for messaging
-      if (e instanceof TypeError) corsBlocked = true;
+      return { url, text: null, cors: e instanceof TypeError };
     }
-  }
+  }));
+
+  const winner = attempts.find(a => a.text !== null) || null;
+  const text = winner ? winner.text : null;
+  const fetchedUrl = winner ? winner.url : null;
+  const corsBlocked = !winner && attempts.some(a => a.cors);
 
   if (!text) {
     return { rating: 'warning', found: false, corsBlocked, checkedUrls: urls };
@@ -5311,8 +5550,10 @@ async function checkSecurityTxt(domain) {
   let rating = 'excellent';
 
   if (!fields['contact'] || fields['contact'].length === 0) {
+    // Contact is the one MUST in RFC 9116 §2.5.3 — without it the file cannot
+    // serve its purpose, so the panel rating matches the issue rating.
     issues.push({ rating: 'fail', textKey: 'STXT_NO_CONTACT' });
-    rating = worstRating(rating, 'warning');
+    rating = worstRating(rating, 'fail');
   } else {
     issues.push({ rating: 'excellent', textKey: 'STXT_CONTACT_OK', textArgs: [fields['contact'].join(', ')] });
   }
@@ -5350,11 +5591,10 @@ async function checkSecurityTxt(domain) {
 async function checkWHOIS(domain) {
   try {
     if (scanStats) scanStats.httpRequests++;
-    const resp = await fetch('https://rdap.org/domain/' + encodeURIComponent(domain), {
+    const data = await fetchJSON('https://rdap.org/domain/' + encodeURIComponent(domain), {
       headers: { Accept: 'application/rdap+json, application/json' },
+      label: 'RDAP HTTP',
     });
-    if (!resp.ok) throw new Error('RDAP HTTP ' + resp.status);
-    const data = await resp.json();
 
     const events = {};
     for (const ev of (data.events || [])) events[ev.eventAction] = ev.eventDate;
@@ -5386,7 +5626,7 @@ async function checkWHOIS(domain) {
       nameservers,
     };
   } catch (e) {
-    return { rating: 'warning', found: false, message: e.message === 'Failed to fetch' ? 'Network error — RDAP lookup failed.' : e.message };
+    return { rating: 'warning', found: false, message: describeFetchError(e) };
   }
 }
 
@@ -5438,25 +5678,32 @@ async function checkBIMI(domain) {
 
     return { rating, record, parsed, issues };
   } catch (e) {
-    return { error: true, rating: 'fail', message: e.message === 'Failed to fetch' ? 'Network error' : e.message };
+    return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
 }
 
 // ── PTR / FCrDNS ──────────────────────────────────────────────────────────────
 
+// Expand IPv6 to full 32-hex form, reverse nibbles, join with dots, append
+// .ip6.arpa. Returns null for anything that does not expand to exactly 32 hex
+// nibbles — notably the IPv4-mapped form (::ffff:1.2.3.4), whose dotted tail
+// would otherwise produce a name full of empty labels and a guaranteed SERVFAIL.
 function reverseIPv6(ip) {
-  // Expand IPv6 to full 32-hex form, reverse nibbles, join with dots, append .ip6.arpa
   const halves = ip.split('::');
+  if (halves.length > 2) return null;
   let groups;
   if (halves.length === 2) {
-    const left = halves[0] ? halves[0].split(':') : [];
+    const left  = halves[0] ? halves[0].split(':') : [];
     const right = halves[1] ? halves[1].split(':') : [];
     const missing = 8 - left.length - right.length;
+    if (missing < 0) return null;
     groups = [...left, ...Array(missing).fill('0'), ...right];
   } else {
     groups = ip.split(':');
   }
-  const hex = groups.map(g => g.padStart(4, '0')).join('');
+  if (groups.length !== 8) return null;
+  if (!groups.every(g => /^[0-9a-fA-F]{1,4}$/.test(g))) return null;   // rejects embedded IPv4
+  const hex = groups.map(g => g.toLowerCase().padStart(4, '0')).join('');
   return hex.split('').reverse().join('.') + '.ip6.arpa';
 }
 
@@ -5476,6 +5723,9 @@ async function checkPTR(domain) {
       const ipResults = await Promise.allSettled(ips.slice(0, 4).map(async ip => {
         const isV6 = ip.includes(':');
         const ptrName = isV6 ? reverseIPv6(ip) : ip.split('.').reverse().join('.') + '.in-addr.arpa';
+        // An address we cannot turn into a reverse name is reported as unknown
+        // rather than queried with a malformed name.
+        if (!ptrName) return { ip, ptr: null, match: false, rating: 'warning' };
         try {
           const ptrResp = await dohQuery(ptrName, 'PTR');
           const ptrs = (ptrResp.Answer || []).filter(r => r.type === 12)
@@ -5504,7 +5754,7 @@ async function checkPTR(domain) {
 
     return { rating: overallRating, hosts, issues: [] };
   } catch (e) {
-    return { error: true, rating: 'fail', message: e.message === 'Failed to fetch' ? 'Network error' : e.message };
+    return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
 }
 
@@ -5537,9 +5787,8 @@ async function rpkiLookupIP(ip) {
   const qs = '&sourceapp=email-security-checker';
 
   if (scanStats) scanStats.ripeStatRequests++;
-  const netResp = await fetch(base + 'network-info/data.json?resource=' + encodeURIComponent(ip) + qs);
-  if (!netResp.ok) throw new Error('network-info HTTP ' + netResp.status);
-  const netData = await netResp.json();
+  const netData = await fetchJSON(base + 'network-info/data.json?resource=' + encodeURIComponent(ip) + qs,
+    { label: 'network-info HTTP' });
 
   const asns   = (netData.data && netData.data.asns)   || [];
   const prefix = (netData.data && netData.data.prefix) || null;
@@ -5551,12 +5800,10 @@ async function rpkiLookupIP(ip) {
 
   const asn = asns[0];
   if (scanStats) scanStats.ripeStatRequests++;
-  const valResp = await fetch(
+  const valData = await fetchJSON(
     base + 'rpki-validation/data.json?resource=AS' + encodeURIComponent(asn) +
     '&prefix=' + encodeURIComponent(prefix) + qs,
-  );
-  if (!valResp.ok) throw new Error('rpki-validation HTTP ' + valResp.status);
-  const valData = await valResp.json();
+    { label: 'rpki-validation HTTP' });
 
   const status = (valData.data && valData.data.status) || 'unknown';
   const roas   = (valData.data && valData.data.validating_roas) || [];
@@ -5569,13 +5816,10 @@ async function aspaLookupASN(asn) {
   if (aspaAsnCache.has(asn)) { if (scanStats) scanStats.ripeStatCacheHits++; return aspaAsnCache.get(asn); }
 
   if (scanStats) scanStats.ripeStatRequests++;
-  const resp = await fetch(
+  const json = await fetchJSON(
     'https://stat.ripe.net/data/aspa/data.json?resource=AS' + encodeURIComponent(asn) +
     '&sourceapp=email-security-checker',
-    { headers: { Accept: 'application/json' } },
-  );
-  if (!resp.ok) throw new Error('HTTP ' + resp.status);
-  const json = await resp.json();
+    { headers: { Accept: 'application/json' } });
   const d = json.data;
   if (!d) {
     const result = { asn, published: false, providers: [] };
@@ -5599,12 +5843,12 @@ async function aspaLookupASN(asn) {
 async function fetchASNHolder(asn) {
   if (asnInfoCache.has(asn)) { if (scanStats) scanStats.ripeStatCacheHits++; return asnInfoCache.get(asn); }
   if (scanStats) scanStats.ripeStatRequests++;
-  const r = await fetch(
-    'https://stat.ripe.net/data/as-overview/data.json?resource=AS' + encodeURIComponent(asn) +
-    '&sourceapp=email-security-checker'
-  );
-  if (!r.ok) { asnInfoCache.set(asn, null); return null; }
-  const j = await r.json();
+  let j;
+  try {
+    j = await fetchJSON(
+      'https://stat.ripe.net/data/as-overview/data.json?resource=AS' + encodeURIComponent(asn) +
+      '&sourceapp=email-security-checker');
+  } catch (_) { asnInfoCache.set(asn, null); return null; }
   const holder = (j.data && j.data.holder) || null;
   asnInfoCache.set(asn, holder);
   return holder;
@@ -5628,18 +5872,34 @@ async function checkRPKI(domain) {
 
     const allHosts = [...new Set([...nsHosts, ...mxHosts])];
     if (allHosts.length === 0)
-      return { rating: 'warning', message: 'No NS or MX records to check.', hosts: [] };
+      return { rating: 'warning', messageKey: 'RPKI_NO_HOSTS', hosts: [] };
 
-    // Resolve IPs for all hosts in parallel, then check RPKI for each IP
-    const hostResults = await Promise.all(allHosts.map(async host => {
-      const ips = await resolveHostIPs(host).catch(() => []);
+    // Resolve IPs for all hosts, then check RPKI for each IP. Each IP costs two
+    // sequential RIPE Stat calls, and a domain with many NS+MX hosts would
+    // otherwise open dozens at once against an API that rate-limits — so the
+    // whole flattened set goes through parallelLimit rather than Promise.all.
+    // Each host costs an A and an AAAA query, so a domain with many NS+MX names
+    // opens 2x that many at once unless this is bounded too.
+    const ipSettled = await parallelLimit(allHosts.map(host => () => resolveHostIPs(host)), DNS_CONCURRENCY);
+    const hostIPs = ipSettled.map(r => (r.status === 'fulfilled' ? r.value : []));
+    const lookups = [];   // flat list of { hostIdx, ip } across every host
+    allHosts.forEach((host, hi) => {
       // Cap at 4 IPs per host to avoid hammering RIPE Stat
-      const ipResults = await Promise.all(
-        ips.slice(0, 4).map(ip =>
-          rpkiLookupIP(ip).catch(e => ({ ip, status: 'error', error: e.message, asn: null, prefix: null, roas: [] }))
-        )
-      );
-      return { host, isNS: nsHosts.includes(host), isMX: mxHosts.includes(host), ips, ipResults };
+      hostIPs[hi].slice(0, 4).forEach(ip => lookups.push({ hi, ip }));
+    });
+    const settled = await parallelLimit(
+      lookups.map(l => () => rpkiLookupIP(l.ip)), RIPE_CONCURRENCY);
+
+    const perHost = allHosts.map(() => []);
+    settled.forEach((res, i) => {
+      const { hi, ip } = lookups[i];
+      perHost[hi].push(res.status === 'fulfilled' ? res.value
+        : { ip, status: 'error', error: describeFetchError(res.reason), asn: null, prefix: null, roas: [] });
+    });
+
+    const hostResults = allHosts.map((host, hi) => ({
+      host, isNS: nsHosts.includes(host), isMX: mxHosts.includes(host),
+      ips: hostIPs[hi], ipResults: perHost[hi],
     }));
 
     let hasValid = false, hasInvalid = false, hasNotFound = false, hasError = false;
@@ -5665,27 +5925,31 @@ async function checkRPKI(domain) {
       hostResults.flatMap(h => h.ipResults.map(r => r.asn)).filter(Boolean)
     )];
     const asnInfo = {};
-    await Promise.all(uniqueASNs.map(async asn => {
-      try { asnInfo[asn] = await fetchASNHolder(asn); } catch (_) {}
-    }));
+    const holderResults = await parallelLimit(
+      uniqueASNs.map(asn => () => fetchASNHolder(asn)), RIPE_CONCURRENCY);
+    uniqueASNs.forEach((asn, i) => {
+      if (holderResults[i].status === 'fulfilled') asnInfo[asn] = holderResults[i].value;
+    });
 
     // Fetch ASPA records for each unique ASN
     const aspaData = {};
-    await Promise.all(uniqueASNs.map(async asn => {
-      try {
-        aspaData[asn] = await aspaLookupASN(asn);
-      } catch (e) {
-        aspaData[asn] = { asn, published: false, providers: [], error: true, errorMsg: e.message };
-      }
-    }));
+    const aspaResults = await parallelLimit(
+      uniqueASNs.map(asn => () => aspaLookupASN(asn)), RIPE_CONCURRENCY);
+    uniqueASNs.forEach((asn, i) => {
+      aspaData[asn] = aspaResults[i].status === 'fulfilled'
+        ? aspaResults[i].value
+        : { asn, published: false, providers: [], error: true, errorMsg: describeFetchError(aspaResults[i].reason) };
+    });
 
     // Fetch holder names for provider ASNs not already in asnInfo
     const providerASNs = [...new Set(
       Object.values(aspaData).flatMap(a => a.providers || [])
     )].filter(asn => !(asn in asnInfo));
-    await Promise.all(providerASNs.map(async asn => {
-      try { asnInfo[asn] = await fetchASNHolder(asn); } catch (_) {}
-    }));
+    const provResults = await parallelLimit(
+      providerASNs.map(asn => () => fetchASNHolder(asn)), RIPE_CONCURRENCY);
+    providerASNs.forEach((asn, i) => {
+      if (provResults[i].status === 'fulfilled') asnInfo[asn] = provResults[i].value;
+    });
 
     const nsAsns = [...new Set(
       hostResults.filter(h => h.isNS).flatMap(h => h.ipResults.map(r => r.asn).filter(Boolean))
@@ -5693,7 +5957,7 @@ async function checkRPKI(domain) {
 
     return { rating, hosts: hostResults, asnInfo, aspaData, nsAsns };
   } catch (e) {
-    return { error: true, rating: 'fail', message: e.message === 'Failed to fetch' ? 'Network error' : e.message };
+    return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
 }
 
@@ -5726,10 +5990,11 @@ async function checkIPv6(domain) {
     const uniqueNS = [...new Set(nsHosts)];
     const uniqueMX = [...new Set(mxEntries)];
 
-    const [nsIPResults, mxIPResults] = await Promise.all([
-      Promise.allSettled(uniqueNS.map(h => resolveHostIPs(h))),
-      Promise.allSettled(uniqueMX.map(h => resolveHostIPs(h))),
-    ]);
+    // Bounded for the same reason as checkRPKI: two queries per host.
+    const allIPResults = await parallelLimit(
+      [...uniqueNS, ...uniqueMX].map(h => () => resolveHostIPs(h)), DNS_CONCURRENCY);
+    const nsIPResults = allIPResults.slice(0, uniqueNS.length);
+    const mxIPResults = allIPResults.slice(uniqueNS.length);
 
     function splitIPs(ips) {
       return { v4: ips.filter(ip => !ip.includes(':')), v6: ips.filter(ip => ip.includes(':')) };
@@ -5778,7 +6043,7 @@ async function checkIPv6(domain) {
     return { rating, issues, domainIPs: { v4: domainV4, v6: domainV6 }, mxHosts: mxHostData, nsHosts: nsHostData };
   } catch (e) {
     return { error: true, rating: 'fail', issues: [], domainIPs: { v4: [], v6: [] }, mxHosts: [], nsHosts: [],
-      message: e.message === 'Failed to fetch' ? 'Network error' : e.message };
+      message: describeFetchError(e) };
   }
 }
 
@@ -5793,18 +6058,47 @@ function el(tag, cls, text) {
 
 function clearNode(n) { while (n.firstChild) n.removeChild(n.firstChild); }
 
+// Resolves a check result's summary message. A `messageKey` is looked up at
+// render time so it follows a language switch (see critical bug 5); a plain
+// `message` is passed through, since those come from describeFetchError() and
+// are already localised. fallbackKey covers a result carrying neither.
+function msgText(d, fallbackKey) {
+  if (d.messageKey) return ts(d.messageKey);
+  if (d.message) return d.message;
+  return fallbackKey ? ts(fallbackKey) : '';
+}
+
 function makeSpinner() { return el('span', 'spinner'); }
 
 function makeBadge(rating) {
-  const b = el('span', 'badge badge-' + rating);
-  const key = 'RATING_' + rating.toUpperCase();
-  b.textContent = ts(key) || (rating.charAt(0).toUpperCase() + rating.slice(1));
-  return b;
+  // ts() falls back to the key name for an unknown rating, which is exactly the
+  // signal wanted — a missing RATING_* string shows up rather than hiding behind
+  // a prettified fallback that could never fire anyway.
+  return el('span', 'badge badge-' + rating, ts('RATING_' + rating.toUpperCase()));
+}
+
+// One-line DNSSEC status badge for a host, used by the MX, SPF and reporting-
+// endpoint lists. The algorithm shown is the one that set the rating (the
+// weakest present — see checkDNSSEC), so the badge and the rating never disagree.
+function dnssecBadge(ds) {
+  const badge = makeBadge(ds.rating);
+  if (ds.error)                     badge.textContent = ts('ERR_CHECK_FAILED');
+  else if (!ds.hasDNSKEY && !ds.ad) badge.textContent = ts('MX_NO_DNSSEC');
+  else if (!ds.ad)                  badge.textContent = ts('MX_SIGNED_UNVAL');
+  else {
+    const alg = ds.weakestAlg || (ds.algorithms && ds.algorithms[0]);
+    badge.textContent = '✓ DNSSEC' + (alg ? ' · ' + alg.name : '');
+  }
+  return badge;
 }
 
 // Issue text is plain text (no HTML tags) — textContent is safe for all issue strings.
 // Optional rfcLink: { text, href } appends a linked RFC reference after the text.
-function makeIssueList(issues) {
+// Pass endpointDnssec to append a DNSSEC badge to the URI-bearing issues in the
+// DMARC and TLS-RPT panels (TLSRPT_ENDPOINT, DMARC_RUA_URI, DMARC_RUF_URI).
+const ENDPOINT_URI_KEYS = new Set(['TLSRPT_ENDPOINT', 'DMARC_RUA_URI', 'DMARC_RUF_URI']);
+
+function makeIssueList(issues, endpointDnssec) {
   const ul = el('ul', 'issue-list');
   for (const iss of issues) {
     const li = el('li', 'issue-item');
@@ -5824,49 +6118,10 @@ function makeIssueList(issues) {
       span.appendChild(a);
     }
     li.appendChild(span);
-    ul.appendChild(li);
-  }
-  return ul;
-}
-
-// Like makeIssueList but appends a DNSSEC badge for URI endpoint issues.
-// endpointDnssec: { [hostname]: dnssecResult }
-// URI-bearing issue keys: TLSRPT_ENDPOINT, DMARC_RUA_URI, DMARC_RUF_URI
-function makeEndpointIssueList(issues, endpointDnssec) {
-  const URI_KEYS = new Set(['TLSRPT_ENDPOINT', 'DMARC_RUA_URI', 'DMARC_RUF_URI']);
-  const ul = el('ul', 'issue-list');
-  for (const iss of issues) {
-    const li = el('li', 'issue-item');
-    li.appendChild(el('span', 'issue-dot dot-' + iss.rating));
-    let resolvedText = iss.textKey
-      ? (iss.textArgs ? td(iss.textKey, ...iss.textArgs) : ts(iss.textKey))
-      : iss.text;
-    if (iss._caList) resolvedText += iss._caList.join(', ');
-    const span = el('span', null, resolvedText);
-    if (iss.rfcLink) {
-      span.appendChild(document.createTextNode(' '));
-      const a = document.createElement('a');
-      a.textContent = iss.rfcLink.text; a.href = iss.rfcLink.href;
-      a.target = '_blank'; a.rel = 'noopener noreferrer';
-      span.appendChild(a);
-    }
-    li.appendChild(span);
-    if (iss.textKey && URI_KEYS.has(iss.textKey) && iss.textArgs) {
+    if (endpointDnssec && iss.textKey && ENDPOINT_URI_KEYS.has(iss.textKey) && iss.textArgs) {
       const host = uriHostname(iss.textArgs[0]);
       const ds = host && endpointDnssec[host];
-      if (ds) {
-        const badge = makeBadge(ds.rating);
-        let info;
-        if (ds.error)            info = ts('ERR_CHECK_FAILED');
-        else if (!ds.hasDNSKEY && !ds.ad) info = ts('MX_NO_DNSSEC');
-        else if (!ds.ad)         info = ts('MX_SIGNED_UNVAL');
-        else {
-          const bestAlg = ds.algorithms && (ds.algorithms.find(a => a.rating === 'excellent') || ds.algorithms[0]);
-          info = '\u2713 DNSSEC' + (bestAlg ? ' \u00b7 ' + bestAlg.name : '');
-        }
-        badge.textContent = info;
-        li.appendChild(badge);
-      }
+      if (ds) li.appendChild(dnssecBadge(ds));
     }
     ul.appendChild(li);
   }
@@ -5970,33 +6225,69 @@ function setTabResult(name, rating, buildFn) {
   }
 }
 
-document.getElementById('tab-bar').addEventListener('click', e => {
-  const btn = e.target.closest('.tab-btn');
+// Activates a tab and keeps the ARIA state in step with the visual state.
+// Roving tabindex: only the active tab is reachable with Tab, and the arrow keys
+// move between tabs from there — the pattern screen-reader users expect from a
+// tablist, and the reason every tab is not a separate Tab stop.
+function activateTab(btn, focus) {
   if (!btn) return;
   const name = btn.dataset.tab;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    const on = b === btn;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', String(on));
+    b.tabIndex = on ? 0 : -1;
+  });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
+  if (focus) btn.focus();
   // Scroll active tab into view on mobile horizontal tab bar
   btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+}
+
+const tabBarEl = document.getElementById('tab-bar');
+
+tabBarEl.addEventListener('click', e => {
+  const btn = e.target.closest('.tab-btn');
+  if (btn) activateTab(btn, false);
+});
+
+tabBarEl.addEventListener('keydown', e => {
+  const KEYS = { ArrowRight: 1, ArrowLeft: -1, Home: 'first', End: 'last' };
+  if (!(e.key in KEYS)) return;
+  const tabs = [...document.querySelectorAll('.tab-btn')];
+  const i = tabs.indexOf(e.target.closest('.tab-btn'));
+  if (i === -1) return;
+  e.preventDefault();
+  const step = KEYS[e.key];
+  const next = step === 'first' ? 0
+             : step === 'last'  ? tabs.length - 1
+             : (i + step + tabs.length) % tabs.length;   // wraps at both ends
+  activateTab(tabs[next], true);
 });
 
 // ── Renderers ─────────────────────────────────────────────────────────────────
 
 function renderDNSSEC(result) {
-  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', message: 'Check failed' };
+  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', messageKey: 'ERR_CHECK_FAILED' };
   setTabResult('dnssec', d.rating, body => {
     if (d.error) {
-      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + d.message));
+      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + msgText(d, 'ERR_CHECK_FAILED')));
     } else if (!d.hasDNSKEY) {
       body.appendChild(el('div', 'card-summary', d.ad
         ? ts('DNSSEC_RESOLVER_ONLY')
-        : (d.messageKey ? ts(d.messageKey) : (d.message || 'Not DNSSEC-signed.'))));
+        : msgText(d, 'DNSSEC_NOT_SIGNED')));
     } else {
       const sum = el('div', 'card-summary');
       sum.appendChild(el('b', null, d.ad ? ts('DNSSEC_VALIDATED') : ts('DNSSEC_UNVALIDATED')));
       body.appendChild(sum);
 
+      // Every algorithm is listed with its own rating, and the one that set the
+      // panel's rating is marked — otherwise a zone rated on its weakest
+      // algorithm looks arbitrarily downgraded.
       const algList = el('ul', 'issue-list');
+      const decider = d.weakestAlg;
+      const mixed = d.algorithms.length > 1 &&
+        d.algorithms.some(a => a.rating !== d.algorithms[0].rating);
       for (const a of d.algorithms) {
         const li = el('li', 'issue-item');
         li.appendChild(el('span', 'issue-dot dot-' + a.rating));
@@ -6006,10 +6297,21 @@ function renderDNSSEC(result) {
         const badge = makeBadge(a.rating);
         badge.style.fontSize = '0.68rem';
         info.appendChild(badge);
+        if (mixed && decider && a === decider) {
+          info.appendChild(document.createTextNode(' '));
+          info.appendChild(el('span', 'tag-pill tag-pill-warn', ts('DNSSEC_ALG_DECIDES')));
+        }
         li.appendChild(info);
         algList.appendChild(li);
       }
-      body.appendChild(makeDetails(ts('DNSSEC_ALG_DETAILS'), algList));
+      const algFrag = document.createDocumentFragment();
+      algFrag.appendChild(algList);
+      if (mixed) {
+        const note = el('div', 'explanation');
+        safeMarkup(note, ts('DNSSEC_ALG_WEAKEST_NOTE'));
+        algFrag.appendChild(note);
+      }
+      body.appendChild(makeDetails(ts('DNSSEC_ALG_DETAILS'), algFrag));
     }
 
     addExplanation(body, tx('DNSSEC'));
@@ -6017,12 +6319,12 @@ function renderDNSSEC(result) {
 }
 
 function renderMX(result) {
-  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', message: 'Check failed' };
+  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', messageKey: 'ERR_CHECK_FAILED' };
   setTabResult('mx', d.rating, body => {
     if (d.error) {
-      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + d.message));
+      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + msgText(d, 'ERR_CHECK_FAILED')));
     } else if (d.hosts.length === 0) {
-      body.appendChild(el('div', 'card-summary', d.nullMX ? '\u2713 Null MX (RFC 7505) \u2014 domain accepts no email.' : (d.message || 'No MX records.')));
+      body.appendChild(el('div', 'card-summary', d.nullMX ? ts('MX_NULL_CONFIRM') : msgText(d, 'MX_NO_RECORDS')));
       // If no real MX, check whether SPF -all and DMARC p=reject are both configured
       if (!d.nullMX) {
         const spfVal = lastResults && lastResults.spf && lastResults.spf.status === 'fulfilled' ? lastResults.spf.value : null;
@@ -6055,22 +6357,7 @@ function renderMX(result) {
         line1.appendChild(el('span', 'mx-priority', String(h.priority)));
         line1.appendChild(el('span', 'mx-hostname', h.hostname));
         row.appendChild(line1);
-        const ds = h.dnssec;
-        let hInfo;
-        if (ds.error) {
-          hInfo = ts('ERR_CHECK_FAILED');
-        } else if (!ds.hasDNSKEY && !ds.ad) {
-          hInfo = ts('MX_NO_DNSSEC');
-        } else if (!ds.ad) {
-          hInfo = ts('MX_SIGNED_UNVAL');
-        } else {
-          const bestAlg = ds.algorithms && (ds.algorithms.find(a => a.rating === 'excellent') || ds.algorithms[0]);
-          const algLabel = bestAlg ? bestAlg.name : '';
-          hInfo = '\u2713 DNSSEC' + (algLabel ? ' \u00b7 ' + algLabel : '');
-        }
-        const hostBadge = makeBadge(ds.rating);
-        hostBadge.textContent = hInfo;
-        row.appendChild(hostBadge);
+        row.appendChild(dnssecBadge(h.dnssec));
         if (ipv6Val && !ipv6Val.error) {
           const mxEntry = ipv6Val.mxHosts.find(m => m.hostname === h.hostname.toLowerCase().replace(/\.$/, ''));
           if (mxEntry) {
@@ -6090,12 +6377,12 @@ function renderMX(result) {
 }
 
 function renderPTR(result) {
-  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', message: 'Check failed' };
+  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', messageKey: 'ERR_CHECK_FAILED' };
   setTabResult('ptr', d.rating, body => {
     if (d.error) {
-      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + d.message));
+      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + msgText(d, 'ERR_CHECK_FAILED')));
     } else if (d.hosts.length === 0) {
-      body.appendChild(el('div', 'card-summary', d.issues && d.issues.length ? '' : 'No MX hosts.'));
+      body.appendChild(el('div', 'card-summary', d.issues && d.issues.length ? '' : ts('PTR_NO_MX_HOSTS')));
       if (d.issues && d.issues.length) body.appendChild(makeIssueList(d.issues));
     } else {
       const hostList = el('div', 'mx-host-list');
@@ -6113,7 +6400,12 @@ function renderPTR(result) {
             const span = el('span');
             span.appendChild(el('code', null, ipInfo.ip));
             if (ipInfo.ptr) {
-              span.appendChild(document.createTextNode(' \u2192 ' + ipInfo.ptr + (ipInfo.match ? ' \u2713' : ' \u26a0')));
+              span.appendChild(document.createTextNode(' \u2192 ' + ipInfo.ptr + ' '));
+              // A bare \u2713/\u26a0 glyph says nothing to a screen reader and little to a
+              // reader who does not already know what FCrDNS is.
+              const b = makeBadge(ipInfo.match ? 'excellent' : 'good');
+              b.textContent = ts(ipInfo.match ? 'PTR_MATCH' : 'PTR_MISMATCH');
+              span.appendChild(b);
             } else {
               span.appendChild(document.createTextNode(' \u2014 ' + ts('PTR_MISSING')));
             }
@@ -6130,12 +6422,12 @@ function renderPTR(result) {
 }
 
 function renderDANE(result) {
-  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', message: 'Check failed' };
+  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', messageKey: 'ERR_CHECK_FAILED' };
   setTabResult('dane', d.rating, body => {
     if (d.error) {
-      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + d.message));
-    } else if (d.message) {
-      body.appendChild(el('div', 'card-summary', d.message));
+      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + msgText(d, 'ERR_CHECK_FAILED')));
+    } else if (d.message || d.messageKey) {
+      body.appendChild(el('div', 'card-summary', msgText(d)));
     } else {
       const validatedCount = d.hosts.filter(h => h.records.length > 0 && h.ad).length;
       const sumText = validatedCount > 0
@@ -6185,13 +6477,16 @@ function renderDANE(result) {
 }
 
 function renderSPF(result) {
-  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', message: 'Check failed' };
+  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', messageKey: 'ERR_CHECK_FAILED' };
   setTabResult('spf', d.rating, body => {
     if (d.error) {
-      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + d.message));
+      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + msgText(d, 'ERR_CHECK_FAILED')));
     } else {
       const record = d.records && d.records[0];
-      const sumText = d.noRecord ? ts('SPF_NO_RECORD')
+      // NXDOMAIN returns no record and no noRecord flag, only a messageKey —
+      // without this branch it fell through to "found, 0 lookups".
+      const sumText = d.messageKey ? ts(d.messageKey)
+        : d.noRecord ? ts('SPF_NO_RECORD')
         : d.multiRecord ? td('SPF_MULTI_MESSAGE', d.multiCount)
         : (d.totalLookupCount && d.totalLookupCount > d.lookupCount)
           ? td('SPF_FOUND_LOOKUPS_TOTAL', d.lookupCount, d.totalLookupCount)
@@ -6255,26 +6550,10 @@ function renderSPF(result) {
         });
 
         addMechSection(ts('SPF_DNS_NAMES'), mech.dnsNames, item => {
-          const displayVal = item.val ? item.checkDomain : item.checkDomain + ' ' + ts('SPF_IMPLICIT');
+          const displayVal = (item.val ? item.checkDomain : item.checkDomain + ' ' + ts('SPF_IMPLICIT'))
+                           + (item.cidr ? ' ' + item.cidr : '');
           const row = spfMechRow(item.mech, displayVal);
-          const ds = item.dnssec;
-          if (ds) {
-            let hInfo;
-            if (ds.error) {
-              hInfo = ts('ERR_CHECK_FAILED');
-            } else if (!ds.hasDNSKEY && !ds.ad) {
-              hInfo = ts('MX_NO_DNSSEC');
-            } else if (!ds.ad) {
-              hInfo = ts('MX_SIGNED_UNVAL');
-            } else {
-              const bestAlg = ds.algorithms && (ds.algorithms.find(a => a.rating === 'excellent') || ds.algorithms[0]);
-              const algLabel = bestAlg ? bestAlg.name : '';
-              hInfo = '\u2713 DNSSEC' + (algLabel ? ' \u00b7 ' + algLabel : '');
-            }
-            const badge = makeBadge(ds.rating);
-            badge.textContent = hInfo;
-            row.appendChild(badge);
-          }
+          if (item.dnssec) row.appendChild(dnssecBadge(item.dnssec));
           listEl.appendChild(row);
         });
 
@@ -6302,10 +6581,10 @@ function renderSPF(result) {
 }
 
 function renderDKIM(result) {
-  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', message: 'Check failed' };
+  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', messageKey: 'ERR_CHECK_FAILED' };
   setTabResult('dkim', d.rating, body => {
     if (d.error) {
-      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + d.message));
+      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + msgText(d, 'ERR_CHECK_FAILED')));
     } else {
       const testedCount = d.testedCount || AUTO_SELECTORS.length;
 
@@ -6535,14 +6814,14 @@ function renderDMARCbis(body, bis) {
 }
 
 function renderDMARC(result) {
-  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', message: 'Check failed' };
+  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', messageKey: 'ERR_CHECK_FAILED' };
   setTabResult('dmarc', d.rating, body => {
     if (d.error) {
-      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + d.message));
+      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + msgText(d, 'ERR_CHECK_FAILED')));
     } else {
       body.appendChild(el('div', 'card-summary', d.record ? ts('DMARC_FOUND') : ts('DMARC_NOT_FOUND')));
       if (d.issues && d.issues.length) {
-        const issueList = makeEndpointIssueList(d.issues, d.endpointDnssec || {});
+        const issueList = makeIssueList(d.issues, d.endpointDnssec || {});
         if (d.record) {
           const frag = document.createDocumentFragment();
           frag.appendChild(el('code', 'mono', d.record));
@@ -6558,12 +6837,17 @@ function renderDMARC(result) {
   });
 }
 
+// BIMI is reported but never graded: it has no bearing on deliverability or on
+// any security property this tool measures, and a domain without a VMC is not
+// misconfigured. The single constant keeps the tab dot, the Overview bar and the
+// Fixes row in agreement — they read the same value rather than each deciding.
+const BIMI_RATING = 'none';
+
 function renderBIMI(result) {
-  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', message: 'Check failed' };
-  // BIMI is not scored and the tab dot intentionally stays grey (no rating colour).
-  setTabResult('bimi', 'none', body => {
+  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', messageKey: 'ERR_CHECK_FAILED' };
+  setTabResult('bimi', BIMI_RATING, body => {
     if (d.error) {
-      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + d.message));
+      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + msgText(d, 'ERR_CHECK_FAILED')));
     } else {
       body.appendChild(el('div', 'card-summary', d.record ? ts('BIMI_FOUND') : ts('BIMI_NOT_FOUND')));
       if (d.issues && d.issues.length) {
@@ -6574,7 +6858,7 @@ function renderBIMI(result) {
           li.appendChild(el('span', 'issue-dot dot-' + iss.rating));
           const span = el('span');
           if (iss.textKey === 'BIMI_LOGO_URL' || iss.textKey === 'BIMI_AUTHORITY_URL') {
-            const label = iss.textKey === 'BIMI_LOGO_URL' ? 'Logo URL: ' : 'Authority URL: ';
+            const label = ts(iss.textKey === 'BIMI_LOGO_URL' ? 'BIMI_LOGO_OK' : 'BIMI_AUTHORITY_OK') + ': ';
             const url = iss.textArgs && iss.textArgs[0];
             span.appendChild(document.createTextNode(label));
             if (url && /^https?:\/\//.test(url)) {
@@ -6609,14 +6893,14 @@ function renderBIMI(result) {
 }
 
 function renderTLSRPT(result) {
-  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', message: 'Check failed' };
+  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', messageKey: 'ERR_CHECK_FAILED' };
   setTabResult('tlsrpt', d.rating, body => {
     if (d.error) {
-      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + d.message));
+      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + msgText(d, 'ERR_CHECK_FAILED')));
     } else {
       body.appendChild(el('div', 'card-summary', d.record ? ts('TLSRPT_FOUND') : ts('TLSRPT_NOT_FOUND')));
       if (d.issues && d.issues.length) {
-        const issueList = makeEndpointIssueList(d.issues, d.endpointDnssec || {});
+        const issueList = makeIssueList(d.issues, d.endpointDnssec || {});
         if (d.record) {
           const frag = document.createDocumentFragment();
           frag.appendChild(el('code', 'mono', d.record));
@@ -6633,11 +6917,11 @@ function renderTLSRPT(result) {
 }
 
 function renderMTASTS(result) {
-  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', message: 'Check failed' };
+  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', messageKey: 'ERR_CHECK_FAILED' };
   if (d.skipped) { setTabResult('mtasts', 'skip', body => { body.appendChild(el('div', 'card-summary', ts('CHECK_SKIPPED'))); }); return; }
   setTabResult('mtasts', d.rating, body => {
     if (d.error) {
-      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + d.message));
+      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + msgText(d, 'ERR_CHECK_FAILED')));
     } else {
       body.appendChild(el('div', 'card-summary', d.record ? ts('MTASTS_FOUND') : ts('MTASTS_NOT_FOUND')));
       if (d.policy) {
@@ -6674,10 +6958,10 @@ function renderMTASTS(result) {
 }
 
 function renderCAA(result) {
-  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', message: 'Check failed' };
+  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', messageKey: 'ERR_CHECK_FAILED' };
   setTabResult('caa', d.rating, body => {
     if (d.error) {
-      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + d.message));
+      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + msgText(d, 'ERR_CHECK_FAILED')));
     } else {
       const sumText = d.parsed.length > 0
         ? td('CAA_RECORDS_FOUND', d.parsed.length)
@@ -6766,12 +7050,12 @@ function renderCAA(result) {
 }
 
 function renderRPKI(result) {
-  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', message: 'Check failed' };
+  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', messageKey: 'ERR_CHECK_FAILED' };
   setTabResult('rpki', d.rating, body => {
     if (d.error) {
-      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + d.message));
-    } else if (d.message) {
-      body.appendChild(el('div', 'card-summary', d.message));
+      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + msgText(d, 'ERR_CHECK_FAILED')));
+    } else if (d.message || d.messageKey) {
+      body.appendChild(el('div', 'card-summary', msgText(d)));
     } else {
       // Summary counts
       let total = 0, valid = 0, invalid = 0, unknown = 0;
@@ -6887,12 +7171,12 @@ function getASPARating(result) {
 }
 
 function renderASPA(result) {
-  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', message: 'Check failed' };
+  const d = result.status === 'fulfilled' ? result.value : { error: true, rating: 'fail', messageKey: 'ERR_CHECK_FAILED' };
   const rating = getASPARating(result);
 
   setTabResult('aspa', rating, body => {
     if (d.error) {
-      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + d.message));
+      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + msgText(d, 'ERR_CHECK_FAILED')));
     } else {
       const aspaData = d.aspaData || {};
       const asnInfo  = d.asnInfo  || {};
@@ -6964,10 +7248,10 @@ function renderASPA(result) {
 function renderIPv6(result) {
   const d = result && result.status === 'fulfilled'
     ? result.value
-    : { error: true, rating: 'fail', message: 'Check failed', issues: [], domainIPs: { v4: [], v6: [] }, mxHosts: [], nsHosts: [] };
+    : { error: true, rating: 'fail', messageKey: 'ERR_CHECK_FAILED', issues: [], domainIPs: { v4: [], v6: [] }, mxHosts: [], nsHosts: [] };
   setTabResult('ipv6', d.rating, body => {
     if (d.error) {
-      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + d.message));
+      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + msgText(d, 'ERR_CHECK_FAILED')));
       addExplanation(body, tx('IPV6'));
       return;
     }
@@ -7079,7 +7363,7 @@ function renderIPv6(result) {
 }
 
 function renderSecurityTxt(result) {
-  const d = result.status === 'fulfilled' ? result.value : { rating: 'warning', found: false, message: 'Check failed' };
+  const d = result.status === 'fulfilled' ? result.value : { rating: 'warning', found: false, messageKey: 'ERR_CHECK_FAILED' };
   if (d.skipped) { setTabResult('security-txt', 'skip', body => { body.appendChild(el('div', 'card-summary', ts('CHECK_SKIPPED'))); }); return; }
   setTabResult('security-txt', d.rating, body => {
     if (!d.found) {
@@ -7091,7 +7375,7 @@ function renderSecurityTxt(result) {
         strong.textContent = ts('CORS_SECURITY_NOTE');
         msg.appendChild(strong);
       } else {
-        msg.appendChild(document.createTextNode(d.message || ts('STXT_NOT_FOUND')));
+        msg.appendChild(document.createTextNode(msgText(d, 'STXT_NOT_FOUND')));
       }
       body.appendChild(msg);
       // Show manual check links
@@ -7139,7 +7423,7 @@ function renderSecurityTxt(result) {
 }
 
 function renderWHOIS(result) {
-  const d = result.status === 'fulfilled' ? result.value : { rating: 'warning', found: false, message: 'Check failed' };
+  const d = result.status === 'fulfilled' ? result.value : { rating: 'warning', found: false, messageKey: 'ERR_CHECK_FAILED' };
   setTabResult('whois', d.rating, body => {
     function fmtDate(iso) {
       if (!iso) return 'N/A';
@@ -7149,7 +7433,7 @@ function renderWHOIS(result) {
     }
 
     if (!d.found) {
-      body.appendChild(el('div', 'card-summary', d.message || ts('WHOIS_FAILED')));
+      body.appendChild(el('div', 'card-summary', msgText(d, 'WHOIS_FAILED')));
     } else {
       const sum = el('div', 'card-summary');
       sum.appendChild(el('b', null, ts('WHOIS_RDAP_OK')));
@@ -7242,6 +7526,15 @@ function renderRecommendations(r) {
     { tabId: 'whois',        label: 'WHOIS',        weight: 0, result: g(r.whois)       },
   ].filter(c => !c.result.skipped);
 
+  // BIMI is reported but never graded, so it belongs in neither the fix list nor
+  // the passing list — a 'none' rating is not 'excellent' and would otherwise sit
+  // in "Informational" forever and permanently suppress RECS_ALL_EXCELLENT.
+  // It gets its own row below both, carrying whatever issues checkBIMI found.
+  const bimiRes = g(r.bimi);
+  const NEUTRAL = bimiRes.skipped ? [] : [
+    { tabId: 'bimi', label: 'BIMI', weight: 0, result: { ...bimiRes, rating: BIMI_RATING } },
+  ];
+
   const overallRating = SCORED.reduce((acc, c) => worstRating(acc, c.result.rating), 'excellent');
 
   setTabResult('recs', overallRating, body => {
@@ -7291,6 +7584,13 @@ function renderRecommendations(r) {
       }
     }
 
+    if (NEUTRAL.length > 0) {
+      const sec = el('div', 'panel-section');
+      sec.appendChild(el('div', 'panel-section-title', ts('RECS_NOT_SCORED')));
+      for (const check of NEUTRAL) sec.appendChild(buildCheckRow(check));
+      body.appendChild(sec);
+    }
+
     const passingChecks = [...scoredPass, ...infoPass];
     if (passingChecks.length > 0) {
       const passList = el('ul', 'issue-list');
@@ -7330,7 +7630,9 @@ function renderStatsPanel(dkim, rpki) {
   }
 
   addRow(ts('STATS_TOTAL_TIME'), scanStats.totalMs.toLocaleString() + '\u202f' + ts('STATS_MS'));
-  addRow(ts('STATS_DOH_REQUESTS'), String(scanStats.dohRequests));
+  const dohStr = String(scanStats.dohRequests) +
+    (scanStats.dohCacheHits > 0 ? '  (' + scanStats.dohCacheHits + ' ' + ts('STATS_DOH_CACHE') + ')' : '');
+  addRow(ts('STATS_DOH_REQUESTS'), dohStr);
 
   const ripeStr = String(scanStats.ripeStatRequests) +
     (scanStats.ripeStatCacheHits > 0 ? '  (' + scanStats.ripeStatCacheHits + ' ' + ts('STATS_RIPE_CACHE') + ')' : '');
@@ -7359,7 +7661,8 @@ function renderStatsPanel(dkim, rpki) {
     const CHECK_LABELS = {
       dnssec: 'DNSSEC', mx: 'MX', ptr: 'PTR', dane: 'DANE', spf: 'SPF',
       dkim: 'DKIM', dmarc: 'DMARC', bimi: 'BIMI', tlsrpt: 'TLS-RPT',
-      mtasts: 'MTA-STS', caa: 'CAA', rpki: 'RPKI', stxt: 'Sec.txt', whois: 'WHOIS',
+      mtasts: 'MTA-STS', caa: 'CAA', rpki: 'RPKI', ipv6: 'IPv6',
+      stxt: 'Sec.txt', whois: 'WHOIS',
     };
     const maxMs = checkEntries[0][1] || 1;
     for (const [name, ms] of checkEntries) {
@@ -7454,7 +7757,9 @@ function renderSummary({ dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, 
   const skipped = r => gv(r).skipped === true;
   const dr = g(dnssec), mr = g(mx), nr = g(dane), sr = g(spf), kr = g(dkim);
   const dmr = g(dmarc), tr = g(tlsrpt), pr = g(mtasts), cr = g(caa);
-  const ptr_r = g(ptr), bimi_r = g(bimi), rpki_r = g(rpki), aspa_r = getASPARating(rpki), ipv6_r = g(ipv6), stxt_r = g(securityTxt), whois_r = g(whois);
+  const ptr_r = g(ptr), rpki_r = g(rpki), aspa_r = getASPARating(rpki), ipv6_r = g(ipv6), stxt_r = g(securityTxt), whois_r = g(whois);
+  // BIMI is reported but never graded — see BIMI_RATING.
+  const bimi_r = BIMI_RATING;
   const mtastsSkipped = skipped(mtasts);
 
   // Weights: DKIM 20%, SPF 15%, DMARC 15%, MTA-STS 15%, DNSSEC 10%, MX 10%, DANE 10%, TLS-RPT 3%, CAA 2%
@@ -7483,26 +7788,29 @@ function renderSummary({ dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, 
   const barsEl = document.getElementById('score-bars');
   clearNode(barsEl);
 
-  function addBar(label, rating, weight) {
-    const isSkip = (rating === 'skip');
+  // 'skip' = the check was not run; 'none' = the check ran but is never graded
+  // (BIMI). Both render as a muted full-width bar rather than a red 0% stub,
+  // because neither is a failure.
+  function addBar(label, rating) {
+    const neutral = (rating === 'skip' || rating === 'none');
     const row = el('div', 'score-bar-row');
     row.appendChild(el('span', 'score-bar-label', label));
     const track = el('div', 'score-bar-track');
     const fill = el('div', 'score-bar-fill');
-    fill.style.width = isSkip ? '100%' : ratingScore(rating) + '%';
-    fill.style.background = isSkip ? 'var(--border)' : ratingColor(rating);
-    fill.style.opacity = isSkip ? '0.4' : '';
+    fill.style.width = neutral ? '100%' : ratingScore(rating) + '%';
+    fill.style.background = neutral ? 'var(--border)' : ratingColor(rating);
+    fill.style.opacity = neutral ? '0.4' : '';
     track.appendChild(fill);
     row.appendChild(track);
-    const rlbl = el('span', null, isSkip ? ts('RATING_SKIP') : rating);
-    rlbl.style.cssText = 'color:var(--text-muted);font-size:0.75rem;width:70px;text-align:end' + (isSkip ? '' : ';color:' + ratingColor(rating));
+    const rlbl = el('span', null, neutral ? ts('RATING_' + rating.toUpperCase()) : rating);
+    rlbl.style.cssText = 'color:var(--text-muted);font-size:0.75rem;width:70px;text-align:end' + (neutral ? '' : ';color:' + ratingColor(rating));
     row.appendChild(rlbl);
     barsEl.appendChild(row);
   }
 
-  [['DNSSEC', dr, 10], ['MX', mr, 10], ['DANE', nr, 10], ['SPF', sr, 15], ['DKIM', kr, 20],
-   ['DMARC', dmr, 15], ['MTA-STS', mtastsSkipped ? 'skip' : pr, 15], ['TLS-RPT', tr, 3], ['CAA', cr, 2]
-  ].forEach(([label, rating, wt]) => addBar(label, rating, wt));
+  [['DNSSEC', dr], ['MX', mr], ['DANE', nr], ['SPF', sr], ['DKIM', kr],
+   ['DMARC', dmr], ['MTA-STS', mtastsSkipped ? 'skip' : pr], ['TLS-RPT', tr], ['CAA', cr]
+  ].forEach(([label, rating]) => addBar(label, rating));
 
   // Separator for informational tabs
   const sep = el('div', null);
@@ -7510,8 +7818,12 @@ function renderSummary({ dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, 
   sep.textContent = ts('SCORING_INFO');
   barsEl.appendChild(sep);
 
-  [['PTR', ptr_r], ['RPKI', rpki_r], ['ASPA', aspa_r], ['IPv6', ipv6_r], ['Sec.txt', stxt_r], ['WHOIS', whois_r]
-  ].forEach(([label, rating]) => addBar(label, rating, 0));
+  // BIMI carries the neutral 'none' rating rather than its own excellent/good/
+  // warning/fail: it is reported, never judged. Same value the tab dot uses, so
+  // the bar and the tab can never disagree.
+  [['PTR', ptr_r], ['BIMI', bimi_r], ['RPKI', rpki_r], ['ASPA', aspa_r], ['IPv6', ipv6_r],
+   ['Sec.txt', stxt_r], ['WHOIS', whois_r]
+  ].forEach(([label, rating]) => addBar(label, rating));
 
   document.getElementById('overview-placeholder').style.display = 'none';
   document.getElementById('overview-content').style.display = '';
@@ -7564,13 +7876,17 @@ async function runChecks(domain, customSelectors, opts = {}) {
   const { skipMTASTS = false, skipSecTxt = false } = opts;
   const SKIPPED = { skipped: true, rating: 'skip' };
 
-  scanStats = { startMs: Date.now(), totalMs: 0, checks: {}, dohRequests: 0, ripeStatRequests: 0, ripeStatCacheHits: 0, httpRequests: 0 };
+  scanStats = { startMs: Date.now(), totalMs: 0, checks: {}, dohRequests: 0, dohCacheHits: 0, ripeStatRequests: 0, ripeStatCacheHits: 0, httpRequests: 0 };
+
+  // Per-scan DNS caches. Cleared here (not on page load) so re-running the same
+  // domain always re-queries, while a single scan never asks twice.
+  clearDNSCaches();
 
   document.getElementById('tab-bar').classList.add('visible');
 
-  // Switch to overview tab and show loading state
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === 'overview'));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-overview'));
+  // Switch to overview tab and show loading state. Goes through activateTab so
+  // aria-selected and the roving tabindex stay in step with the visual state.
+  activateTab(document.querySelector('.tab-btn[data-tab="overview"]'), false);
 
   const ph = document.getElementById('overview-placeholder');
   ph.style.display = '';
@@ -7635,12 +7951,17 @@ document.addEventListener('DOMContentLoaded', () => {
   skipCorsCb.checked = localStorage.getItem('mailcheck-skip-cors') === '1';
   skipCorsCb.addEventListener('change', () => localStorage.setItem('mailcheck-skip-cors', skipCorsCb.checked ? '1' : '0'));
 
-  // Copy link button
+  // Copy link button. navigator.clipboard is undefined outside a secure context
+  // (plain http://, and file:// in some browsers), which is exactly how this
+  // single-file tool often gets opened — so feature-check and catch rather than
+  // throwing out of the handler.
   copyLinkBtn.addEventListener('click', () => {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-      copyLinkBtn.textContent = ts('BTN_COPIED');
+    const done = ok => {
+      copyLinkBtn.textContent = ts(ok ? 'BTN_COPIED' : 'BTN_COPY_FAILED');
       setTimeout(() => { copyLinkBtn.textContent = ts('BTN_COPY_LINK'); }, 2000);
-    });
+    };
+    if (!navigator.clipboard || !navigator.clipboard.writeText) { done(false); return; }
+    navigator.clipboard.writeText(window.location.href).then(() => done(true), () => done(false));
   });
 
   async function doCheck() {
@@ -7662,6 +7983,16 @@ document.addEventListener('DOMContentLoaded', () => {
       history.pushState(null, '', '?' + params.toString());
       shareRow.style.display = '';
       copyLinkBtn.textContent = ts('BTN_COPY_LINK');
+    } catch (e) {
+      // Individual checks already trap their own failures; reaching here means
+      // the orchestrator or a renderer threw. Without this the rejection is
+      // swallowed and the overview is left showing a spinner forever.
+      console.error('Scan failed:', e);
+      errorEl.textContent = ts('ERR_PREFIX') + describeFetchError(e);
+      const ph = document.getElementById('overview-placeholder');
+      clearNode(ph);
+      ph.style.display = '';
+      ph.appendChild(el('div', 'error-state', ts('ERR_SCAN_FAILED')));
     } finally {
       checkBtn.disabled = false;
       checkBtn.textContent = ts('BTN_CHECK');
@@ -7686,16 +8017,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Auto-run if URL contains ?domain=
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlDomain = urlParams.get('domain');
-  if (urlDomain && DOMAIN_RE.test(normalizeDomain(urlDomain))) {
+  // Apply ?domain=&selectors=&skip= from the URL to the form. Returns true if a
+  // scannable domain was present.
+  function applyUrlParams(search) {
+    const urlParams = new URLSearchParams(search);
+    const urlDomain = urlParams.get('domain');
+    if (!urlDomain || !DOMAIN_RE.test(normalizeDomain(urlDomain))) return false;
     domainInput.value = urlDomain;
-    if (urlParams.has('selectors')) selectorInput.value = urlParams.get('selectors');
+    selectorInput.value = urlParams.get('selectors') || '';
     const skipParam = (urlParams.get('skip') || '').split(',');
-    if (skipParam.includes('cors') || skipParam.includes('mtasts') || skipParam.includes('stxt')) skipCorsCb.checked = true;
-    doCheck();
+    skipCorsCb.checked = skipParam.includes('cors') || skipParam.includes('mtasts') || skipParam.includes('stxt');
+    return true;
   }
+
+  // Auto-run if URL contains ?domain=
+  if (applyUrlParams(window.location.search)) doCheck();
+
+  // doCheck() pushes a history entry per scan, so Back has to mean something.
+  // Without this the URL rewinds while the page keeps showing the newer results.
+  window.addEventListener('popstate', () => {
+    if (applyUrlParams(window.location.search)) {
+      doCheck();
+    } else {
+      // Back to the entry point: clear the form and hide the stale results.
+      domainInput.value = '';
+      selectorInput.value = '';
+      lastResults = null;
+      document.getElementById('tab-bar').classList.remove('visible');
+      document.getElementById('overview-content').style.display = 'none';
+      const ph = document.getElementById('overview-placeholder');
+      clearNode(ph);
+      ph.style.display = '';
+      ph.textContent = ts('OVERVIEW_PLACEHOLDER');
+      shareRow.style.display = 'none';
+      errorEl.textContent = '';
+    }
+  });
 
   // ── Language selector ────────────────────────────────────────────────────────
   // Inline buttons rather than a <select>. aria-pressed carries the active state
@@ -7733,7 +8090,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const scoringBackdrop = document.getElementById('scoring-modal-backdrop');
   const scoringModalEl = document.getElementById('scoring-modal');
 
-  let isLight = true;
+  // The class is already on <html> — the inline script in <head> put it there
+  // before first paint. Read it back rather than re-deciding, so the two can
+  // never disagree and the page never flashes the wrong theme.
+  let isLight = document.documentElement.classList.contains('light');
 
   function applyTheme() {
     document.documentElement.classList.toggle('light', isLight);
@@ -7750,6 +8110,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   themeOption.addEventListener('click', () => {
     isLight = !isLight;
+    try { localStorage.setItem('mailcheck-theme', isLight ? 'light' : 'dark'); } catch (_) {}
     applyTheme();
     settingsDropdown.hidden = true;
   });
@@ -7844,8 +8205,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const ackSection = document.getElementById('ack-section');
   const ackToggle  = document.getElementById('ack-toggle');
   ackToggle.addEventListener('click', () => {
-    ackSection.classList.toggle('open');
-    startFireworks();
+    // Celebrate on open only — firing them as the section collapses reads as a bug.
+    const opened = ackSection.classList.toggle('open');
+    if (opened) startFireworks();
   });
 
   let fwTimer = null;

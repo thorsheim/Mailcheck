@@ -8,7 +8,7 @@ Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-August-13-4**
+Current version: **2026-August-17-1**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -22,10 +22,20 @@ The changelog is hardcoded HTML in the footer — not part of the i18n system.
 Tab-based: `#tab-bar` (18 `.tab-btn` elements) + `#tab-panels` (18 `.tab-panel` divs).
 Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**, TLS-RPT, MTA-STS, CAA, RPKI, **ASPA**, **IPv6**, Security.txt, WHOIS, **Fixes**.
 - Tab bar hidden until first `runChecks()` call (`.visible` class).
+- **Tab semantics.** `#tab-bar` is `role="tablist"`, each button `role="tab"` with
+  `aria-controls`/`aria-selected`, each panel `role="tabpanel"` with `aria-labelledby`. A roving
+  tabindex means only the active tab is a Tab stop; arrow keys / Home / End move between tabs and
+  wrap. All of it goes through `activateTab(btn, focus)` — including `runChecks`'s jump back to
+  Overview — so the ARIA state can never drift from the `.active` classes. Adding a tab means
+  adding the id pair (`tab-<name>` / `panel-<name>`); nothing else needs touching.
 - Tab dots (`.tab-dot`) colored per rating after each check completes.
 - Each panel: `.panel-header` (icon + name + badge) + `.panel-body` (summary, issues, details, explanation).
 - Overview panel contains `#summary-grade`, `#summary-title`, `#summary-desc`, `#score-bars`.
 - No modal popups — DKIM probed-selectors list is a `<details>` block in the DKIM panel.
+- **Theme** is decided by a small inline script in `<head>`, before the stylesheet, because
+  `:root` is the dark palette and `.light` overrides it — deciding in `DOMContentLoaded` painted
+  the page dark and then flipped it. Stored `mailcheck-theme` wins, else `prefers-color-scheme`.
+  The DOMContentLoaded code reads the class back rather than re-deciding.
 - `#settings-menu` (fixed top-right): `#settings-btn` (⚙ gear icon) opens `#settings-dropdown`. Dropdown has two `.settings-item` buttons: `#theme-option` (toggles light/dark) and `#scoring-option` (opens `#scoring-modal-backdrop` with the scoring system explanation). Backdrop click or Escape closes the modal. `buildScoringModal()` builds the modal content dynamically using `el()` and `clearNode()`. `applyTheme()` updates the dropdown item text labels (i18n-aware).
 - **DKIM selector help popover**: a `.help-btn` (`?` circle) sits inline with the "Extra DKIM Selectors" label. Click toggles `.help-popover` (positioned below the input, `z-index: 200`). Content built lazily via `safeMarkup(popover, tx('SELECTOR_HELP'))` on each open — always uses current language. Closes on click-outside (document click handler), Escape, or language change. `SELECTOR_HELP` is an `x`-namespace key in all 4 languages.
 - `#lang-row` inline language buttons (below input row): English / Norsk / Español / Français. Each is a `.lang-btn` carrying `data-lang`; `.lang-sep` spans (`aria-hidden`) render the separator dots so they stay outside each button's hover/active background. Active state is `aria-pressed="true"`, which both announces the selection and drives the highlight through a CSS attribute selector — there is no separate active class to keep in sync. Persisted in `localStorage('mailcheck-lang')`.
@@ -33,9 +43,23 @@ Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**
 - `#footer` below `#tab-panels`: attribution to Per Thorsheim + links to thorsheim.net and passwordscon.org. Version string on a second line via `<br>`, wrapped in `<details id="changelog">` — clicking expands the full changelog.
 - **Mobile tab bar**: `flex-wrap: nowrap; overflow-x: auto` so all 16 tabs scroll horizontally in a single row. Scrollbar hidden (`scrollbar-width: none`). Edge fade via CSS `mask-image` gradient. `flex-shrink: 0` on `.tab-btn` prevents wrapping. Tab click handler calls `btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })` to keep the active tab visible.
 
+### Network layer
+Every outbound request goes through `fetchJSON()`, which applies a deadline via `timeoutSignal()`
+(`TIMEOUT_DOH` 8 s for DNS, `TIMEOUT_HTTP` 10 s for RIPE Stat / RDAP / policy files) and
+normalises failures through `describeFetchError()` into a translated `ERR_NETWORK` /
+`ERR_TIMEOUT`. **Never add a bare `fetch()`** — see critical bug 9.
+
+Every fan-out is bounded by `parallelLimit()`: `DKIM_CONCURRENCY` 10, `RIPE_CONCURRENCY` 4,
+`SPF_CONCURRENCY` 6, `DNS_CONCURRENCY` 12 (host A/AAAA resolution, 2 queries per host).
+
 ### DNS layer
 - `dohQuery(name, type)` — fetches `https://cloudflare-dns.com/dns-query?name=…&type=…`
   with `Accept: application/dns-json`. Returns raw JSON.
+- **Per-scan cache.** `dohQuery` memoises on `name|type` in `dohCache`, storing the in-flight
+  promise so concurrent callers share one request; `checkDNSSEC` memoises on hostname in
+  `dnssecCache`. Both are cleared by `clearDNSCaches()` at the top of `runChecks`, so a re-run
+  always re-queries. A rejected lookup is evicted so the next caller retries.
+  This matters: `<domain>` MX was being queried six times per scan and NS twice.
 - `parseTxtData(data)` — strips outer quotes and joins adjacent TXT segments
   (`"part1" "part2"` → `part1part2`).
 - **AD flag** (`response.AD === true`) = DNSSEC-validated by Cloudflare's resolver.
@@ -45,7 +69,7 @@ Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**
 
 | Check | DNS name / endpoint queried | Key detail |
 |-------|----------------------------|------------|
-| DNSSEC | `<domain>` DNSKEY + SOA | Falls back to zone apex via SOA Authority section for non-apex hostnames |
+| DNSSEC | `<domain>` DNSKEY + SOA | Falls back to zone apex via SOA Authority section for non-apex hostnames; rated on the **weakest** algorithm published (see below) |
 | MX | `<domain>` MX, then DNSSEC per host | Detects null MX (RFC 7505); `nullMX: true` flag |
 | PTR | A+AAAA per MX host → PTR per IP | FCrDNS: checks if PTR value matches MX hostname; does not affect grade |
 | DANE | `_25._tcp.<mx-hostname>` TLSA | Checks per-MX-host; requires DNSSEC validation (AD flag) |
@@ -73,7 +97,9 @@ dohQuery()          DoH fetch
 parseTxtData()      TXT segment joining
 ALG_NAME_TO_NUM     Cloudflare returns algorithm as TEXT (e.g. "ED25519", "ECDSAP256SHA256"),
 resolveAlgNum()       never numeric — must map through this table
-checkDNSSEC()       DNSKEY + SOA; zone-apex fallback for non-apex hostnames
+checkDNSSEC()       memoising wrapper over checkDNSSECUncached (per-scan dnssecCache)
+checkDNSSECUncached() DNSKEY + SOA; zone-apex fallback for non-apex hostnames; returns
+                      weakestAlg — the algorithm that set the rating
 checkMX()           detects null MX (RFC 7505); returns nullMX:true for MX 0 .
 parseTLSAData()     RFC 3597 hex or presentation format
 rateTLSA()
@@ -136,10 +162,17 @@ el()                DOM element factory
 clearNode()         safe DOM clearing (replaces innerHTML = '')
 makeSpinner()
 makeBadge(rating)
-makeIssueList()     resolves textKey/textArgs on each issue at render time (i18n-aware)
-makeEndpointIssueList(issues, endpointDnssec)
-                    like makeIssueList but appends a DNSSEC badge to TLSRPT_ENDPOINT,
-                    DMARC_RUA_URI, DMARC_RUF_URI items; used in renderTLSRPT + renderDMARC
+makeIssueList(issues, endpointDnssec)
+                    resolves textKey/textArgs on each issue at render time (i18n-aware).
+                      The optional second argument appends a DNSSEC badge to TLSRPT_ENDPOINT,
+                      DMARC_RUA_URI and DMARC_RUF_URI items (renderTLSRPT + renderDMARC).
+                      Replaced the near-identical makeEndpointIssueList in 2026-August-17-1.
+dnssecBadge(ds)     one-line DNSSEC status badge; shows ds.weakestAlg, so the badge and the
+                      rating always name the same algorithm. Shared by renderMX, renderSPF and
+                      makeIssueList — these were three copies of the same if/else chain.
+msgText(d, fallbackKey)
+                    resolves a result's messageKey (translated at render time) or message
+                      (already localised by describeFetchError)
 makeDetails()       <details>/<summary> helper
 safeMarkup()        whitelist markup parser for explanation sections
 addExplanation()
@@ -203,7 +236,10 @@ const resolvedText = iss.textKey
 **Current languages**: `en` (English, default), `es` (Spanish), `fr` (French), `no` (Norwegian Bokmål).
 All four are **complete** — no language relies on the English fallback. When adding a key, add it to every language, and mirror it into `translations/<lang>.js` **and `translations/TEMPLATE.js`** so the contributor files stay in sync. TEMPLATE.js is easy to forget because nothing in the app reads it — it had silently drifted 37 keys behind (the entire IPv6 block, plus `SELECTOR_HELP`, the SPF recursive-lookup counts and the RPKI nameserver-diversity keys) before being backfilled on 2026-08-13. A contributor starting from a stale template simply never sees those strings.
 
-To check for drift, parse the `STRINGS` block out of `index.html` and diff the key sets — the three namespaces should total **362 keys** (s=261, d=82, x=19). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses.
+To check for drift, parse the `STRINGS` block out of `index.html` and diff the key sets — the three namespaces should total **372 keys** (s=274, d=79, x=19). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses.
+
+There are now four contributor files — `es.js`, `fr.js`, `no.js` and `TEMPLATE.js` — and all four
+carry the full key set with no value drift from `index.html`.
 
 **Removed languages**: `eo` (Esperanto), `ar` (Arabic), `hi` (Hindi) were dropped in 2026-July-27-4. Their `STRINGS` blocks and `translations/*.js` files are recoverable from git history at tag/commit `7de8c09`.
 
@@ -237,6 +273,26 @@ To check for drift, parse the `STRINGS` block out of `index.html` and diff the k
     IPv6 was wrong — NIS2 contains no IPv6 requirement. The row now points at the ISA² *IPv6
     Framework for European Governments*, which is guidance. Do not re-add the NIS2 claim.
 - Test: `cloudflare.com` and `gmail.com` → excellent; a domain with IPv6-capable MX but no `ip6:` in SPF → SPF tab shows warning note.
+
+### DNSSEC rating policy
+`checkDNSSEC` rates a zone on the **weakest** algorithm in its DNSKEY RRset, not the strongest.
+RFC 6781 §4.1.4 requires a multi-algorithm zone to be signed with every algorithm it publishes,
+and a validator may pick any one — so a zone offering both ECDSA P-256 and RSA/SHA-1 is only as
+strong as the RSA/SHA-1 signatures an attacker can target. Reporting the best one (the behaviour
+before 2026-August-17-1) read as a clean bill of health for a zone that had not finished its
+rollover.
+
+- The no-algorithms branch (`algorithms.length === 0`, i.e. AD set but no DNSKEY visible at this
+  name) must keep rating `warning`. It is load-bearing; starting the fold at `'excellent'`
+  without it silently promotes those names.
+- `weakestAlg` is returned and marked in the panel with a `DNSSEC_ALG_DECIDES` pill, plus a
+  `DNSSEC_ALG_WEAKEST_NOTE` explanation — but only when the set is actually mixed, so a
+  single-algorithm zone gains no clutter.
+- **This propagates into MX.** `checkMX` worst-cases every MX host's `checkDNSSEC` result into
+  the MX rating, so a mixed-strength zone can move both the DNSSEC bar (10%) and the MX bar
+  (10%). Single-algorithm zones are unaffected — best and worst coincide.
+- Known and deliberately unchanged: MX is effectively a second DNSSEC score, because any domain
+  whose MX host lives in an unsigned zone scores 0 on MX regardless of its MX configuration.
 
 ### SPF redirect details
 - `analyzeSPF()` tracks `redirectDomain` when it encounters `redirect=<val>`. Does NOT push the old `SPF_REDIRECT` warning.
@@ -276,14 +332,22 @@ To check for drift, parse the `STRINGS` block out of `index.html` and diff the k
 - `uriHostname(uri)` extracts the hostname from a `mailto:user@host` or `https://host/path` URI. Handles `!size` suffix in DMARC URIs. Used for DNSSEC checks on reporting endpoints.
 - `checkDMARC` collects all unique hostnames from `rua=` and `ruf=` URIs, runs `checkDNSSEC` on each in parallel, returns `endpointDnssec: { [hostname]: dnssecResult }`.
 - `checkTLSRPT` does the same for `rua=` URIs, returns `endpointDnssec`.
-- `makeEndpointIssueList(issues, endpointDnssec)`: like `makeIssueList` but for `TLSRPT_ENDPOINT`, `DMARC_RUA_URI`, `DMARC_RUF_URI` issues it appends a DNSSEC badge (rating + algorithm name) for the endpoint's hostname.
-- `renderDMARC` and `renderTLSRPT` use `makeEndpointIssueList` instead of `makeIssueList`.
+- `renderDMARC` and `renderTLSRPT` pass `endpointDnssec` as the second argument to `makeIssueList`, which appends a DNSSEC badge (via `dnssecBadge`) to `TLSRPT_ENDPOINT`, `DMARC_RUA_URI` and `DMARC_RUF_URI` issues for the endpoint's hostname. (The separate `makeEndpointIssueList` was merged into `makeIssueList` in 2026-August-17-1.)
 
 ### BIMI details
 - Queries `default._bimi.<domain>` TXT; record must start with `v=BIMI1`.
 - Parses tag=value pairs: `l=` (logo URL, required), `a=` (authority/VMC URL, optional but required by Gmail).
-- Rating: `excellent` (both l= and a= present), `good` (l= only), `warning` (record present, l= empty), `fail` (no record).
-- Does NOT affect grade score.
+- `checkBIMI` still computes `excellent`/`good`/`warning`/`fail` internally, but **nothing
+  displays it**: the tab dot, the Overview bar and the Fixes row all read the `BIMI_RATING`
+  constant (`'none'`). One constant, three consumers — they cannot drift apart the way they did
+  before 2026-August-17-1, when the panel forced `'none'` while `renderSummary` read the real
+  rating and the bar was missing entirely.
+- Does NOT affect grade score, and must not: `renderRecommendations` keeps BIMI out of the
+  pass/fail partition (`NEUTRAL`), because a `'none'` rating is not `'excellent'` and would
+  otherwise sit in "Informational" forever and make `RECS_ALL_EXCELLENT` unreachable.
+- Requires `RATING_NONE` in every language and `.badge-none` / `.tab-dot.dot-none` in the
+  stylesheet. Without the string the badge renders the literal text `RATING_NONE` — `ts()`
+  returns the key name for a missing key, and that is truthy, so a `||` fallback never fires.
 - `renderBIMI` renders `BIMI_LOGO_URL` and `BIMI_AUTHORITY_URL` issues as clickable `<a>` links (not plain text). Other issues use normal `textContent` rendering.
 
 ### PTR / FCrDNS details
@@ -454,9 +518,39 @@ committed range had been stale for two months and the checker would have missed 
 after June. `dsRotationSelectors()` derives the window from `new Date()` instead. Do not replace it
 with a literal list.
 
+### 9. Every fetch needs a deadline
+`runChecks` awaits `Promise.allSettled`, so a single request that never settles leaves the whole
+scan pending: spinner up, Check button disabled (the `finally` never runs), no error shown, no
+recovery but a page reload. Before 2026-August-17-1, seven of nine call sites — both DoH
+functions, RDAP and all four RIPE Stat endpoints — had no timeout. Route new requests through
+`fetchJSON()`; if you need a non-JSON body, still pass `signal: timeoutSignal(...)`.
+`doCheck()` also carries a `catch` so a renderer throwing cannot leave the overview spinning.
+
+### 10. SPF `a/24` is a CIDR suffix, not a domain
+RFC 7208 §5.3 lets `a` and `mx` carry a dual-cidr-length (`/24`, `//64`, `/24//64`). Splitting a
+term on `[:/=]` turns `a/24` into a lookup for a domain named `24`, and a regex that requires a
+separator drops `a//64` entirely — including from the 10-lookup budget. Use `parseSPFTerm()`,
+which returns `{qual, mech, val, cidr}` and only strips the suffix for `a`/`mx` (`ip4:`/`ip6:`
+keep their prefix length, which is part of the address).
+
+### 11. DKIM: separate TXT records must not be concatenated
+`parseTxtData()` already joins the segments *within* one record. `txts.join('')` joined
+*distinct* records, so a selector answering with two keys produced a string that parsed as
+neither. Pick one record (preferring a `v=DKIM1` one). The record filter also tests for `p=`/`k=`
+rather than any of `[pkvt]=`, so the wildcard `v=spf1` TXT that ~15 zones publish under
+`_domainkey` is not mistaken for a key.
+
+### 12. Propagation checks compare sets, not `[0]`
+A DNS RRset is unordered and segment joins can differ in whitespace, so comparing Cloudflare's
+first record to Google's first record verbatim flagged perfectly matching domains as
+"not yet propagated". Use `sameRecordSet()`.
+
 ## Security
-- All DNS/external data goes through `escapeHtml()` or `textContent` before any DOM insertion.
-- Issue text set via `textContent` (not innerHTML) — `escapeHtml()` not needed on issue strings.
+- No HTML is ever parsed from data. Every node is built with `el()`/`createElement` and every
+  string is assigned through `textContent`, so DNS and HTTP responses can never become markup —
+  there is no escaping step to forget. (`escapeHtml()` was removed in 2026-August-17-1: it had
+  been dead code for a long time, and its presence in this list implied an escaping path that
+  did not exist.)
 - Explanation sections built with `safeMarkup()` — whitelist parser, no innerHTML.
 - `clearNode(n)` used for all DOM clearing — no `innerHTML = ''` anywhere in JS.
 - `el()` and `appendChild` used for all DOM construction.
@@ -468,12 +562,42 @@ with a literal list.
 `['excellent', 'good', 'warning', 'fail']` — `worstRating(a, b)` takes the higher-index.
 `ratingScore()`: excellent=100, good=75, warning=40, fail=0.
 
+Two pseudo-ratings sit outside that list and deliberately have `RATINGS.indexOf() === -1`, so
+`worstRating()` can never let them win a tab dot or an aggregate:
+- **`skip`** — the check was not run (the CORS skip checkbox). MTA-STS's 15% is excluded and the
+  remaining 85% renormalised.
+- **`none`** — the check ran but is never graded. Only BIMI uses it, via the `BIMI_RATING`
+  constant that the tab dot, the Overview bar and the Fixes row all read, so the three cannot
+  drift apart. `renderRecommendations` partitions BIMI out of the pass/fail split entirely;
+  folding it in would make `RECS_ALL_EXCELLENT` unreachable forever.
+
 ## Testing notes
+
+There is no test runner in the repo, but `index.html` is loadable in Node: split the two
+`<script>` blocks out, stub `document`/`localStorage`/`fetch`, and the check functions can be
+driven against canned DNS answers. `const` and `let` at script top level are lexical bindings
+rather than properties of `globalThis`, so a harness has to re-export the names it wants.
+Worth rebuilding for any change to the check logic — it caught the RPKI restructure's
+concurrency behaviour and confirmed the DNSSEC rating change leaves single-algorithm zones alone.
+
+Static checks worth re-running after any edit: key-set parity across the four languages and the
+four `translations/*.js` files (all must total 372), `d`-function arity, every CSS class
+referenced from JS existing in `<style>`, no `innerHTML`/`eval`, tab-button and panel lists
+matching in order, no `{ rating, text: … }` issues left in check functions, and the version
+string agreeing across `index.html`, `CLAUDE.md` and `README.md`.
+
 - `gmail.com` — SPF `~all`, DMARC p=none. Note: it publishes **no** discoverable DKIM selector —
   its `20230601`-style selectors are all revoked (`p=` empty), so 0 found is the correct result here
-- `cloudflare.com` — DNSSEC alg 13 (ECDSAP256SHA256); good CAA + RPKI coverage; DMARC p=reject.
+- `cloudflare.com` — DNSSEC alg 13 only, so it is the **control case for the weakest-algorithm
+  change**: its DNSSEC and MX bars must not move. Also good CAA + RPKI coverage; DMARC p=reject.
   Also the best DKIM test domain: finds `k1`, `mandrill`, `s1`, `smtpapi`, `m1`, `m2`, `krs`
   across five providers, exercising the provider-attribution path
+- `debian.org` — the **mixed-algorithm DNSSEC case**, verified live on 2026-08-17: publishes both
+  RSA/SHA-256 (good) and ECDSA P-256 (excellent) mid-rollover. Rating the best algorithm gave
+  DNSSEC=excellent, MX=excellent, score 56; rating the weakest gives DNSSEC=good, MX=good,
+  score 51. Note MX moves too — it inherits each MX host's DNSSEC result. If this domain finishes
+  its rollover, re-find one with `DNSKEY` sets spanning two rating tiers rather than deleting
+  the test
 - `dmarcadvisor.com` — SPF redirect= only (no mechanisms, no all); tests redirect following
 - `apple.com` — has BIMI record; tests BIMI tab
 - `fastmail.com` — MTA-STS enforce mode with multiple mx: lines; tests MX match check

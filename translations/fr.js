@@ -12,6 +12,7 @@ const LANG_FR = {
     BTN_CHECKING:        'Vérification\u2026',
     BTN_COPY_LINK:       '\uD83D\uDD17 Copier le lien',
     BTN_COPIED:          '\u2713 Copié\u00a0!',
+    BTN_COPY_FAILED:     '\u00c9chec de la copie',
     LANG_LABEL:          'Langue',
     OVERVIEW_PLACEHOLDER:'Saisissez un nom de domaine comme google.com ou microsoft.com, puis cliquez sur Vérifier. Notez que les résultats peuvent ne pas être exacts en raison des limitations de votre navigateur ou du réseau depuis lequel vous effectuez le test. Les scores sont fournis à titre indicatif uniquement et ne reflètent pas nécessairement la réalité complète ni la conformité aux normes applicables.',
     RUNNING_CHECKS:      'Vérifications en cours\u2026',
@@ -37,6 +38,7 @@ const LANG_FR = {
 
     RECS_WHAT_TO_FIX:    'Quoi corriger',
     RECS_INFORMATIONAL:  'Informatif',
+    RECS_NOT_SCORED:     'Signal\u00e9, non not\u00e9',
     RECS_ALL_GOOD:       'Toutes les vérifications réussies',
     RECS_ALL_EXCELLENT:  'Tout est configuré de manière optimale.',
 
@@ -51,10 +53,13 @@ const LANG_FR = {
     RATING_WARNING:      'Avertissement',
     RATING_FAIL:         'Échec',
     RATING_SKIP:         'Ignoré',
+    RATING_NONE:         'Non not\u00e9',
 
-    ERR_INVALID_DOMAIN:  'ne ressemble pas à un domaine valide.',
     ERR_CHECK_FAILED:    'Vérification échouée',
     ERR_PREFIX:          'Erreur\u00a0: ',
+    ERR_NETWORK:         'Erreur r\u00e9seau',
+    ERR_TIMEOUT:         'D\u00e9lai d\u00e9pass\u00e9',
+    ERR_SCAN_FAILED:     'L\u2019analyse n\u2019a pas pu \u00eatre men\u00e9e \u00e0 son terme. V\u00e9rifiez votre connexion r\u00e9seau et r\u00e9essayez.',
 
     THEME_LIGHT:         '\u2600 Clair',
     THEME_DARK:          '\u263D Sombre',
@@ -75,6 +80,7 @@ const LANG_FR = {
     STATS_TITLE:         '\uD83E\uDD13 Statistiques',
     STATS_TOTAL_TIME:    'Durée totale de l\'analyse',
     STATS_DOH_REQUESTS:  'Requêtes DoH Cloudflare',
+    STATS_DOH_CACHE:     'en cache',
     STATS_RIPE_REQUESTS: 'Appels API RIPE Stat',
     STATS_RIPE_CACHE:    'depuis le cache',
     STATS_HTTP_FETCHES:  'Requêtes HTTP',
@@ -88,11 +94,20 @@ const LANG_FR = {
     DNSSEC_RESOLVER_ONLY:'DNSSEC validé par le résolveur, mais les enregistrements de clé n\'ont pu être récupérés.',
     DNSSEC_NOT_SIGNED:   'Aucun enregistrement DNSKEY trouvé \u2014 le domaine n\'est pas signé DNSSEC.',
     DNSSEC_ALG_DETAILS:  'Détails de l\'algorithme',
+    DNSSEC_ALG_DECIDES:  'd\u00e9termine la note',
+    DNSSEC_ALG_WEAKEST_NOTE: 'Une zone est sign\u00e9e avec <b>tous</b> les algorithmes de son jeu DNSKEY, et un validateur peut s\u2019appuyer sur n\u2019importe lequel. La note ci-dessus suit donc l\u2019algorithme le <b>plus faible</b> publi\u00e9, et non le plus fort \u2014 un jeu mixte ne vaut que son maillon le plus faible. C\u2019est normal et temporaire pendant un changement d\u2019algorithme.',
 
     MX_HOST_DETAILS:     'Détails des serveurs MX',
     MX_NO_DNSSEC:        'Sans DNSSEC',
     MX_SIGNED_UNVAL:     '\u26a0 Signé, non validé',
     MX_RRSET_WARN:       '\u26a0 Le RRset MX n\'est pas validé par DNSSEC \u2014 la liste des serveurs de messagerie n\'a pas pu être vérifiée cryptographiquement.',
+    MSG_NXDOMAIN:        'NXDOMAIN \u2014 le domaine n\u2019existe pas.',
+    MX_NO_RECORDS:       'Aucun enregistrement MX trouv\u00e9.',
+    MX_NULL_CONFIRM:     '\u2713 Null MX (RFC 7505) \u2014 le domaine n\u2019accepte aucun courrier.',
+    DANE_NOT_APPLICABLE: 'Aucun enregistrement MX \u2014 DANE sans objet.',
+    DKIM_NO_RECORDS_MSG: 'Aucun enregistrement DKIM trouv\u00e9 pour un s\u00e9lecteur connu.',
+    RPKI_NO_HOSTS:       'Aucun enregistrement NS ou MX \u00e0 v\u00e9rifier.',
+    PTR_NO_MX_HOSTS:     'Aucun h\u00f4te MX.',
     MX_NULL_SUGGEST:     'Aucun enregistrement MX \u2014 envisagez de publier un enregistrement MX nul (RFC 7505) accompagné de SPF \u201c-all\u201d et DMARC p=reject pour bloquer complètement les abus de messagerie',
 
     DANE_NO_TLSA:        'Aucun enregistrement TLSA',
@@ -121,7 +136,6 @@ const LANG_FR = {
     DKIM_TH_PROBED:      'S\u00e9lecteurs test\u00e9s',
     DKIM_PROV_UNKNOWN:   'G\u00e9n\u00e9rique / non sp\u00e9cifique \u00e0 un fournisseur',
     DKIM_DKIM2_TITLE:    'DKIM2\u00a0: la prochaine version de DKIM',
-    DKIM_AUTO_TESTED_LABEL: 'sélecteurs testés automatiquement',
     DKIM_REVOKED:        'Clé révoquée (balise p= vide)',
     DKIM_KEY_TYPE:       'Type de clé',
     DKIM_KEY_SIZE:       'Taille de clé',
@@ -167,12 +181,12 @@ const LANG_FR = {
     CAA_DNSSEC_NONE:     'non signé DNSSEC',
     CAA_DNSSEC_ERROR:    'erreur\u00a0: ',
     CAA_NO_RECORDS_ISSUE:'Aucun enregistrement CAA \u2014 n\'importe quelle autorité de certification peut émettre des certificats pour ce domaine',
+    CAA_NXDOMAIN:        'NXDOMAIN \u2014 le domaine n\u2019existe pas.',
     CAA_ISSUE_PROHIBITED:'Émission de certificats interdite pour toutes les CA (issue ";")',
     CAA_NO_IODEF:        'Aucune balise iodef= \u2014 les violations de politique CA ne seront pas signalées',
 
     RPKI_HOST_DETAILS:   'Détails de l\'hôte',
     RPKI_NO_IPS:         'Aucune IP résolue',
-    RPKI_ASPA_TITLE:     'ASPA (Autorisation de fournisseur AS)',
     RPKI_ASPA_PROVIDERS: 'Fournisseurs\u00a0:',
 
     ASPA_NO_DATA:        'Aucune donnée ASPA disponible',
@@ -256,8 +270,8 @@ const LANG_FR = {
     BIMI_NO_RECORD:      'Aucun enregistrement BIMI \u2014 le logo de marque ne s\'affiche pas dans les clients de messagerie compatibles',
     BIMI_NO_LOGO:        'l= (URL du logo) absent ou vide \u2014 nécessaire pour que BIMI fonctionne',
     BIMI_NO_AUTHORITY:   'a= (preuve d\'autorité) absent \u2014 un certificat VMC est requis pour que Gmail et d\'autres affichent le logo',
-    BIMI_LOGO_OK:        'URL du logo présente',
-    BIMI_AUTHORITY_OK:   'Preuve d\'autorité (VMC) présente',
+    BIMI_LOGO_OK:        'URL du logo',
+    BIMI_AUTHORITY_OK:   'Autorité (VMC)',
 
     PTR_HOST_DETAILS:    'Détails de l\'hôte',
     PTR_NO_MX:           'Aucun serveur MX pour vérifier les enregistrements PTR',
@@ -266,7 +280,6 @@ const LANG_FR = {
     PTR_MISSING:         'Aucun enregistrement PTR trouvé',
     // Keys added in later releases — backfilled
     IPV6_HOST_DETAILS: 'Détail des adresses par hôte',
-    IPV6_NO_AAAA: 'Aucun enregistrement AAAA',
     IPV6_NO_MX: 'Aucun hôte MX trouvé',
     IPV6_NO_NS: 'Aucun hôte NS trouvé',
     IPV6_MANDATORY_TITLE: 'Exigences IPv6 obligatoires',
@@ -306,7 +319,6 @@ const LANG_FR = {
     SPF_MULTI_MESSAGE:     n => 'Plusieurs enregistrements SPF (' + n + ') \u2014 il s\'agit d\'une erreur de configuration.',
     SPF_LOOKUP_EXCEED:     n => n + ' mécanismes de requête DNS dépassent la limite RFC de 10 (peut provoquer un SPF PermError)',
     SPF_LOOKUP_HIGH:       n => n + ' mécanismes de requête DNS \u2014 approchant la limite RFC de 10',
-    SPF_REDIRECT:          v => 'redirect=' + v + ' présent',
     SPF_IP4_BROAD:         (v, p) => 'ip4:' + v + ' a une plage très large (/' + p + ' \u2264 /16)',
     SPF_IP6_BROAD:         (v, p) => 'ip6:' + v + ' a une plage très large (/' + p + ' \u2264 /32)',
     SPF_REDIRECT_FOLLOWED: d => '\u2713 redirect= suivi \u2014 politique effective chargée depuis\u00a0: ' + d,
@@ -374,9 +386,7 @@ const LANG_FR = {
     DMARCBIS_EXT_ERROR:      (tag, uri, name) => tag + '=' + uri + ' — la requête pour ' + name + ' a échoué ; l’autorisation n’a pas pu être confirmée',
     BIMI_LOGO_URL:         url => 'URL du logo\u00a0: ' + url,
     BIMI_AUTHORITY_URL:    url => 'URL d\'autorité\u00a0: ' + url,
-    PTR_VALUE:             v => 'PTR\u00a0: ' + v,
     // Keys added in later releases — backfilled
-    IPV6_DOMAIN_SUMMARY: n => n + ' adresse' + (n !== 1 ? 's' : '') + ' IPv6 trouvée' + (n !== 1 ? 's' : '') + ' pour le domaine.',
     IPV6_MX_SUMMARY: (n, t) => n + '/' + t + ' hôte' + (t !== 1 ? 's' : '') + ' MX disposent d\u2019IPv6.',
     IPV6_NS_SUMMARY: (n, t) => n + '/' + t + ' hôte' + (t !== 1 ? 's' : '') + ' NS disposent d\u2019IPv6.',
     SPF_LOOKUP_TOTAL_EXCEED: n => n + ' requêtes DNS au total (y compris les include imbriqués) dépassent la limite de 10 de RFC 7208 — les destinataires renverront SPF PermError',
@@ -435,7 +445,8 @@ const LANG_FR = {
       'empêchant l\'empoisonnement de cache et les attaques de l\'homme du milieu. ' +
       'L\'<b>indicateur AD</b> (Authentic Data) du résolveur Cloudflare confirme que toute la chaîne depuis la racine jusqu\'à ce domaine est validée.<br><br>' +
       '<b>Évaluation des algorithmes</b> selon <a href="https://www.rfc-editor.org/rfc/rfc8624">RFC 8624</a>\u00a0: <b>Ed25519</b> (alg 15) et <b>ECDSA P-256</b> (alg 13) sont les plus forts. ' +
-      'RSA/SHA-256 (alg 8) est acceptable. RSA/SHA-1 (alg 5) et les variantes DSA sont faibles ou non sécurisés.<br><br>' +
+      'RSA/SHA-256 (alg 8) est acceptable. RSA/SHA-1 (alg 5) et les variantes DSA sont faibles ou non sécurisés. ' +
+      'Lorsqu’une zone publie plusieurs algorithmes, elle est signée avec tous et un validateur peut utiliser n’importe lequel\u00a0: la note suit donc le <b>plus faible</b> présent.<br><br>' +
       '<b>DNSSEC active DANE\u00a0:</b> Sans DNS validé par DNSSEC, les enregistrements TLSA ne sont pas fiables \u2014 ' +
       'un attaquant pourrait substituer de faux enregistrements TLSA.',
     MX:
