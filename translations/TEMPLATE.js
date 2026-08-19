@@ -102,6 +102,8 @@ const LANG_TEMPLATE = {
     ERR_NETWORK:            '',  // "Network error"
     ERR_TIMEOUT:            '',  // "Timed out" — a request exceeded its deadline
     ERR_SCAN_FAILED:        '',  // shown when the whole scan fails, not just one check
+    NXDOMAIN_MSG:           '',  // "Domain does not exist. Try another one." — modal shown instead of a scan
+    NXDOMAIN_OK:            '',  // "OK" — button that dismisses that modal
 
     // Settings / theme
     THEME_LIGHT:            '',  // e.g. "☀ Light"

@@ -367,6 +367,23 @@
   }
   #scoring-close-btn:hover { border-color: var(--accent); color: var(--text); }
 
+  #nxdomain-modal-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 200;
+    align-items: center; justify-content: center; padding: 1rem;
+  }
+  #nxdomain-modal-backdrop.visible { display: flex; }
+  #nxdomain-modal {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1.5rem; max-width: 380px; width: 100%; text-align: center;
+  }
+  #nxdomain-modal p { font-size: 0.95rem; margin-bottom: 1.1rem; }
+  #nxdomain-ok-btn {
+    min-width: 6rem; background: var(--accent); border: none; border-radius: 8px;
+    color: #fff; cursor: pointer; font-size: 0.9rem; font-weight: 600; padding: 0.5rem 1.2rem;
+    transition: background 0.2s;
+  }
+  #nxdomain-ok-btn:hover { background: var(--accent-hover); }
+
   #footer {
     text-align: center; color: var(--text-muted); font-size: 0.8rem;
     margin-top: 2rem; padding: 1rem; border-top: 1px solid var(--border);
@@ -496,6 +513,12 @@
 </div>
 <div id="scoring-modal-backdrop">
   <div id="scoring-modal"></div>
+</div>
+<div id="nxdomain-modal-backdrop" role="alertdialog" aria-modal="true" aria-describedby="nxdomain-msg">
+  <div id="nxdomain-modal">
+    <p id="nxdomain-msg" data-i18n="NXDOMAIN_MSG">Domain does not exist. Try another one.</p>
+    <button type="button" id="nxdomain-ok-btn" data-i18n="NXDOMAIN_OK">OK</button>
+  </div>
 </div>
 <div id="app">
   <div id="header">
@@ -724,8 +747,14 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-August-17-3 &mdash; click for changelog</summary>
+      <summary>Version 2026-August-19-1 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-August-19-1</span>
+          <ul class="cl-changes">
+            <li>A domain that does not exist (NXDOMAIN) no longer triggers a scan: a single SOA lookup gates the whole run, and a &ldquo;Domain does not exist. Try another one.&rdquo; message is shown instead &mdash; dismissed with OK, Escape or a click outside. Previous results on screen stay untouched, and the dead domain is not pushed into the shareable URL</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-August-17-3</span>
           <ul class="cl-changes">
@@ -1117,6 +1146,8 @@ const STRINGS = {
       ERR_NETWORK:         'Network error',
       ERR_TIMEOUT:         'Timed out',
       ERR_SCAN_FAILED:     'The scan could not be completed. Check your network connection and try again.',
+      NXDOMAIN_MSG:        'Domain does not exist. Try another one.',
+      NXDOMAIN_OK:         'OK',
       THEME_LIGHT:         '\u2600 Light',
       THEME_DARK:          '\u263D Dark',
       THEME_TO_DARK:       'Switch to dark theme',
@@ -1807,6 +1838,8 @@ const STRINGS = {
       ERR_NETWORK:         'Nettverksfeil',
       ERR_TIMEOUT:         'Tidsavbrudd',
       ERR_SCAN_FAILED:     'Skanningen kunne ikke fullf\u00f8res. Sjekk nettverkstilkoblingen og pr\u00f8v igjen.',
+      NXDOMAIN_MSG:        'Domenet finnes ikke. Pr\u00f8v et annet.',
+      NXDOMAIN_OK:         'OK',
       THEME_LIGHT:         '\u2600 Lyst',
       THEME_DARK:          '\u263D M\u00f8rkt',
       THEME_TO_DARK:       'Bytt til m\u00f8rkt tema',
@@ -2486,6 +2519,8 @@ const STRINGS = {
       ERR_NETWORK:         'Error de red',
       ERR_TIMEOUT:         'Tiempo de espera agotado',
       ERR_SCAN_FAILED:     'No se pudo completar el an\u00e1lisis. Comprueba tu conexi\u00f3n de red e int\u00e9ntalo de nuevo.',
+      NXDOMAIN_MSG:        'El dominio no existe. Prueba con otro.',
+      NXDOMAIN_OK:         'Aceptar',
       THEME_LIGHT:         '\u2600 Claro',
       THEME_DARK:          '\u263D Oscuro',
       THEME_TO_DARK:       'Cambiar a tema oscuro',
@@ -3137,6 +3172,8 @@ const STRINGS = {
       ERR_NETWORK:         'Erreur r\u00e9seau',
       ERR_TIMEOUT:         'D\u00e9lai d\u00e9pass\u00e9',
       ERR_SCAN_FAILED:     'L\u2019analyse n\u2019a pas pu \u00eatre men\u00e9e \u00e0 son terme. V\u00e9rifiez votre connexion r\u00e9seau et r\u00e9essayez.',
+      NXDOMAIN_MSG:        'Ce domaine n\u2019existe pas. Essayez-en un autre.',
+      NXDOMAIN_OK:         'OK',
 
       THEME_LIGHT:         '\u2600 Clair',
       THEME_DARK:          '\u263D Sombre',
@@ -3898,6 +3935,20 @@ function dohQuery(name, type) {
   p.catch(() => dohCache.delete(key));
   dohCache.set(key, p);
   return p;
+}
+
+// The whole-scan NXDOMAIN gate. RCODE 3 is name-based, not type-based
+// (RFC 8020): if the SOA query comes back NXDOMAIN, no record of any type
+// exists at this name, so no check could find anything. Fails open — a
+// network error here must not block the scan; the individual checks report
+// their own failures with far better context.
+async function domainExists(domain) {
+  try {
+    const resp = await dohQuery(domain, 'SOA');
+    return !(resp && resp.Status === 3);
+  } catch (_) {
+    return true;
+  }
 }
 
 function dohQueryGoogle(name, type) {
@@ -8064,16 +8115,36 @@ function rerenderAll(r) {
   renderRecommendations(r);
 }
 
+// Shown instead of a scan when the domain doesn't exist. The OK button,
+// backdrop click and Escape all close it (wired up in DOMContentLoaded).
+function showNXDomainModal() {
+  document.getElementById('nxdomain-modal-backdrop').classList.add('visible');
+  document.getElementById('nxdomain-ok-btn').focus();
+}
+
+// Returns false when the scan was blocked before it started (NXDOMAIN modal
+// shown); the caller must not then push the dead domain into the URL.
 async function runChecks(domain, customSelectors, opts = {}) {
-  currentDomain = domain;
   const { skipMTASTS = false, skipSecTxt = false } = opts;
   const SKIPPED = { skipped: true, rating: 'skip' };
 
-  scanStats = { startMs: Date.now(), totalMs: 0, checks: {}, dohRequests: 0, dohCacheHits: 0, ripeStatRequests: 0, ripeStatCacheHits: 0, httpRequests: 0 };
-
   // Per-scan DNS caches. Cleared here (not on page load) so re-running the same
-  // domain always re-queries, while a single scan never asks twice.
+  // domain always re-queries, while a single scan never asks twice. Cleared
+  // before the NXDOMAIN gate so its SOA lookup is always fresh.
   clearDNSCaches();
+
+  // NXDOMAIN gate: if the name does not exist, run no checks at all. Bails out
+  // before currentDomain, scanStats or any visible UI is touched, so a blocked
+  // attempt leaves the previous scan's results (and their language-switch
+  // re-renders) fully intact. The SOA answer stays in dohCache for
+  // checkDNSSEC's zone-apex fallback to reuse.
+  if (!(await domainExists(domain))) {
+    showNXDomainModal();
+    return false;
+  }
+
+  currentDomain = domain;
+  scanStats = { startMs: Date.now(), totalMs: 0, checks: {}, dohRequests: 0, dohCacheHits: 0, ripeStatRequests: 0, ripeStatCacheHits: 0, httpRequests: 0 };
 
   document.getElementById('tab-bar').classList.add('visible');
 
@@ -8169,14 +8240,17 @@ document.addEventListener('DOMContentLoaded', () => {
     checkBtn.disabled = true;
     checkBtn.textContent = ts('BTN_CHECKING');
     try {
-      await runChecks(domain, customSelectors, { skipMTASTS: skipCorsCb.checked, skipSecTxt: skipCorsCb.checked });
-      // Update URL so the scan is shareable
-      const params = new URLSearchParams({ domain });
-      if (customSelectors.length) params.set('selectors', customSelectors.join(','));
-      if (skipCorsCb.checked) params.set('skip', 'cors');
-      history.pushState(null, '', '?' + params.toString());
-      shareRow.style.display = '';
-      copyLinkBtn.textContent = ts('BTN_COPY_LINK');
+      const ran = await runChecks(domain, customSelectors, { skipMTASTS: skipCorsCb.checked, skipSecTxt: skipCorsCb.checked });
+      if (ran !== false) {
+        // Update URL so the scan is shareable. A false return means the scan
+        // was blocked (NXDOMAIN modal) — don't make the dead domain shareable.
+        const params = new URLSearchParams({ domain });
+        if (customSelectors.length) params.set('selectors', customSelectors.join(','));
+        if (skipCorsCb.checked) params.set('skip', 'cors');
+        history.pushState(null, '', '?' + params.toString());
+        shareRow.style.display = '';
+        copyLinkBtn.textContent = ts('BTN_COPY_LINK');
+      }
     } catch (e) {
       // Individual checks already trap their own failures; reaching here means
       // the orchestrator or a renderer threw. Without this the rejection is
@@ -8319,6 +8393,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target === scoringBackdrop) scoringBackdrop.classList.remove('visible');
   });
 
+  // NXDOMAIN modal (shown by runChecks via showNXDomainModal). Closing hands
+  // focus back to the domain input — "try another one" is the next action.
+  const nxBackdrop = document.getElementById('nxdomain-modal-backdrop');
+  const closeNXModal = () => {
+    if (!nxBackdrop.classList.contains('visible')) return;
+    nxBackdrop.classList.remove('visible');
+    domainInput.focus();
+  };
+  document.getElementById('nxdomain-ok-btn').addEventListener('click', closeNXModal);
+  nxBackdrop.addEventListener('click', e => {
+    if (e.target === nxBackdrop) closeNXModal();
+  });
+
   document.addEventListener('click', e => {
     if (!settingsBtn.closest('#settings-menu').contains(e.target)) {
       settingsDropdown.hidden = true;
@@ -8333,6 +8420,7 @@ document.addEventListener('DOMContentLoaded', () => {
       settingsDropdown.hidden = true;
       scoringBackdrop.classList.remove('visible');
       selectorHelpPopover.classList.remove('visible');
+      closeNXModal();
     }
   });
 

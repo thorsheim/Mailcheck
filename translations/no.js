@@ -53,6 +53,8 @@ const LANG_NO = {
     ERR_NETWORK:         'Nettverksfeil',
     ERR_TIMEOUT:         'Tidsavbrudd',
     ERR_SCAN_FAILED:     'Skanningen kunne ikke fullf\u00f8res. Sjekk nettverkstilkoblingen og pr\u00f8v igjen.',
+    NXDOMAIN_MSG:        'Domenet finnes ikke. Pr\u00f8v et annet.',
+    NXDOMAIN_OK:         'OK',
     THEME_LIGHT:         '\u2600 Lyst',
     THEME_DARK:          '\u263D M\u00f8rkt',
     THEME_TO_DARK:       'Bytt til m\u00f8rkt tema',

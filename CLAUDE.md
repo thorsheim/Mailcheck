@@ -8,7 +8,7 @@ Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-August-17-3**
+Current version: **2026-August-19-1**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -64,6 +64,17 @@ Every fan-out is bounded by `parallelLimit()`: `DKIM_CONCURRENCY` 10, `RIPE_CONC
   (`"part1" "part2"` → `part1part2`).
 - **AD flag** (`response.AD === true`) = DNSSEC-validated by Cloudflare's resolver.
 - **Status 3** = NXDOMAIN.
+- **NXDOMAIN gate.** `domainExists(domain)` (one SOA query through `dohQuery`) runs at the top of
+  `runChecks`, right after `clearDNSCaches()`. RCODE 3 is name-based, not type-based (RFC 8020),
+  so a Status-3 SOA answer means no check could find anything: `runChecks` shows the
+  `#nxdomain-modal-backdrop` message ("Domain does not exist. Try another one." + OK button) and
+  returns `false` **before** touching `currentDomain`, `scanStats`, the tab bar or `lastResults`
+  — a blocked attempt leaves the previous scan's results and their language-switch re-renders
+  intact, and `doCheck` skips the URL push so the dead domain is never shareable. The helper
+  fails open on network errors (the individual checks report those with better context), and its
+  cached SOA answer is reused by `checkDNSSEC`'s zone-apex fallback. Modal dismissal (OK, Escape,
+  backdrop click) is wired in DOMContentLoaded via `closeNXModal()`, which hands focus back to
+  the domain input.
 
 ### Checks (all run in parallel via `Promise.allSettled`)
 
@@ -208,8 +219,11 @@ scanStats           module-level stats object (null before first scan); reset at
                       ripeStatCacheHits, httpRequests
 timed(name, p)      wraps a promise; records elapsed ms into scanStats.checks[name] on settle
 rerenderAll(r)      re-renders all 17 panels from stored results (no DNS re-query)
-runChecks()         orchestrator; accepts opts={skipMTASTS,skipSecTxt}; resets scanStats; wraps all
-                      16 checks in timed(); saves lastResults; calls rerenderAll()
+domainExists()      NXDOMAIN gate: one SOA dohQuery, false only on Status 3; fails open on error
+showNXDomainModal() shows #nxdomain-modal-backdrop and focuses the OK button
+runChecks()         orchestrator; accepts opts={skipMTASTS,skipSecTxt}; NXDOMAIN-gates the domain
+                      first (returns false, no UI touched, modal shown); resets scanStats; wraps
+                      all 16 checks in timed(); saves lastResults; calls rerenderAll()
 renderStatsPanel(dkim, rpki)
                     appends/replaces <details id="stats-panel"> to #overview-content; reads
                       scanStats for counts and check timings; called at end of renderSummary()
@@ -247,7 +261,7 @@ const resolvedText = iss.textKey
 **Current languages**: `en` (English, default), `es` (Spanish), `fr` (French), `no` (Norwegian Bokmål).
 All four are **complete** — no language relies on the English fallback. When adding a key, add it to every language, and mirror it into `translations/<lang>.js` **and `translations/TEMPLATE.js`** so the contributor files stay in sync. TEMPLATE.js is easy to forget because nothing in the app reads it — it had silently drifted 37 keys behind (the entire IPv6 block, plus `SELECTOR_HELP`, the SPF recursive-lookup counts and the RPKI nameserver-diversity keys) before being backfilled on 2026-08-13. A contributor starting from a stale template simply never sees those strings.
 
-To check for drift, parse the `STRINGS` block out of `index.html` and diff the key sets — the three namespaces should total **383 keys** (s=284, d=80, x=19). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
+To check for drift, parse the `STRINGS` block out of `index.html` and diff the key sets — the three namespaces should total **385 keys** (s=286, d=80, x=19). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
 
 There are now four contributor files — `es.js`, `fr.js`, `no.js` and `TEMPLATE.js` — and all four
 carry the full key set with no value drift from `index.html`.
@@ -602,7 +616,7 @@ Worth rebuilding for any change to the check logic — it caught the RPKI restru
 concurrency behaviour and confirmed the DNSSEC rating change leaves single-algorithm zones alone.
 
 Static checks worth re-running after any edit: key-set parity across the four languages and the
-four `translations/*.js` files (all must total 372), `d`-function arity, every CSS class
+four `translations/*.js` files (all must total 385), `d`-function arity, every CSS class
 referenced from JS existing in `<style>`, no `innerHTML`/`eval`, tab-button and panel lists
 matching in order, no `{ rating, text: … }` issues left in check functions, and the version
 string agreeing across `index.html`, `CLAUDE.md` and `README.md`.

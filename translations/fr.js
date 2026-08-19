@@ -60,6 +60,8 @@ const LANG_FR = {
     ERR_NETWORK:         'Erreur r\u00e9seau',
     ERR_TIMEOUT:         'D\u00e9lai d\u00e9pass\u00e9',
     ERR_SCAN_FAILED:     'L\u2019analyse n\u2019a pas pu \u00eatre men\u00e9e \u00e0 son terme. V\u00e9rifiez votre connexion r\u00e9seau et r\u00e9essayez.',
+    NXDOMAIN_MSG:        'Ce domaine n\u2019existe pas. Essayez-en un autre.',
+    NXDOMAIN_OK:         'OK',
 
     THEME_LIGHT:         '\u2600 Clair',
     THEME_DARK:          '\u263D Sombre',

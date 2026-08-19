@@ -59,6 +59,8 @@ const LANG_ES = {
     ERR_NETWORK:         'Error de red',
     ERR_TIMEOUT:         'Tiempo de espera agotado',
     ERR_SCAN_FAILED:     'No se pudo completar el an\u00e1lisis. Comprueba tu conexi\u00f3n de red e int\u00e9ntalo de nuevo.',
+    NXDOMAIN_MSG:        'El dominio no existe. Prueba con otro.',
+    NXDOMAIN_OK:         'Aceptar',
 
     THEME_LIGHT:         '\u2600 Claro',
     THEME_DARK:          '\u263D Oscuro',
