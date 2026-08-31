@@ -314,6 +314,26 @@ const LANG_ES = {
     BGP_ISP_BADGE_UNSAFE:'No seguro',
     BGP_ISP_BADGE_WARP:  'WARP',
     BGP_ISP_BADGE_ERROR: 'Desconocido',
+    // Connection tab (visitor tests)
+    PANEL_CONN:          'Conexión',
+    CONN_DNSSEC_TITLE:   '¿Valida DNSSEC tu resolutor DNS?',
+    CONN_DNSSEC_OK:      'Tu resolutor DNS valida DNSSEC — un nombre de prueba con una firma deliberadamente rota fue rechazado correctamente.',
+    CONN_DNSSEC_BAD:     'Tu resolutor DNS no valida DNSSEC — un nombre de prueba con una firma deliberadamente rota se resolvió de todos modos. Las respuestas DNS falsificadas para dominios firmados no serían detectadas en esta conexión.',
+    CONN_DNSSEC_ERROR:   'No se pudo contactar con los puntos de prueba de DNSSEC — resultado desconocido. La prueba se ejecutará de nuevo en el próximo escaneo.',
+    CONN_DNSSEC_BADGE_OK:    'Valida',
+    CONN_DNSSEC_BADGE_BAD:   'No valida',
+    CONN_DNSSEC_BADGE_ERROR: 'Desconocido',
+    CONN_DNSSEC_ATTRIBUTION: 'Método de prueba y dominios de Matthäus Wander:',
+    CONN_IP_TITLE:       'Tus direcciones IP públicas',
+    CONN_IP_BOTH:        'Tu conexión tiene tanto una dirección IPv4 pública como una IPv6 pública (doble pila).',
+    CONN_IP6_ONLY:       'Tu conexión es solo IPv6 — no se detectó ninguna dirección IPv4 pública.',
+    CONN_IP6_MISSING:    'Sin conectividad IPv6 — tu red o tu ISP aún no ha habilitado IPv6.',
+    CONN_IP_ERROR:       'No se pudieron determinar tus direcciones IP públicas — los puntos de prueba estaban inaccesibles.',
+    CONN_IP_BADGE_BOTH:  'Doble pila',
+    CONN_IP_BADGE_V6ONLY:'Solo IPv6',
+    CONN_IP_BADGE_NOV6:  'Sin IPv6',
+    CONN_IP_BADGE_ERROR: 'Desconocido',
+    CONN_IP_NONE:        'ninguna dirección detectada',
     OVERVIEW_PROVIDERS: 'Infraestructura de correo detectada',
   },
 
@@ -344,7 +364,7 @@ const LANG_ES = {
     TLSA_RECORDS_COUNT:    n => n + ' registro' + (n !== 1 ? 's' : '') + ' TLSA',
     RPKI_SUMMARY:          (valid, total, inv, noRoa) => valid + '/' + total + ' IP' + (total !== 1 ? 's' : '') + ' cubiert' + (total !== 1 ? 'as' : 'a') + ' por ROA válido' + (inv > 0 ? ' \u2014 ' + inv + ' inválid' + (inv !== 1 ? 'as' : 'a') : '') + (noRoa > 0 ? ' \u2014 ' + noRoa + ' sin ROA' : ''),
     ASPA_SUMMARY:          (pub, total) => pub + '/' + total + ' ASN' + (total !== 1 ? 's' : '') + ' con ASPA publicado',
-    BGP_ISP_NOTE:          dom => 'Esto prueba la conexión a internet desde la que navegas — no tiene relación con ' + dom + ' y nunca afecta a ninguna valoración, puntuación o nota.',
+    CONN_NOTE:             dom => 'Todo en esta pestaña prueba la conexión a internet y el navegador que estás usando ahora mismo — no tiene relación con ' + dom + ' y nunca afecta a ninguna valoración, puntuación o nota.',
     TLSRPT_ENDPOINT:       uri => 'Punto de notificación: ' + uri,
     TLSRPT_BAD_URI:        uri => 'Esquema de URI rua= desconocido: ' + uri,
     MTASTS_MAX_AGE_LOW:    age => 'max_age=' + age + 's es menor de 1 día \u2014 considera 604800 (1 semana) o más',
@@ -568,11 +588,7 @@ const LANG_ES = {
       '<b>Sin ROA</b> \u2014 no se encontró ninguna ROA: el prefijo no está protegido pero puede enrutarse.<br><br>' +
       'Esta comprobación resuelve IPs para todos los hosts NS y MX, luego consulta RIPE Stat para validar cada prefijo frente a su ASN de origen. ' +
       'RPKI protege la infraestructura de correo del secuestro de rutas BGP que podría redirigir o interceptar el tráfico de correo.<br><br>' +
-      '<b>¿Es tu ISP seguro en BGP?</b> prueba la conexión desde la que navegas, no el dominio escaneado: ' +
-      'obtiene un recurso de prueba anunciado con una ROA válida y otro anunciado desde un ASN no autorizado. ' +
-      'Si el inválido se carga, tu ISP acepta rutas secuestradas. ' +
-      'Basado en <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> de Cloudflare (licencia MIT). ' +
-      'El resultado es solo informativo y nunca afecta a ninguna puntuación.',
+      '\u00bfQuieres saber si tu propio ISP filtra rutas secuestradas? Consulta la pesta\u00f1a <b>Conexi\u00f3n</b>.',
     ASPA:
       '<b>ASPA (Autonomous System Provider Authorization, <a href="https://www.rfc-editor.org/rfc/rfc9582">RFC 9582</a>)</b> permite a un AS declarar qué proveedores upstream está autorizado a utilizar. ' +
       'Los registros ASPA publicados permiten detectar filtraciones de rutas: si el tráfico llega a través de un proveedor no autorizado, los routers compatibles con ASPA pueden rechazarlo.<br><br>' +
@@ -582,6 +598,14 @@ const LANG_ES = {
       '<b>Nota:</b> RFC 9582 es aún un estándar propuesto y el despliegue real es actualmente muy limitado. ' +
       'Por ello, la ausencia de registros ASPA no afecta tu puntuación \u2014 esta comprobación es puramente informativa por ahora. ' +
       'No obstante, vale la pena preguntar a tu proveedor de hosting o ISP si están siguiendo el desarrollo de ASPA y considerando su implementación.',
+    CONN:
+      '<b>Conexi\u00f3n</b> \u2014 a diferencia de todas las dem\u00e1s pesta\u00f1as, estas pruebas examinan la conexi\u00f3n a internet y el navegador desde los que escaneas, no el dominio que introdujiste. Nada de lo que hay aqu\u00ed afecta a ninguna valoraci\u00f3n, puntuaci\u00f3n o nota.<br><br>' +
+      '<b>Validaci\u00f3n DNSSEC</b> \u2014 se obtienen dos nombres de prueba por HTTPS: uno correctamente firmado y otro con la firma DNSSEC deliberadamente rota. Un resolutor validador se niega a resolver el nombre roto, as\u00ed que si aun as\u00ed se carga, el resolutor que usa tu navegador (el del sistema operativo, el de tu ISP, o un servicio de DNS cifrado \u00abDNS seguro\u00bb configurado en el navegador) acepta respuestas DNS falsificadas para dominios firmados. ' +
+      'M\u00e9todo de prueba y dominios del <a href="https://wander.science/projects/dns/dnssec-resolver-test/">DNSSEC Resolver Test</a> de Matth\u00e4us Wander.<br><br>' +
+      '<b>Direcciones IP p\u00fablicas</b> \u2014 tus direcciones IPv4 e IPv6 visibles desde el exterior seg\u00fan las reporta icanhazip.com (operado por Cloudflare), con la red que las anuncia (ASN y titular), el prefijo que las cubre, y si esa ruta est\u00e1 protegida por una ROA de RPKI v\u00e1lida. La falta de IPv6 aqu\u00ed significa que tu ISP o tu red a\u00fan no lo ha habilitado.<br><br>' +
+      '<b>\u00bfEs tu ISP seguro en BGP?</b> \u2014 prueba si tu ISP filtra rutas BGP secuestradas: obtiene un recurso de prueba anunciado con una ROA v\u00e1lida y otro anunciado desde un ASN no autorizado. Si el inv\u00e1lido se carga, tu ISP acepta rutas secuestradas. ' +
+      'Basado en <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> de Cloudflare (licencia MIT).<br><br>' +
+      '<b>Nota de privacidad:</b> estas pruebas contactan con ippacket.stream, icanhazip.com, isbgpsafeyet.com y RIPE Stat, y tus direcciones IP p\u00fablicas se env\u00edan a RIPE Stat para consultar sus datos de red. Los resultados se guardan durante la sesi\u00f3n de la p\u00e1gina: se ejecutan en tu primer escaneo y los escaneos posteriores los reutilizan.',
     STXT:
       '<b>security.txt (<a href="https://www.rfc-editor.org/rfc/rfc9116">RFC 9116</a>)</b> es un estándar para publicar información de divulgación de vulnerabilidades.<br><br>' +
       'Coloca el archivo en <code>/.well-known/security.txt</code> (preferido) o <code>/security.txt</code>.<br><br>' +

@@ -8,7 +8,7 @@ Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-August-19-1**
+Current version: **2026-August-31-1**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -19,8 +19,8 @@ The changelog is hardcoded HTML in the footer — not part of the i18n system.
 ## Architecture
 
 ### UI layout
-Tab-based: `#tab-bar` (18 `.tab-btn` elements) + `#tab-panels` (18 `.tab-panel` divs).
-Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**, TLS-RPT, MTA-STS, CAA, RPKI, **ASPA**, **IPv6**, Security.txt, WHOIS, **Fixes**.
+Tab-based: `#tab-bar` (19 `.tab-btn` elements) + `#tab-panels` (19 `.tab-panel` divs).
+Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**, TLS-RPT, MTA-STS, CAA, RPKI, **ASPA**, **IPv6**, Security.txt, WHOIS, **Connection**, **Fixes**.
 - Tab bar hidden until first `runChecks()` call (`.visible` class).
 - **Tab semantics.** `#tab-bar` is `role="tablist"`, each button `role="tab"` with
   `aria-controls`/`aria-selected`, each panel `role="tabpanel"` with `aria-labelledby`. A roving
@@ -41,7 +41,7 @@ Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**
 - `#lang-row` inline language buttons (below input row): English / Norsk / Español / Français. Each is a `.lang-btn` carrying `data-lang`; `.lang-sep` spans (`aria-hidden`) render the separator dots so they stay outside each button's hover/active background. Active state is `aria-pressed="true"`, which both announces the selection and drives the highlight through a CSS attribute selector — there is no separate active class to keep in sync. Persisted in `localStorage('mailcheck-lang')`.
 - Single skip checkbox (`#skip-cors-cb`) on the same row as the language selector. Persisted in `localStorage('mailcheck-skip-cors')`. When checked, `runChecks` receives `opts.skipMTASTS`/`opts.skipSecTxt` and passes a pre-resolved `{ skipped: true, rating: 'skip' }` result instead of calling the check. Skipped tabs show a grey dot + "Skipped" badge. MTA-STS weight (15%) is excluded from the score and the remaining 85% normalised to 100. Skipped checks are filtered from `renderRecommendations`.
 - `#footer` below `#tab-panels`: attribution to Per Thorsheim + links to thorsheim.net and passwordscon.org. Version string on a second line via `<br>`, wrapped in `<details id="changelog">` — clicking expands the full changelog.
-- **Mobile tab bar**: `flex-wrap: nowrap; overflow-x: auto` so all 16 tabs scroll horizontally in a single row. Scrollbar hidden (`scrollbar-width: none`). Edge fade via CSS `mask-image` gradient. `flex-shrink: 0` on `.tab-btn` prevents wrapping. Tab click handler calls `btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })` to keep the active tab visible.
+- **Mobile tab bar**: `flex-wrap: nowrap; overflow-x: auto` so all 19 tabs scroll horizontally in a single row. Scrollbar hidden (`scrollbar-width: none`). Edge fade via CSS `mask-image` gradient. `flex-shrink: 0` on `.tab-btn` prevents wrapping. Tab click handler calls `btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })` to keep the active tab visible.
 
 ### Network layer
 Every outbound request goes through `fetchJSON()`, which applies a deadline via `timeoutSignal()`
@@ -92,7 +92,8 @@ Every fan-out is bounded by `parallelLimit()`: `DKIM_CONCURRENCY` 10, `RIPE_CONC
 | MTA-STS | `_mta-sts.<domain>` TXT + HTTPS policy fetch | RFC 8461; collects all `mx:` lines as array; cross-checks against actual MX hosts |
 | CAA | `<domain>` CAA (type 257) | Hex format parsed by `parseCAAData()`; DNSSEC checked for each CA domain; values linkified |
 | RPKI | RIPE Stat `network-info` + `rpki-validation` + `as-overview` + `aspa` | Checks NS+MX host IPs; includes ASPA section |
-| ISP BGP safety | isbgpsafeyet.com `cdn-cgi/trace` + valid/invalid RPKI beacons | Tests the **visitor's** connection, not the domain; renders in the RPKI tab; cached per page session; never scored |
+| ISP BGP safety | isbgpsafeyet.com `cdn-cgi/trace` + valid/invalid RPKI beacons | Tests the **visitor's** connection, not the domain; renders in the Connection tab; cached per page session; never scored |
+| Connection | `sigok`/`sigfail.ippacket.stream` (no-cors probes) + `ipv4`/`ipv6.icanhazip.com` + RIPE Stat per visitor IP | Tests the **visitor's** connection: resolver DNSSEC validation, public IPv4/IPv6 egress addresses with ASN/prefix/ROA; cached per page session; never scored |
 | IPv6 | `<domain>` A+AAAA, `<domain>` NS → AAAA per NS host, `<domain>` MX → AAAA per MX host | Informational only; does not affect grade |
 | Security.txt | `https://<domain>/.well-known/security.txt` (fallback `/security.txt`) | RFC 9116; parsed fields shown |
 | WHOIS | `https://rdap.org/domain/<domain>` | RDAP JSON; registrar, dates, nameservers, status |
@@ -169,9 +170,25 @@ checkBGPSafety()    session-cached wrapper over runBGPSafetyTest ('error' result
 runBGPSafetyTest()  isbgpsafeyet.com method: WARP trace + valid/invalid RPKI beacon fetches;
                       2 s decision window after the valid fetch resolves; never rejects
 renderBGPSafetySection(body)
-                    ISP BGP-safety section in the RPKI panel; reads lastResults.bgp from
-                      module scope; rendered in all three renderRPKI branches, before the
-                      explanation; its rating is display-only and never aggregated
+                    ISP BGP-safety section; reads lastResults.bgp from module scope; rendered
+                      by renderConnection (moved out of renderRPKI in 2026-August-31-1); its
+                      rating (module-level BGP_STATUS_RATING map) is display-only and folds
+                      only into the Connection tab dot, never into any score
+connTestPromise     session cache for the visitor connection test; lives beside
+                      bgpSafetyPromise and is NOT cleared by clearDNSCaches()
+checkConnection()   session-cached wrapper over runConnectionTest; evicts inconclusive
+                      results (dnssec 'error', or neither IP found) so the next scan retries
+runConnectionTest() visitor tests: two no-cors probes of sigok/sigfail.ippacket.stream
+                      (resolver DNSSEC validation — only a settled sigfail response proves
+                      non-validation) + ipv4/ipv6.icanhazip.com egress-IP echoes, then
+                      rpkiLookupIP + fetchASNHolder per found IP; never rejects
+renderConnection(result)
+                    Connection tab: CONN_NOTE summary, resolver-DNSSEC section (with
+                      wander.science attribution), public-IP section (family pill, IP,
+                      prefix/AS pills, holder, ROA badge per address), then
+                      renderBGPSafetySection and tx('CONN'). Tab dot/badge = worst of the
+                      three section ratings — display-only, invisible to renderSummary and
+                      renderRecommendations (explicit check lists)
 checkIPv6()         queries A+AAAA for domain, NS hosts, MX hosts; returns mxHosts/nsHosts arrays
                       with v4/v6 address splits; rating: excellent (all have AAAA), good (some),
                       warning (none); informational only (weight=0)
@@ -209,21 +226,22 @@ renderRecommendations(r)
                       Tab dot color = worst rating across all scored checks.
 renderSummary()     Weighted grade: DKIM 20%, SPF 15%, DMARC 15%, MTA-STS 15%, DNSSEC 10%,
                       MX 10%, DANE 10%, TLS-RPT 3%, CAA 2%
-                      Shows all 18 tabs: 9 scored bars first, then a labeled separator
+                      Shows 16 bars: 9 scored bars first, then a labeled separator
                       "Informational (not scored)", then PTR, BIMI, RPKI, ASPA, IPv6, Security.txt,
-                      WHOIS bars (weight=0). Grade calculation unchanged.
+                      WHOIS bars (weight=0). Overview, Connection and Fixes have no bar —
+                      Connection is about the visitor, not the domain. Grade calculation unchanged.
 currentDomain       module-level domain state (set in runChecks)
 lastResults         stores last Promise.allSettled results for language-switch re-render
 scanStats           module-level stats object (null before first scan); reset at top of runChecks();
                       fields: startMs, totalMs, checks{}, dohRequests, ripeStatRequests,
                       ripeStatCacheHits, httpRequests
 timed(name, p)      wraps a promise; records elapsed ms into scanStats.checks[name] on settle
-rerenderAll(r)      re-renders all 17 panels from stored results (no DNS re-query)
+rerenderAll(r)      re-renders all 18 panels from stored results (no DNS re-query)
 domainExists()      NXDOMAIN gate: one SOA dohQuery, false only on Status 3; fails open on error
 showNXDomainModal() shows #nxdomain-modal-backdrop and focuses the OK button
 runChecks()         orchestrator; accepts opts={skipMTASTS,skipSecTxt}; NXDOMAIN-gates the domain
                       first (returns false, no UI touched, modal shown); resets scanStats; wraps
-                      all 16 checks in timed(); saves lastResults; calls rerenderAll()
+                      all 17 checks in timed(); saves lastResults; calls rerenderAll()
 renderStatsPanel(dkim, rpki)
                     appends/replaces <details id="stats-panel"> to #overview-content; reads
                       scanStats for counts and check timings; called at end of renderSummary()
@@ -235,7 +253,7 @@ Three namespaces per language in the `STRINGS` object:
 
 - **`s` (static)** — plain string key→value. Access with `ts('KEY')`.
 - **`d` (dynamic)** — arrow functions for pluralised/interpolated strings. Access with `td('KEY', ...args)`.
-- **`x` (explanations)** — full explanation markup strings for `addExplanation()` (19 keys: DMARC, DMARCBIS, DNSSEC, MX, PTR, DANE, SPF, DKIM, DKIM2, TLSRPT, MTASTS, CAA, RPKI, ASPA, BIMI, STXT, WHOIS, IPV6, SELECTOR_HELP). Access with `tx('KEY')`.
+- **`x` (explanations)** — full explanation markup strings for `addExplanation()` (20 keys: DMARC, DMARCBIS, DNSSEC, MX, PTR, DANE, SPF, DKIM, DKIM2, TLSRPT, MTASTS, CAA, RPKI, ASPA, CONN, BIMI, STXT, WHOIS, IPV6, SELECTOR_HELP). Access with `tx('KEY')`.
   `safeMarkup()` builds **text nodes**, so HTML entities are *not* decoded — write `<domain>` literally, never `&lt;domain&gt;`.
 
 Lookup order: current language → English fallback → key name as visible fallback.
@@ -261,7 +279,7 @@ const resolvedText = iss.textKey
 **Current languages**: `en` (English, default), `es` (Spanish), `fr` (French), `no` (Norwegian Bokmål).
 All four are **complete** — no language relies on the English fallback. When adding a key, add it to every language, and mirror it into `translations/<lang>.js` **and `translations/TEMPLATE.js`** so the contributor files stay in sync. TEMPLATE.js is easy to forget because nothing in the app reads it — it had silently drifted 37 keys behind (the entire IPv6 block, plus `SELECTOR_HELP`, the SPF recursive-lookup counts and the RPKI nameserver-diversity keys) before being backfilled on 2026-08-13. A contributor starting from a stale template simply never sees those strings.
 
-To check for drift, parse the `STRINGS` block out of `index.html` and diff the key sets — the three namespaces should total **385 keys** (s=286, d=80, x=19). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
+To check for drift, parse the `STRINGS` block out of `index.html` and diff the key sets — the three namespaces should total **405 keys** (s=305, d=80, x=20). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
 
 There are now four contributor files — `es.js`, `fr.js`, `no.js` and `TEMPLATE.js` — and all four
 carry the full key set with no value drift from `index.html`.
@@ -403,13 +421,41 @@ rollover.
 
 ### ISP BGP-safety test details (isbgpsafeyet.com method, MIT)
 - Tests the **visitor's connection**, not the scanned domain: fetches `https://isbgpsafeyet.com/cdn-cgi/trace` (WARP detection), `https://valid.rpki.isbgpsafeyet.com/<uid>` and `https://invalid.rpki.isbgpsafeyet.com/<uid>`. All three endpoints send `access-control-allow-origin: *` (verified 2026-08-17).
-- Status model: `safe`/`unsafe`/`warp`/`error` → excellent/fail/warning/warning — **display-only**, never reaches the tab dot, bars or grade. `renderSummary`/`renderRecommendations` use explicit check lists, so `lastResults.bgp` is structurally invisible to them.
+- Status model: `safe`/`unsafe`/`warp`/`error` → excellent/fail/warning/warning (the module-level `BGP_STATUS_RATING` map) — **display-only**: it folds into the Connection tab dot but never into bars or the grade. `renderSummary`/`renderRecommendations` use explicit check lists, so `lastResults.bgp` and `lastResults.conn` are structurally invisible to them.
 - **Any settled HTTP response on the invalid beacon = unsafe** (regardless of status code or body); only network-level failure/timeout = safe. Deliberate deviation from upstream, whose `.json()` chain would misreport an unparsable body as safe.
 - The 2 s decision window (`BGP_INVALID_WINDOW_MS`) opens only after the valid fetch resolves; the invalid fetch starts earlier (connection warm-up, upstream behaviour) and is reaped by its own `timeoutSignal`.
 - Trace fetch failure is **non-fatal** (deviation from upstream, which errors out); its `r.ok` guard prevents a non-200 body from faking a WARP verdict.
 - Auto-runs once per page session (user decision): first scan runs it, later scans reuse `bgpSafetyPromise`. `error` results are evicted so the next scan retries. `scanStats.httpRequests += 3` only on real runs.
 - Valid-beacon JSON (`{status, asn, name, blackholed}`) supplies the AS pill + ISP holder name shown in the section.
 - Not gated by the skip-CORS checkbox: these endpoints send proper CORS headers, and the checkbox means "skip checks with expected CORS failures", not "no third-party HTTP".
+
+### Connection tab details (visitor tests)
+All three sections test the **visitor's** connection, not the scanned domain, and are
+display-only: `renderSummary`/`renderRecommendations` never see `lastResults.conn`, there is no
+Overview bar, and the tab dot (worst of the three section ratings) never aggregates anywhere.
+- **Resolver DNSSEC validation** (method and domains from Matthäus Wander's DNSSEC Resolver
+  Test, wander.science). Two parallel `no-cors` fetches: `sigok.ippacket.stream` (control) and
+  `sigfail.ippacket.stream`. The sigfail trick that makes this work over HTTPS: the queried name
+  carries a valid `*.ippacket.stream` wildcard certificate but CNAMEs into a zone with
+  deliberately broken RRSIGs, so a validating resolver SERVFAILs while a non-validating one
+  loads the page fine (verified live 2026-08-31; cert expires 2026-10-18 and is renewed
+  upstream). Only a **settled** sigfail response proves non-validation — any network-level
+  failure counts as validated, mirroring the invalid-beacon philosophy. Control failure →
+  `error`. Cache-buster query + `cache: 'no-store'` so a cached response can never answer for
+  DNS. The classic test domains do NOT work over HTTPS and must not be substituted in:
+  `dnssec-failed.org` filters port 443 and `brokendnssec.net` no longer has a valid cert, so
+  with either of them a non-validating resolver is indistinguishable from a validating one.
+- **Public IP addresses**: `ipv4.icanhazip.com` / `ipv6.icanhazip.com` (Cloudflare-run,
+  `access-control-allow-origin: *`, family-locked A-only/AAAA-only names, verified 2026-08-31).
+  Body is trimmed and regex-validated before display. A failed IPv6 fetch IS the result ("no
+  IPv6"), not an error; only both families missing counts as inconclusive. Each found IP is
+  enriched via `rpkiLookupIP` + `fetchASNHolder` (session-cached RIPE Stat helpers — the
+  visitor's IP is sent to RIPE Stat, disclosed in the CONN explanation's privacy note).
+- **ISP BGP safety**: `renderBGPSafetySection` unchanged, just rendered here now.
+- Session caching mirrors the BGP test: `connTestPromise` survives re-scans and is NOT cleared
+  by `clearDNSCaches()`; `checkConnection` evicts inconclusive results (dnssec `error`, or no IP
+  found at all) so the next scan retries. `scanStats.httpRequests += 4` per real run.
+- Not gated by the skip-CORS checkbox, for the same reason as the BGP test.
 
 ### CAA details
 - `checkCAA` extracts CA domain names from `issue`/`issuewild` values (part before `;`), runs `checkDNSSEC` on each in parallel, returns `caDnssec` map.
@@ -651,3 +697,4 @@ string agreeing across `index.html`, `CLAUDE.md` and `README.md`.
 - RPKI: any domain with Google/Cloudflare NS or MX will show valid ROAs; ASPA coverage varies by ASN
 - Language switch: run a check, then toggle EN↔NO — all panel content, badges, explanations, and issue text should update immediately without re-querying DNS
 - Recommendations tab: `cloudflare.com` → scored checks not at excellent appear under "What to fix" with weight badges; passing checks in collapsed "All checks passing" details block; clicking a check name jumps to that tab
+- Connection tab: on a validating-resolver connection (e.g. behind 1.1.1.1/8.8.8.8) the DNSSEC section shows "Validating"; from `dig @1.1.1.1 sigfail.ippacket.stream` expect SERVFAIL and with `+cd` an IP — if that ever stops being true, the test infrastructure changed and the endpoints need re-verifying. IPv4-only networks must show the amber "No IPv6" badge, not an error. The scanned domain's grade must be identical before and after the Connection tab renders (`lastResults.conn` is invisible to renderSummary/renderRecommendations)

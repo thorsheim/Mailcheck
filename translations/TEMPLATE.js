@@ -383,6 +383,26 @@ const LANG_TEMPLATE = {
     BGP_ISP_BADGE_UNSAFE:   '',  // "Not safe"
     BGP_ISP_BADGE_WARP:     '',  // "WARP"
     BGP_ISP_BADGE_ERROR:    '',  // "Unknown"
+    // Connection tab (visitor tests)
+    PANEL_CONN:             '',  // "Connection"
+    CONN_DNSSEC_TITLE:      '',  // "Does your DNS resolver validate DNSSEC?"
+    CONN_DNSSEC_OK:         '',  // "Your DNS resolver validates DNSSEC — a test name with a deliberately broken signature was correctly refused."
+    CONN_DNSSEC_BAD:        '',  // "Your DNS resolver does not validate DNSSEC — a test name with a deliberately broken signature resolved anyway. Forged DNS answers for signed domains would not be detected on this connection."
+    CONN_DNSSEC_ERROR:      '',  // "The DNSSEC test endpoints could not be reached — result unknown. The test will run again on the next scan."
+    CONN_DNSSEC_BADGE_OK:   '',  // "Validating"
+    CONN_DNSSEC_BADGE_BAD:  '',  // "Not validating"
+    CONN_DNSSEC_BADGE_ERROR:'',  // "Unknown"
+    CONN_DNSSEC_ATTRIBUTION:'',  // "Test method and domains by Matthäus Wander:"
+    CONN_IP_TITLE:          '',  // "Your public IP addresses"
+    CONN_IP_BOTH:           '',  // "Your connection has both a public IPv4 and a public IPv6 address (dual stack)."
+    CONN_IP6_ONLY:          '',  // "Your connection is IPv6-only — no public IPv4 address was detected."
+    CONN_IP6_MISSING:       '',  // "No IPv6 connectivity — your network or ISP has not enabled IPv6 yet."
+    CONN_IP_ERROR:          '',  // "Your public IP addresses could not be determined — the test endpoints were unreachable."
+    CONN_IP_BADGE_BOTH:     '',  // "Dual stack"
+    CONN_IP_BADGE_V6ONLY:   '',  // "IPv6 only"
+    CONN_IP_BADGE_NOV6:     '',  // "No IPv6"
+    CONN_IP_BADGE_ERROR:    '',  // "Unknown"
+    CONN_IP_NONE:           '',  // "no address detected"
     OVERVIEW_PROVIDERS:     '',  // Overview heading "Detected email infrastructure"
   },
 
@@ -418,7 +438,7 @@ const LANG_TEMPLATE = {
     TLSA_RECORDS_COUNT:       n => '',   // "2 TLSA records"
     RPKI_SUMMARY: (valid, total, inv, noRoa) => '', // "4/4 IPs covered by valid ROA"
     ASPA_SUMMARY:    (pub, total) => '',  // "2/3 ASNs with published ASPA"
-    BGP_ISP_NOTE:    dom => '',  // "This tests the internet connection you are browsing from — it is unrelated to example.com and never affects any rating, score or grade."
+    CONN_NOTE:       dom => '',  // "Everything in this tab tests the internet connection and browser you are using right now — it is unrelated to example.com and never affects any rating, score or grade."
     TLSRPT_ENDPOINT:        uri => '',   // "Reporting endpoint: mailto:tls@example.com"
     TLSRPT_BAD_URI:         uri => '',   // "Unknown rua= URI scheme: …"
     MTASTS_MAX_AGE_LOW:     age => '',   // "max_age=3600s is less than 1 day"
@@ -505,6 +525,7 @@ const LANG_TEMPLATE = {
     CAA:     '',
     RPKI:    '',
     ASPA:    '',
+    CONN:    '',  // Connection tab explanation (visitor tests)
     STXT:    '',  // Security.txt explanation
     WHOIS:   '',
     BIMI:    '',

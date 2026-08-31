@@ -585,6 +585,7 @@
     <button class="tab-btn" data-tab="ipv6" role="tab" id="tab-ipv6" aria-controls="panel-ipv6" aria-selected="false" tabindex="-1">IPv6 <span class="tab-dot"></span></button>
     <button class="tab-btn" data-tab="security-txt" role="tab" id="tab-security-txt" aria-controls="panel-security-txt" aria-selected="false" tabindex="-1">Security.txt <span class="tab-dot"></span></button>
     <button class="tab-btn" data-tab="whois" role="tab" id="tab-whois" aria-controls="panel-whois" aria-selected="false" tabindex="-1">WHOIS <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="connection" role="tab" id="tab-connection" aria-controls="panel-connection" aria-selected="false" tabindex="-1">Connection <span class="tab-dot"></span></button>
     <button class="tab-btn" data-tab="recs" role="tab" id="tab-recs" aria-controls="panel-recs" aria-selected="false" tabindex="-1">Fixes <span class="tab-dot"></span></button>
   </div>
 
@@ -733,6 +734,14 @@
       <div class="panel-body"></div>
     </div>
 
+    <div class="tab-panel" id="panel-connection" role="tabpanel" aria-labelledby="tab-connection" tabindex="0">
+      <div class="panel-header">
+        <span class="panel-icon">&#128225;</span>
+        <span class="panel-title" data-i18n="PANEL_CONN">Connection</span>
+      </div>
+      <div class="panel-body"></div>
+    </div>
+
     <div class="tab-panel" id="panel-recs" role="tabpanel" aria-labelledby="tab-recs" tabindex="0">
       <div class="panel-header">
         <span class="panel-icon">&#9998;</span>
@@ -747,8 +756,14 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-August-19-1 &mdash; click for changelog</summary>
+      <summary>Version 2026-August-31-1 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-August-31-1</span>
+          <ul class="cl-changes">
+            <li>New <b>Connection</b> tab testing the network <i>you</i> are browsing from &mdash; not the scanned domain: whether your DNS resolver validates DNSSEC (a test name with a deliberately broken signature must fail to load; method and domains from Matth&auml;us Wander&rsquo;s <a href="https://wander.science/projects/dns/dnssec-resolver-test/" target="_blank" rel="noopener noreferrer">DNSSEC Resolver Test</a>), your public IPv4 and IPv6 addresses via icanhazip.com &mdash; each with ASN, holder, prefix and RPKI ROA status &mdash; and the &ldquo;Is your ISP BGP-safe?&rdquo; test, which moved here from the RPKI tab. Runs once per page session on the first scan, is reused by later scans, and never affects any rating, score or grade</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-August-19-1</span>
           <ul class="cl-changes">
@@ -1421,6 +1436,26 @@ const STRINGS = {
       BGP_ISP_BADGE_UNSAFE:'Not safe',
       BGP_ISP_BADGE_WARP:  'WARP',
       BGP_ISP_BADGE_ERROR: 'Unknown',
+      // Connection tab (visitor tests)
+      PANEL_CONN:          'Connection',
+      CONN_DNSSEC_TITLE:   'Does your DNS resolver validate DNSSEC?',
+      CONN_DNSSEC_OK:      'Your DNS resolver validates DNSSEC — a test name with a deliberately broken signature was correctly refused.',
+      CONN_DNSSEC_BAD:     'Your DNS resolver does not validate DNSSEC — a test name with a deliberately broken signature resolved anyway. Forged DNS answers for signed domains would not be detected on this connection.',
+      CONN_DNSSEC_ERROR:   'The DNSSEC test endpoints could not be reached — result unknown. The test will run again on the next scan.',
+      CONN_DNSSEC_BADGE_OK:    'Validating',
+      CONN_DNSSEC_BADGE_BAD:   'Not validating',
+      CONN_DNSSEC_BADGE_ERROR: 'Unknown',
+      CONN_DNSSEC_ATTRIBUTION: 'Test method and domains by Matthäus Wander:',
+      CONN_IP_TITLE:       'Your public IP addresses',
+      CONN_IP_BOTH:        'Your connection has both a public IPv4 and a public IPv6 address (dual stack).',
+      CONN_IP6_ONLY:       'Your connection is IPv6-only — no public IPv4 address was detected.',
+      CONN_IP6_MISSING:    'No IPv6 connectivity — your network or ISP has not enabled IPv6 yet.',
+      CONN_IP_ERROR:       'Your public IP addresses could not be determined — the test endpoints were unreachable.',
+      CONN_IP_BADGE_BOTH:  'Dual stack',
+      CONN_IP_BADGE_V6ONLY:'IPv6 only',
+      CONN_IP_BADGE_NOV6:  'No IPv6',
+      CONN_IP_BADGE_ERROR: 'Unknown',
+      CONN_IP_NONE:        'no address detected',
       // Overview provider detection
       OVERVIEW_PROVIDERS:  'Detected email infrastructure',
     },
@@ -1454,7 +1489,7 @@ const STRINGS = {
       TLSA_RECORDS_COUNT:    n => n + ' TLSA records',
       RPKI_SUMMARY:          (valid, total, inv, noRoa) => valid + '/' + total + ' IP' + (total !== 1 ? 's' : '') + ' covered by valid ROA' + (inv > 0 ? ' \u2014 ' + inv + ' invalid' : '') + (noRoa > 0 ? ' \u2014 ' + noRoa + ' no ROA' : ''),
       ASPA_SUMMARY:          (pub, total) => pub + '/' + total + ' ASN' + (total !== 1 ? 's' : '') + ' with published ASPA',
-      BGP_ISP_NOTE:          dom => 'This tests the internet connection you are browsing from — it is unrelated to ' + dom + ' and never affects any rating, score or grade.',
+      CONN_NOTE:             dom => 'Everything in this tab tests the internet connection and browser you are using right now — it is unrelated to ' + dom + ' and never affects any rating, score or grade.',
       TLSRPT_ENDPOINT:       uri => 'Reporting endpoint: ' + uri,
       TLSRPT_BAD_URI:        uri => 'Unknown rua= URI scheme: ' + uri,
       MTASTS_MAX_AGE_LOW:    age => 'max_age=' + age + 's is less than 1 day \u2014 consider 604800 (1 week) or more',
@@ -1706,11 +1741,7 @@ const STRINGS = {
         '<b>No ROA</b> \u2014 no ROA found: prefix is unprotected but can still be routed.<br><br>' +
         'This check resolves IPs for all NS and MX hosts, then queries RIPE Stat to validate each prefix against its origin ASN. ' +
         'RPKI protects mail infrastructure from BGP route hijacking that could redirect or intercept email traffic.<br><br>' +
-        '<b>Is your ISP BGP-safe?</b> tests the connection you are browsing from, not the scanned domain: ' +
-        'it fetches one test resource announced with a valid ROA and one announced from an unauthorized ASN. ' +
-        'If the invalid one loads, your ISP accepts hijacked routes. ' +
-        'Based on Cloudflare\'s <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> (MIT-licensed). ' +
-        'The result is informational only and never affects any score.',
+        'Curious whether your own ISP filters hijacked routes? See the <b>Connection</b> tab.',
       ASPA:
         '<b>ASPA (Autonomous System Provider Authorization, <a href="https://www.rfc-editor.org/rfc/rfc9582">RFC 9582</a>)</b> lets an AS declare which upstream providers it is authorized to use. ' +
         'Published ASPA records enable route leak detection: if traffic arrives through an unauthorized provider, ASPA-aware routers can reject it.<br><br>' +
@@ -1720,6 +1751,14 @@ const STRINGS = {
         '<b>Note:</b> RFC 9582 is still a proposed standard and real-world deployment is currently very limited. ' +
         'Because of this, the absence of ASPA records does not affect your score \u2014 this check is purely informational for now. ' +
         'That said, it is worth reaching out to your hosting provider or ISP(s) to ask whether they are tracking the development of ASPA and considering deployment.',
+      CONN:
+        '<b>Connection</b> — unlike every other tab, these tests examine the internet connection and browser you are scanning from, not the domain you entered. Nothing here affects any rating, score or grade.<br><br>' +
+        '<b>DNSSEC validation</b> — two HTTPS test names are fetched: one correctly signed, one whose DNSSEC signature is deliberately broken. A validating resolver refuses to resolve the broken name, so if it loads anyway, the resolver your browser uses (your operating system\'s, your ISP\'s, or an encrypted-DNS "secure DNS" service configured in the browser) accepts forged DNS answers for signed domains. ' +
+        'Test method and domains from the <a href="https://wander.science/projects/dns/dnssec-resolver-test/">DNSSEC Resolver Test</a> by Matthäus Wander.<br><br>' +
+        '<b>Public IP addresses</b> — your externally visible IPv4 and IPv6 addresses as reported by icanhazip.com (operated by Cloudflare), with the announcing network (ASN and holder), the covering prefix, and whether that route is protected by a valid RPKI ROA. Missing IPv6 here means your ISP or network has not enabled it yet.<br><br>' +
+        '<b>Is your ISP BGP-safe?</b> — tests whether your ISP filters hijacked BGP routes: it fetches one test resource announced with a valid ROA and one announced from an unauthorized ASN. If the invalid one loads, your ISP accepts hijacked routes. ' +
+        'Based on Cloudflare\'s <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> (MIT-licensed).<br><br>' +
+        '<b>Privacy note:</b> these tests contact ippacket.stream, icanhazip.com, isbgpsafeyet.com and RIPE Stat, and your public IP addresses are sent to RIPE Stat to look up their network data. The results are cached for the page session: they run on your first scan and are reused by later scans.',
       STXT:
         '<b>security.txt (<a href="https://www.rfc-editor.org/rfc/rfc9116">RFC 9116</a>)</b> is a standard for publishing vulnerability disclosure information.<br><br>' +
         'Place the file at <code>/.well-known/security.txt</code> (preferred) or <code>/security.txt</code>.<br><br>' +
@@ -2108,6 +2147,26 @@ const STRINGS = {
       BGP_ISP_BADGE_UNSAFE:'Ikke trygg',
       BGP_ISP_BADGE_WARP:  'WARP',
       BGP_ISP_BADGE_ERROR: 'Ukjent',
+      // Connection tab (visitor tests)
+      PANEL_CONN:          'Tilkobling',
+      CONN_DNSSEC_TITLE:   'Validerer DNS-resolveren din DNSSEC?',
+      CONN_DNSSEC_OK:      'DNS-resolveren din validerer DNSSEC — et testnavn med en bevisst ødelagt signatur ble korrekt avvist.',
+      CONN_DNSSEC_BAD:     'DNS-resolveren din validerer ikke DNSSEC — et testnavn med en bevisst ødelagt signatur ble likevel slått opp. Forfalskede DNS-svar for signerte domener ville ikke bli oppdaget på denne forbindelsen.',
+      CONN_DNSSEC_ERROR:   'DNSSEC-testendepunktene kunne ikke nås — resultatet er ukjent. Testen kjøres på nytt ved neste skanning.',
+      CONN_DNSSEC_BADGE_OK:    'Validerer',
+      CONN_DNSSEC_BADGE_BAD:   'Validerer ikke',
+      CONN_DNSSEC_BADGE_ERROR: 'Ukjent',
+      CONN_DNSSEC_ATTRIBUTION: 'Testmetode og domener av Matthäus Wander:',
+      CONN_IP_TITLE:       'Dine offentlige IP-adresser',
+      CONN_IP_BOTH:        'Forbindelsen din har både en offentlig IPv4- og en offentlig IPv6-adresse (dual stack).',
+      CONN_IP6_ONLY:       'Forbindelsen din er kun IPv6 — ingen offentlig IPv4-adresse ble funnet.',
+      CONN_IP6_MISSING:    'Ingen IPv6-tilkobling — nettverket eller internettleverandøren din har ikke aktivert IPv6 ennå.',
+      CONN_IP_ERROR:       'De offentlige IP-adressene dine kunne ikke fastslås — testendepunktene var utilgjengelige.',
+      CONN_IP_BADGE_BOTH:  'Dual stack',
+      CONN_IP_BADGE_V6ONLY:'Kun IPv6',
+      CONN_IP_BADGE_NOV6:  'Ingen IPv6',
+      CONN_IP_BADGE_ERROR: 'Ukjent',
+      CONN_IP_NONE:        'ingen adresse funnet',
       OVERVIEW_PROVIDERS: 'Oppdaget e-postinfrastruktur',
     },
     // ── d: dynamic strings (arrow functions) ─────────────────────────────────
@@ -2137,7 +2196,7 @@ const STRINGS = {
       TLSA_RECORDS_COUNT:    n => n + ' TLSA-poster',
       RPKI_SUMMARY:          (valid, total, inv, noRoa) => valid + '/' + total + ' IP' + (total !== 1 ? 'er' : '') + ' dekket av gyldig ROA' + (inv > 0 ? ' \u2014 ' + inv + ' ugyldig' : '') + (noRoa > 0 ? ' \u2014 ' + noRoa + ' ingen ROA' : ''),
       ASPA_SUMMARY:          (pub, total) => pub + '/' + total + ' ASN' + (total !== 1 ? 'er' : '') + ' med publisert ASPA',
-      BGP_ISP_NOTE:          dom => 'Dette tester internettforbindelsen du surfer fra — den er urelatert til ' + dom + ' og påvirker aldri noen vurdering, poengsum eller karakter.',
+      CONN_NOTE:             dom => 'Alt i denne fanen tester internettforbindelsen og nettleseren du bruker akkurat nå — det er urelatert til ' + dom + ' og påvirker aldri noen vurdering, poengsum eller karakter.',
       TLSRPT_ENDPOINT:       uri => 'Rapporteringsendepunkt: ' + uri,
       TLSRPT_BAD_URI:        uri => 'Ukjent rua= URI-skjema: ' + uri,
       MTASTS_MAX_AGE_LOW:    age => 'max_age=' + age + 's er under 1 dag \u2014 vurder 604800 (1 uke) eller mer',
@@ -2381,11 +2440,7 @@ const STRINGS = {
         '<b>Ingen ROA</b> \u2014 ingen ROA funnet: prefikset er ubeskyttet men kan fortsatt rutes.<br><br>' +
         'Denne sjekken l\u00f8ser opp IP-adresser for alle NS- og MX-verter og sp\u00f8r RIPE Stat for \u00e5 validere hvert prefiks mot sitt opprinnelses-ASN. ' +
         'RPKI beskytter e-postinfrastruktur mot BGP-rutekapring som kan omdirigere eller avskj\u00e6re e-posttrafikk.<br><br>' +
-        '<b>Er internettleverand\u00f8ren din BGP-trygg?</b> tester forbindelsen du surfer fra, ikke det skannede domenet: ' +
-        'den henter \u00e9n testressurs annonsert med en gyldig ROA og \u00e9n annonsert fra et uautorisert ASN. ' +
-        'Hvis den ugyldige lastes, godtar internettleverand\u00f8ren din kaprede ruter. ' +
-        'Basert p\u00e5 Cloudflares <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> (MIT-lisensiert). ' +
-        'Resultatet er kun til informasjon og p\u00e5virker aldri noen poengsum.',
+        'Nysgjerrig p\u00e5 om din egen internettleverand\u00f8r filtrerer kaprede ruter? Se fanen <b>Tilkobling</b>.',
       ASPA:
         '<b>ASPA (Autonomous System Provider Authorization, <a href="https://www.rfc-editor.org/rfc/rfc9582">RFC 9582</a>)</b> lar et AS erkl\u00e6re hvilke oppstr\u00f8ms-leverand\u00f8rer det er autorisert til \u00e5 bruke. ' +
         'Publiserte ASPA-poster muliggj\u00f8r deteksjon av rutelekk: hvis trafikk ankommer gjennom en uautorisert leverand\u00f8r, kan ASPA-bevisste rutere avvise den.<br><br>' +
@@ -2395,6 +2450,14 @@ const STRINGS = {
         '<b>Merk:</b> RFC 9582 er fortsatt en foreslått standard og faktisk distribusjon er forel\u00f8pig svært begrenset. ' +
         'Derfor p\u00e5virker manglende ASPA-poster ikke poengsummen din \u2014 denne sjekken er rent informativ for n\u00e5. ' +
         'Likevel er det verdt \u00e5 kontakte din hostingleverand\u00f8r eller internettleverand\u00f8r(er) og sp\u00f8rre om de f\u00f8lger utviklingen av ASPA og vurderer distribusjon.',
+      CONN:
+        '<b>Tilkobling</b> \u2014 i motsetning til alle andre faner tester denne internettforbindelsen og nettleseren du skanner fra, ikke domenet du skrev inn. Ingenting her p\u00e5virker noen vurdering, poengsum eller karakter.<br><br>' +
+        '<b>DNSSEC-validering</b> \u2014 to HTTPS-testnavn hentes: ett korrekt signert og ett med en bevisst \u00f8delagt DNSSEC-signatur. En validerende resolver nekter \u00e5 sl\u00e5 opp det \u00f8delagte navnet, s\u00e5 hvis det likevel lastes, godtar resolveren nettleseren din bruker (operativsystemets, internettleverand\u00f8rens, eller en kryptert DNS-tjeneste (\u00absikker DNS\u00bb) satt opp i nettleseren) forfalskede DNS-svar for signerte domener. ' +
+        'Testmetode og domener fra <a href="https://wander.science/projects/dns/dnssec-resolver-test/">DNSSEC Resolver Test</a> av Matth\u00e4us Wander.<br><br>' +
+        '<b>Offentlige IP-adresser</b> \u2014 dine utad synlige IPv4- og IPv6-adresser slik icanhazip.com (driftet av Cloudflare) rapporterer dem, med annonserende nettverk (ASN og innehaver), dekkende prefiks, og om ruten er beskyttet av en gyldig RPKI ROA. Manglende IPv6 her betyr at internettleverand\u00f8ren eller nettverket ditt ikke har aktivert det enn\u00e5.<br><br>' +
+        '<b>Er internettleverand\u00f8ren din BGP-trygg?</b> \u2014 tester om internettleverand\u00f8ren din filtrerer kaprede BGP-ruter: den henter \u00e9n testressurs annonsert med en gyldig ROA og \u00e9n annonsert fra et uautorisert ASN. Hvis den ugyldige lastes, godtar internettleverand\u00f8ren din kaprede ruter. ' +
+        'Basert p\u00e5 Cloudflares <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> (MIT-lisensiert).<br><br>' +
+        '<b>Personvernmerknad:</b> disse testene kontakter ippacket.stream, icanhazip.com, isbgpsafeyet.com og RIPE Stat, og de offentlige IP-adressene dine sendes til RIPE Stat for \u00e5 sl\u00e5 opp nettverksdataene deres. Resultatene bufres for sidesesjonen: de kj\u00f8res ved f\u00f8rste skanning og gjenbrukes av senere skanninger.',
       STXT:
         '<b>security.txt (<a href="https://www.rfc-editor.org/rfc/rfc9116">RFC 9116</a>)</b> er en standard for publisering av informasjon om s\u00e5rbarhetsavsl\u00f8ring.<br><br>' +
         'Plasser filen p\u00e5 <code>/.well-known/security.txt</code> (foretrukket) eller <code>/security.txt</code>.<br><br>' +
@@ -2757,6 +2820,26 @@ const STRINGS = {
       BGP_ISP_BADGE_UNSAFE:'No seguro',
       BGP_ISP_BADGE_WARP:  'WARP',
       BGP_ISP_BADGE_ERROR: 'Desconocido',
+      // Connection tab (visitor tests)
+      PANEL_CONN:          'Conexión',
+      CONN_DNSSEC_TITLE:   '¿Valida DNSSEC tu resolutor DNS?',
+      CONN_DNSSEC_OK:      'Tu resolutor DNS valida DNSSEC — un nombre de prueba con una firma deliberadamente rota fue rechazado correctamente.',
+      CONN_DNSSEC_BAD:     'Tu resolutor DNS no valida DNSSEC — un nombre de prueba con una firma deliberadamente rota se resolvió de todos modos. Las respuestas DNS falsificadas para dominios firmados no serían detectadas en esta conexión.',
+      CONN_DNSSEC_ERROR:   'No se pudo contactar con los puntos de prueba de DNSSEC — resultado desconocido. La prueba se ejecutará de nuevo en el próximo escaneo.',
+      CONN_DNSSEC_BADGE_OK:    'Valida',
+      CONN_DNSSEC_BADGE_BAD:   'No valida',
+      CONN_DNSSEC_BADGE_ERROR: 'Desconocido',
+      CONN_DNSSEC_ATTRIBUTION: 'Método de prueba y dominios de Matthäus Wander:',
+      CONN_IP_TITLE:       'Tus direcciones IP públicas',
+      CONN_IP_BOTH:        'Tu conexión tiene tanto una dirección IPv4 pública como una IPv6 pública (doble pila).',
+      CONN_IP6_ONLY:       'Tu conexión es solo IPv6 — no se detectó ninguna dirección IPv4 pública.',
+      CONN_IP6_MISSING:    'Sin conectividad IPv6 — tu red o tu ISP aún no ha habilitado IPv6.',
+      CONN_IP_ERROR:       'No se pudieron determinar tus direcciones IP públicas — los puntos de prueba estaban inaccesibles.',
+      CONN_IP_BADGE_BOTH:  'Doble pila',
+      CONN_IP_BADGE_V6ONLY:'Solo IPv6',
+      CONN_IP_BADGE_NOV6:  'Sin IPv6',
+      CONN_IP_BADGE_ERROR: 'Desconocido',
+      CONN_IP_NONE:        'ninguna dirección detectada',
       OVERVIEW_PROVIDERS: 'Infraestructura de correo detectada',
     },
     d: {
@@ -2785,7 +2868,7 @@ const STRINGS = {
       TLSA_RECORDS_COUNT:    n => n + ' registro' + (n !== 1 ? 's' : '') + ' TLSA',
       RPKI_SUMMARY:          (valid, total, inv, noRoa) => valid + '/' + total + ' IP' + (total !== 1 ? 's' : '') + ' cubiert' + (total !== 1 ? 'as' : 'a') + ' por ROA v\u00e1lido' + (inv > 0 ? ' \u2014 ' + inv + ' inv\u00e1lid' + (inv !== 1 ? 'as' : 'a') : '') + (noRoa > 0 ? ' \u2014 ' + noRoa + ' sin ROA' : ''),
       ASPA_SUMMARY:          (pub, total) => pub + '/' + total + ' ASN' + (total !== 1 ? 's' : '') + ' con ASPA publicado',
-      BGP_ISP_NOTE:          dom => 'Esto prueba la conexión a internet desde la que navegas — no tiene relación con ' + dom + ' y nunca afecta a ninguna valoración, puntuación o nota.',
+      CONN_NOTE:             dom => 'Todo en esta pestaña prueba la conexión a internet y el navegador que estás usando ahora mismo — no tiene relación con ' + dom + ' y nunca afecta a ninguna valoración, puntuación o nota.',
       TLSRPT_ENDPOINT:       uri => 'Punto de notificaci\u00f3n: ' + uri,
       TLSRPT_BAD_URI:        uri => 'Esquema de URI rua= desconocido: ' + uri,
       MTASTS_MAX_AGE_LOW:    age => 'max_age=' + age + 's es menor de 1 d\u00eda \u2014 considera 604800 (1 semana) o m\u00e1s',
@@ -3029,11 +3112,7 @@ const STRINGS = {
         '<b>Sin ROA</b> \u2014 no se encontr\u00f3 ninguna ROA: el prefijo no est\u00e1 protegido pero puede enrutarse.<br><br>' +
         'Esta comprobaci\u00f3n resuelve IPs para todos los hosts NS y MX, luego consulta RIPE Stat para validar cada prefijo frente a su ASN de origen. ' +
         'RPKI protege la infraestructura de correo del secuestro de rutas BGP que podr\u00eda redirigir o interceptar el tr\u00e1fico de correo.<br><br>' +
-        '<b>\u00bfEs tu ISP seguro en BGP?</b> prueba la conexi\u00f3n desde la que navegas, no el dominio escaneado: ' +
-        'obtiene un recurso de prueba anunciado con una ROA v\u00e1lida y otro anunciado desde un ASN no autorizado. ' +
-        'Si el inv\u00e1lido se carga, tu ISP acepta rutas secuestradas. ' +
-        'Basado en <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> de Cloudflare (licencia MIT). ' +
-        'El resultado es solo informativo y nunca afecta a ninguna puntuaci\u00f3n.',
+        '\u00bfQuieres saber si tu propio ISP filtra rutas secuestradas? Consulta la pesta\u00f1a <b>Conexi\u00f3n</b>.',
       ASPA:
         '<b>ASPA (Autonomous System Provider Authorization, <a href="https://www.rfc-editor.org/rfc/rfc9582">RFC 9582</a>)</b> permite a un AS declarar qu\u00e9 proveedores upstream est\u00e1 autorizado a utilizar. ' +
         'Los registros ASPA publicados permiten detectar filtraciones de rutas: si el tr\u00e1fico llega a trav\u00e9s de un proveedor no autorizado, los routers compatibles con ASPA pueden rechazarlo.<br><br>' +
@@ -3043,6 +3122,14 @@ const STRINGS = {
         '<b>Nota:</b> RFC 9582 es a\u00fan un est\u00e1ndar propuesto y el despliegue real es actualmente muy limitado. ' +
         'Por ello, la ausencia de registros ASPA no afecta tu puntuaci\u00f3n \u2014 esta comprobaci\u00f3n es puramente informativa por ahora. ' +
         'No obstante, vale la pena preguntar a tu proveedor de hosting o ISP si est\u00e1n siguiendo el desarrollo de ASPA y considerando su implementaci\u00f3n.',
+      CONN:
+        '<b>Conexi\u00f3n</b> \u2014 a diferencia de todas las dem\u00e1s pesta\u00f1as, estas pruebas examinan la conexi\u00f3n a internet y el navegador desde los que escaneas, no el dominio que introdujiste. Nada de lo que hay aqu\u00ed afecta a ninguna valoraci\u00f3n, puntuaci\u00f3n o nota.<br><br>' +
+        '<b>Validaci\u00f3n DNSSEC</b> \u2014 se obtienen dos nombres de prueba por HTTPS: uno correctamente firmado y otro con la firma DNSSEC deliberadamente rota. Un resolutor validador se niega a resolver el nombre roto, as\u00ed que si aun as\u00ed se carga, el resolutor que usa tu navegador (el del sistema operativo, el de tu ISP, o un servicio de DNS cifrado \u00abDNS seguro\u00bb configurado en el navegador) acepta respuestas DNS falsificadas para dominios firmados. ' +
+        'M\u00e9todo de prueba y dominios del <a href="https://wander.science/projects/dns/dnssec-resolver-test/">DNSSEC Resolver Test</a> de Matth\u00e4us Wander.<br><br>' +
+        '<b>Direcciones IP p\u00fablicas</b> \u2014 tus direcciones IPv4 e IPv6 visibles desde el exterior seg\u00fan las reporta icanhazip.com (operado por Cloudflare), con la red que las anuncia (ASN y titular), el prefijo que las cubre, y si esa ruta est\u00e1 protegida por una ROA de RPKI v\u00e1lida. La falta de IPv6 aqu\u00ed significa que tu ISP o tu red a\u00fan no lo ha habilitado.<br><br>' +
+        '<b>\u00bfEs tu ISP seguro en BGP?</b> \u2014 prueba si tu ISP filtra rutas BGP secuestradas: obtiene un recurso de prueba anunciado con una ROA v\u00e1lida y otro anunciado desde un ASN no autorizado. Si el inv\u00e1lido se carga, tu ISP acepta rutas secuestradas. ' +
+        'Basado en <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> de Cloudflare (licencia MIT).<br><br>' +
+        '<b>Nota de privacidad:</b> estas pruebas contactan con ippacket.stream, icanhazip.com, isbgpsafeyet.com y RIPE Stat, y tus direcciones IP p\u00fablicas se env\u00edan a RIPE Stat para consultar sus datos de red. Los resultados se guardan durante la sesi\u00f3n de la p\u00e1gina: se ejecutan en tu primer escaneo y los escaneos posteriores los reutilizan.',
       STXT:
         '<b>security.txt (<a href="https://www.rfc-editor.org/rfc/rfc9116">RFC 9116</a>)</b> es un est\u00e1ndar para publicar informaci\u00f3n de divulgaci\u00f3n de vulnerabilidades.<br><br>' +
         'Coloca el archivo en <code>/.well-known/security.txt</code> (preferido) o <code>/security.txt</code>.<br><br>' +
@@ -3428,6 +3515,26 @@ const STRINGS = {
       BGP_ISP_BADGE_UNSAFE:'Non sûr',
       BGP_ISP_BADGE_WARP:  'WARP',
       BGP_ISP_BADGE_ERROR: 'Inconnu',
+      // Connection tab (visitor tests)
+      PANEL_CONN:          'Connexion',
+      CONN_DNSSEC_TITLE:   'Votre résolveur DNS valide-t-il DNSSEC ?',
+      CONN_DNSSEC_OK:      'Votre résolveur DNS valide DNSSEC — un nom de test à la signature délibérément cassée a été correctement refusé.',
+      CONN_DNSSEC_BAD:     'Votre résolveur DNS ne valide pas DNSSEC — un nom de test à la signature délibérément cassée a tout de même été résolu. Des réponses DNS falsifiées pour des domaines signés ne seraient pas détectées sur cette connexion.',
+      CONN_DNSSEC_ERROR:   'Les points de test DNSSEC sont injoignables — résultat inconnu. Le test sera relancé à la prochaine analyse.',
+      CONN_DNSSEC_BADGE_OK:    'Valide',
+      CONN_DNSSEC_BADGE_BAD:   'Ne valide pas',
+      CONN_DNSSEC_BADGE_ERROR: 'Inconnu',
+      CONN_DNSSEC_ATTRIBUTION: 'Méthode de test et domaines par Matthäus Wander :',
+      CONN_IP_TITLE:       'Vos adresses IP publiques',
+      CONN_IP_BOTH:        'Votre connexion dispose à la fois d\'une adresse IPv4 publique et d\'une adresse IPv6 publique (double pile).',
+      CONN_IP6_ONLY:       'Votre connexion est en IPv6 uniquement — aucune adresse IPv4 publique n\'a été détectée.',
+      CONN_IP6_MISSING:    'Pas de connectivité IPv6 — votre réseau ou votre FAI n\'a pas encore activé IPv6.',
+      CONN_IP_ERROR:       'Vos adresses IP publiques n\'ont pas pu être déterminées — les points de test étaient injoignables.',
+      CONN_IP_BADGE_BOTH:  'Double pile',
+      CONN_IP_BADGE_V6ONLY:'IPv6 seul',
+      CONN_IP_BADGE_NOV6:  'Sans IPv6',
+      CONN_IP_BADGE_ERROR: 'Inconnu',
+      CONN_IP_NONE:        'aucune adresse détectée',
       OVERVIEW_PROVIDERS: 'Infrastructure de messagerie détectée',
     },
 
@@ -3458,7 +3565,7 @@ const STRINGS = {
       TLSA_RECORDS_COUNT:    n => n + ' enregistrement' + (n !== 1 ? 's' : '') + ' TLSA',
       RPKI_SUMMARY:          (valid, total, inv, noRoa) => valid + '/' + total + ' IP' + (total !== 1 ? 's' : '') + ' couverte' + (total !== 1 ? 's' : '') + ' par un ROA valide' + (inv > 0 ? ' \u2014 ' + inv + ' invalide' + (inv !== 1 ? 's' : '') : '') + (noRoa > 0 ? ' \u2014 ' + noRoa + ' sans ROA' : ''),
       ASPA_SUMMARY:          (pub, total) => pub + '/' + total + ' ASN' + (total !== 1 ? 's' : '') + ' avec ASPA publi\u00e9',
-      BGP_ISP_NOTE:          dom => 'Ceci teste la connexion internet depuis laquelle vous naviguez \u2014 sans rapport avec ' + dom + ' et sans aucun effet sur les notes ou scores.',
+      CONN_NOTE:             dom => 'Tout dans cet onglet teste la connexion internet et le navigateur que vous utilisez en ce moment \u2014 sans rapport avec ' + dom + ' et sans aucun effet sur les notes ou scores.',
       TLSRPT_ENDPOINT:       uri => 'Point de rapport\u00a0: ' + uri,
       TLSRPT_BAD_URI:        uri => 'Sch\u00e9ma URI rua= inconnu\u00a0: ' + uri,
       MTASTS_MAX_AGE_LOW:    age => 'max_age=' + age + 's est inf\u00e9rieur \u00e0 1 jour \u2014 envisagez 604800 (1 semaine) ou plus',
@@ -3706,11 +3813,7 @@ const STRINGS = {
         '<b>Sans ROA</b> \u2014 aucune ROA trouv\u00e9e\u00a0: le pr\u00e9fixe n\'est pas prot\u00e9g\u00e9 mais peut \u00eatre rout\u00e9.<br><br>' +
         'Cette v\u00e9rification r\u00e9sout les IPs pour tous les h\u00f4tes NS et MX, puis interroge RIPE Stat pour valider chaque pr\u00e9fixe par rapport \u00e0 son ASN d\'origine. ' +
         'RPKI prot\u00e8ge l\'infrastructure de messagerie contre le d\u00e9tournement de routes BGP qui pourrait rediriger ou intercepter le trafic de messagerie.<br><br>' +
-        '<b>Votre FAI est-il s\u00fbr en BGP\u00a0?</b> teste la connexion depuis laquelle vous naviguez, pas le domaine analys\u00e9\u00a0: ' +
-        'il r\u00e9cup\u00e8re une ressource de test annonc\u00e9e avec une ROA valide et une autre annonc\u00e9e depuis un ASN non autoris\u00e9. ' +
-        'Si la ressource invalide se charge, votre FAI accepte les routes d\u00e9tourn\u00e9es. ' +
-        'Bas\u00e9 sur <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> de Cloudflare (licence MIT). ' +
-        'Le r\u00e9sultat est purement informatif et n\'affecte jamais aucun score.',
+        'Vous voulez savoir si votre propre FAI filtre les routes d\u00e9tourn\u00e9es\u00a0? Consultez l\'onglet <b>Connexion</b>.',
       ASPA:
         '<b>ASPA (Autonomous System Provider Authorization, <a href="https://www.rfc-editor.org/rfc/rfc9582">RFC 9582</a>)</b> permet \u00e0 un AS de d\u00e9clarer quels fournisseurs upstream il est autoris\u00e9 \u00e0 utiliser. ' +
         'Les enregistrements ASPA publi\u00e9s permettent de d\u00e9tecter les fuites de routes\u00a0: si le trafic arrive via un fournisseur non autoris\u00e9, les routeurs compatibles ASPA peuvent le rejeter.<br><br>' +
@@ -3720,6 +3823,14 @@ const STRINGS = {
         '<b>Note\u00a0:</b> RFC 9582 est encore une norme propos\u00e9e et le d\u00e9ploiement r\u00e9el est actuellement tr\u00e8s limit\u00e9. ' +
         'C\'est pourquoi l\'absence d\'enregistrements ASPA n\'affecte pas votre score \u2014 cette v\u00e9rification est purement informative pour l\'instant. ' +
         'Cependant, il vaut la peine de demander \u00e0 votre h\u00e9bergeur ou FAI s\'il suit le d\u00e9veloppement d\'ASPA et envisage son impl\u00e9mentation.',
+      CONN:
+        '<b>Connexion</b> \u2014 contrairement \u00e0 tous les autres onglets, ces tests examinent la connexion internet et le navigateur depuis lesquels vous analysez, pas le domaine saisi. Rien ici n\'affecte les notes ou scores.<br><br>' +
+        '<b>Validation DNSSEC</b> \u2014 deux noms de test sont r\u00e9cup\u00e9r\u00e9s en HTTPS\u00a0: l\'un correctement sign\u00e9, l\'autre avec une signature DNSSEC d\u00e9lib\u00e9r\u00e9ment cass\u00e9e. Un r\u00e9solveur validant refuse de r\u00e9soudre le nom cass\u00e9\u00a0; s\'il se charge malgr\u00e9 tout, le r\u00e9solveur utilis\u00e9 par votre navigateur (celui du syst\u00e8me d\'exploitation, de votre FAI, ou un service de DNS chiffr\u00e9 \u00ab\u00a0DNS s\u00e9curis\u00e9\u00a0\u00bb configur\u00e9 dans le navigateur) accepte des r\u00e9ponses DNS falsifi\u00e9es pour des domaines sign\u00e9s. ' +
+        'M\u00e9thode de test et domaines du <a href="https://wander.science/projects/dns/dnssec-resolver-test/">DNSSEC Resolver Test</a> de Matth\u00e4us Wander.<br><br>' +
+        '<b>Adresses IP publiques</b> \u2014 vos adresses IPv4 et IPv6 visibles de l\'ext\u00e9rieur telles que rapport\u00e9es par icanhazip.com (op\u00e9r\u00e9 par Cloudflare), avec le r\u00e9seau annonceur (ASN et titulaire), le pr\u00e9fixe couvrant, et si cette route est prot\u00e9g\u00e9e par une ROA RPKI valide. L\'absence d\'IPv6 ici signifie que votre FAI ou votre r\u00e9seau ne l\'a pas encore activ\u00e9.<br><br>' +
+        '<b>Votre FAI est-il s\u00fbr en BGP\u00a0?</b> \u2014 teste si votre FAI filtre les routes BGP d\u00e9tourn\u00e9es\u00a0: il r\u00e9cup\u00e8re une ressource de test annonc\u00e9e avec une ROA valide et une autre annonc\u00e9e depuis un ASN non autoris\u00e9. Si la ressource invalide se charge, votre FAI accepte les routes d\u00e9tourn\u00e9es. ' +
+        'Bas\u00e9 sur <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> de Cloudflare (licence MIT).<br><br>' +
+        '<b>Note de confidentialit\u00e9\u00a0:</b> ces tests contactent ippacket.stream, icanhazip.com, isbgpsafeyet.com et RIPE Stat, et vos adresses IP publiques sont envoy\u00e9es \u00e0 RIPE Stat pour consulter leurs donn\u00e9es r\u00e9seau. Les r\u00e9sultats sont conserv\u00e9s pour la session de la page\u00a0: ils s\'ex\u00e9cutent \u00e0 la premi\u00e8re analyse et sont r\u00e9utilis\u00e9s ensuite.',
       STXT:
         '<b>security.txt (<a href="https://www.rfc-editor.org/rfc/rfc9116">RFC 9116</a>)</b> est une norme pour publier des informations de divulgation des vuln\u00e9rabilit\u00e9s.<br><br>' +
         'Placez le fichier \u00e0 <code>/.well-known/security.txt</code> (pr\u00e9f\u00e9r\u00e9) ou <code>/security.txt</code>.<br><br>' +
@@ -5910,6 +6021,7 @@ const rpkiIpCache  = new Map();  // ip  → rpkiLookupIP result
 const aspaAsnCache = new Map();  // asn → aspaLookupASN result
 const asnInfoCache = new Map();  // asn → holder name string | null
 let bgpSafetyPromise = null;     // in-flight/settled ISP BGP-safety test (see checkBGPSafety)
+let connTestPromise  = null;     // in-flight/settled visitor connection test (see checkConnection)
 
 async function rpkiLookupIP(ip) {
   if (rpkiIpCache.has(ip)) { if (scanStats) scanStats.ripeStatCacheHits++; return rpkiIpCache.get(ip); }
@@ -6150,6 +6262,70 @@ async function runBGPSafetyTest() {
     return { status: reachable ? 'unsafe' : 'safe', asn: valid.asn, name: valid.name || null };
   } catch (_) {
     return { status: 'error' };
+  }
+}
+
+// ── Visitor connection tests (Connection tab) ─────────────────────────────────
+// Like the BGP-safety test these examine the connection the visitor is browsing
+// from, not the scanned domain, so the result is cached for the page session.
+// Inconclusive results are evicted so the next scan retries.
+
+function checkConnection() {
+  if (!connTestPromise) {
+    connTestPromise = runConnectionTest().then(res => {
+      if (res.dnssec === 'error' || (!res.ip.v4 && !res.ip.v6)) connTestPromise = null;
+      return res;
+    });
+  }
+  return connTestPromise;
+}
+
+async function runConnectionTest() {
+  try {
+    if (scanStats) scanStats.httpRequests += 4;
+
+    // Resolver DNSSEC validation (method and domains by Matthäus Wander,
+    // wander.science). sigfail.ippacket.stream presents a valid
+    // *.ippacket.stream certificate but CNAMEs into a zone whose signatures are
+    // deliberately broken, so a validating resolver SERVFAILs the lookup while
+    // a non-validating one loads the page fine over HTTPS. Only a settled HTTP
+    // response proves non-validation; any network-level failure counts as
+    // validated, and the sigok control catches a network that cannot reach the
+    // test infrastructure at all. no-cors: only settle/reject is observed.
+    // Cache-buster + no-store so a cached response can never stand in for DNS.
+    const bust = Date.now().toString(36) + Math.floor(Math.random() * 1e9).toString(36);
+    const probe = host => fetch('https://' + host + '/?nocache=' + bust,
+        { mode: 'no-cors', cache: 'no-store', signal: timeoutSignal(TIMEOUT_HTTP) })
+      .then(() => true, () => false);
+
+    // Public egress addresses, one family-locked endpoint each (Cloudflare-run,
+    // CORS-open). A failed IPv6 fetch is itself the result: no IPv6 path.
+    const echo = (host, re) => fetch('https://' + host + '/',
+        { signal: timeoutSignal(TIMEOUT_HTTP) })
+      .then(r => (r.ok ? r.text() : null), () => null)
+      .then(t => { const ip = t == null ? null : t.trim(); return ip && re.test(ip) ? ip : null; });
+
+    const [sigOk, sigFail, v4, v6] = await Promise.all([
+      probe('sigok.ippacket.stream'),
+      probe('sigfail.ippacket.stream'),
+      echo('ipv4.icanhazip.com', /^\d{1,3}(\.\d{1,3}){3}$/),
+      echo('ipv6.icanhazip.com', /^[0-9a-fA-F]*:[0-9a-fA-F:]+$/),
+    ]);
+    const dnssec = !sigOk ? 'error' : (sigFail ? 'not-validating' : 'validating');
+
+    // Origin network for each address — reuses the RPKI session caches, so a
+    // rescan costs nothing and the RPKI tab benefits from the same lookups.
+    const [v4Info, v6Info] = await Promise.all([
+      v4 ? rpkiLookupIP(v4).catch(() => null) : null,
+      v6 ? rpkiLookupIP(v6).catch(() => null) : null,
+    ]);
+    const holders = {};
+    const asns = [...new Set([v4Info, v6Info].filter(i => i && i.asn).map(i => i.asn))];
+    await Promise.all(asns.map(a => fetchASNHolder(a).then(h => { holders[a] = h; })));
+
+    return { dnssec, ip: { v4, v6, v4Info, v6Info, holders } };
+  } catch (_) {
+    return { dnssec: 'error', ip: { v4: null, v6: null, v4Info: null, v6Info: null, holders: {} } };
   }
 }
 
@@ -7245,11 +7421,14 @@ function renderCAA(result) {
 // Reads lastResults.bgp from module scope — same pattern as renderMX reading
 // lastResults.ipv6 — so a language switch re-renders it without re-testing.
 // Display only: the rating here never reaches the tab dot, bars or grade.
+// Display-only rating for the ISP BGP-safety result; shared by the BGP section
+// and the Connection tab dot. Never aggregated into any score or grade.
+const BGP_STATUS_RATING = { safe: 'excellent', unsafe: 'fail', warp: 'warning', error: 'warning' };
+
 function renderBGPSafetySection(body) {
   const res = lastResults && lastResults.bgp && lastResults.bgp.status === 'fulfilled'
     ? lastResults.bgp.value : { status: 'error' };
 
-  const BGP_STATUS_RATING = { safe: 'excellent', unsafe: 'fail', warp: 'warning', error: 'warning' };
   const BGP_STATUS_KEY    = { safe: 'BGP_ISP_SAFE', unsafe: 'BGP_ISP_UNSAFE', warp: 'BGP_ISP_WARP', error: 'BGP_ISP_ERROR' };
   const BGP_BADGE_KEY     = { safe: 'BGP_ISP_BADGE_SAFE', unsafe: 'BGP_ISP_BADGE_UNSAFE', warp: 'BGP_ISP_BADGE_WARP', error: 'BGP_ISP_BADGE_ERROR' };
   const rating = BGP_STATUS_RATING[res.status] || 'warning';
@@ -7275,10 +7454,6 @@ function renderBGPSafetySection(body) {
     sec.appendChild(ispLine);
   }
 
-  const note = el('div', null, td('BGP_ISP_NOTE', currentDomain));
-  note.style.cssText = 'font-size:0.78rem;color:var(--text-muted);margin-block-start:0.5rem';
-  sec.appendChild(note);
-
   const attrib = el('div', null, ts('BGP_ISP_ATTRIBUTION') + ' ');
   attrib.style.cssText = 'font-size:0.78rem;color:var(--text-muted);margin-block-start:0.25rem';
   const link = document.createElement('a');
@@ -7290,6 +7465,103 @@ function renderBGPSafetySection(body) {
   sec.appendChild(attrib);
 
   body.appendChild(sec);
+}
+
+function renderConnection(result) {
+  const d = result && result.status === 'fulfilled' ? result.value
+    : { dnssec: 'error', ip: { v4: null, v6: null, v4Info: null, v6Info: null, holders: {} } };
+  const bgpRes = lastResults && lastResults.bgp && lastResults.bgp.status === 'fulfilled'
+    ? lastResults.bgp.value : { status: 'error' };
+
+  const CONN_DNSSEC_RATING = { validating: 'excellent', 'not-validating': 'warning', error: 'warning' };
+  const CONN_DNSSEC_KEY    = { validating: 'CONN_DNSSEC_OK', 'not-validating': 'CONN_DNSSEC_BAD', error: 'CONN_DNSSEC_ERROR' };
+  const CONN_DNSSEC_BADGE  = { validating: 'CONN_DNSSEC_BADGE_OK', 'not-validating': 'CONN_DNSSEC_BADGE_BAD', error: 'CONN_DNSSEC_BADGE_ERROR' };
+  const dnssecRating = CONN_DNSSEC_RATING[d.dnssec] || 'warning';
+
+  let ipRating, ipKey, ipBadgeKey;
+  if (d.ip.v4 && d.ip.v6)  { ipRating = 'excellent'; ipKey = 'CONN_IP_BOTH';    ipBadgeKey = 'CONN_IP_BADGE_BOTH'; }
+  else if (d.ip.v6)        { ipRating = 'good';      ipKey = 'CONN_IP6_ONLY';   ipBadgeKey = 'CONN_IP_BADGE_V6ONLY'; }
+  else if (d.ip.v4)        { ipRating = 'warning';   ipKey = 'CONN_IP6_MISSING';ipBadgeKey = 'CONN_IP_BADGE_NOV6'; }
+  else                     { ipRating = 'warning';   ipKey = 'CONN_IP_ERROR';   ipBadgeKey = 'CONN_IP_BADGE_ERROR'; }
+
+  // Display-only, like everything in this tab: the dot and badge reflect the
+  // visitor's connection and are never aggregated into any score or grade.
+  const rating = worstRating(worstRating(dnssecRating, ipRating),
+    BGP_STATUS_RATING[bgpRes.status] || 'warning');
+
+  setTabResult('connection', rating, body => {
+    body.appendChild(el('div', 'card-summary', td('CONN_NOTE', currentDomain)));
+
+    // ── Resolver DNSSEC validation ─────────────────────────────────────────
+    const dsec = el('div', 'panel-section');
+    const dtitle = el('div', 'panel-section-title', ts('CONN_DNSSEC_TITLE'));
+    const dbadge = el('span', 'badge badge-' + dnssecRating, ts(CONN_DNSSEC_BADGE[d.dnssec] || 'CONN_DNSSEC_BADGE_ERROR'));
+    dbadge.style.marginInlineStart = '0.4rem';
+    dtitle.appendChild(dbadge);
+    dsec.appendChild(dtitle);
+    dsec.appendChild(makeIssueList([{ rating: dnssecRating, text: ts(CONN_DNSSEC_KEY[d.dnssec] || 'CONN_DNSSEC_ERROR') }]));
+
+    const dattrib = el('div', null, ts('CONN_DNSSEC_ATTRIBUTION') + ' ');
+    dattrib.style.cssText = 'font-size:0.78rem;color:var(--text-muted);margin-block-start:0.25rem';
+    const dlink = document.createElement('a');
+    dlink.textContent = 'wander.science';
+    dlink.href = 'https://wander.science/projects/dns/dnssec-resolver-test/';
+    dlink.target = '_blank';
+    dlink.rel = 'noopener noreferrer';
+    dattrib.appendChild(dlink);
+    dsec.appendChild(dattrib);
+    body.appendChild(dsec);
+
+    // ── Public IP addresses ────────────────────────────────────────────────
+    const isec = el('div', 'panel-section');
+    const ititle = el('div', 'panel-section-title', ts('CONN_IP_TITLE'));
+    const ibadge = el('span', 'badge badge-' + ipRating, ts(ipBadgeKey));
+    ibadge.style.marginInlineStart = '0.4rem';
+    ititle.appendChild(ibadge);
+    isec.appendChild(ititle);
+    isec.appendChild(makeIssueList([{ rating: ipRating, text: ts(ipKey) }]));
+
+    const ROA_RATING = { valid: 'excellent', invalid: 'fail', unknown: 'warning', not_routed: 'warning' };
+    const ROA_LABEL  = { valid: 'valid', invalid: 'invalid', unknown: 'no ROA', not_routed: 'not routed' };
+    function addIPLine(familyLabel, ip, info) {
+      const line = el('div');
+      line.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;font-size:0.78rem;padding:0.15rem 0 0 0.2rem';
+      line.appendChild(el('span', 'tag-pill', familyLabel));
+      if (!ip) {
+        const none = el('span', null, ts('CONN_IP_NONE'));
+        none.style.color = 'var(--text-muted)';
+        line.appendChild(none);
+      } else {
+        const ipEl = el('span', null, ip);
+        ipEl.style.fontFamily = 'monospace';
+        line.appendChild(ipEl);
+        if (info && info.prefix) {
+          line.appendChild(el('span', 'tag-pill', info.prefix));
+          line.appendChild(el('span', 'tag-pill', 'AS' + info.asn));
+          const holder = d.ip.holders && d.ip.holders[info.asn];
+          if (holder) {
+            const holderEl = el('span', null, holder);
+            holderEl.style.color = 'var(--text-muted)';
+            line.appendChild(holderEl);
+          }
+        }
+        if (info && info.status) {
+          const srating = ROA_RATING[info.status] || 'warning';
+          const slabel  = ROA_LABEL[info.status]  || info.status;
+          line.appendChild(el('span', 'badge badge-' + srating, slabel.toUpperCase()));
+        }
+      }
+      isec.appendChild(line);
+    }
+    addIPLine('IPv4', d.ip.v4, d.ip.v4Info);
+    addIPLine('IPv6', d.ip.v6, d.ip.v6Info);
+    body.appendChild(isec);
+
+    // ── ISP BGP safety (moved here from the RPKI tab) ──────────────────────
+    renderBGPSafetySection(body);
+
+    addExplanation(body, tx('CONN'));
+  });
 }
 
 function renderRPKI(result) {
@@ -7398,7 +7670,6 @@ function renderRPKI(result) {
       body.appendChild(nsDivSec);
     }
 
-    renderBGPSafetySection(body);
     addExplanation(body, tx('RPKI'));
   });
 }
@@ -7906,7 +8177,7 @@ function renderStatsPanel(dkim, rpki) {
       dnssec: 'DNSSEC', mx: 'MX', ptr: 'PTR', dane: 'DANE', spf: 'SPF',
       dkim: 'DKIM', dmarc: 'DMARC', bimi: 'BIMI', tlsrpt: 'TLS-RPT',
       mtasts: 'MTA-STS', caa: 'CAA', rpki: 'RPKI', ipv6: 'IPv6',
-      stxt: 'Sec.txt', whois: 'WHOIS', bgp: 'ISP BGP',
+      stxt: 'Sec.txt', whois: 'WHOIS', bgp: 'ISP BGP', conn: 'Connection',
     };
     const maxMs = checkEntries[0][1] || 1;
     for (const [name, ms] of checkEntries) {
@@ -8111,6 +8382,7 @@ function rerenderAll(r) {
   renderDNSSEC(r.dnssec); renderMX(r.mx); renderPTR(r.ptr); renderDANE(r.dane); renderSPF(r.spf);
   renderDKIM(r.dkim); renderDMARC(r.dmarc); renderBIMI(r.bimi); renderTLSRPT(r.tlsrpt); renderMTASTS(r.mtasts); renderCAA(r.caa);
   renderRPKI(r.rpki); renderASPA(r.rpki); renderIPv6(r.ipv6); renderSecurityTxt(r.securityTxt); renderWHOIS(r.whois);
+  renderConnection(r.conn);
   renderSummary(r);
   renderRecommendations(r);
 }
@@ -8162,12 +8434,12 @@ async function runChecks(domain, customSelectors, opts = {}) {
   ph.appendChild(loadRow);
   document.getElementById('overview-content').style.display = 'none';
 
-  const tabsToLoad = ['recs','dnssec','mx','ptr','dane','spf','dkim','dmarc','bimi','tlsrpt','caa','rpki','aspa','ipv6','whois'];
+  const tabsToLoad = ['recs','dnssec','mx','ptr','dane','spf','dkim','dmarc','bimi','tlsrpt','caa','rpki','aspa','ipv6','whois','connection'];
   if (!skipMTASTS) tabsToLoad.push('mtasts');
   if (!skipSecTxt) tabsToLoad.push('security-txt');
   tabsToLoad.forEach(setTabLoading);
 
-  const [dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois, bgp] = await Promise.allSettled([
+  const [dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois, bgp, conn] = await Promise.allSettled([
     timed('dnssec',  checkDNSSEC(domain)),
     timed('mx',      checkMX(domain)),
     timed('ptr',     checkPTR(domain)),
@@ -8184,10 +8456,11 @@ async function runChecks(domain, customSelectors, opts = {}) {
     timed('stxt',    skipSecTxt ? Promise.resolve(SKIPPED) : checkSecurityTxt(domain)),
     timed('whois',   checkWHOIS(domain)),
     timed('bgp',     checkBGPSafety()),
+    timed('conn',    checkConnection()),
   ]);
   if (scanStats) scanStats.totalMs = Date.now() - scanStats.startMs;
 
-  lastResults = { dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois, bgp };
+  lastResults = { dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois, bgp, conn };
   rerenderAll(lastResults);
 }
 

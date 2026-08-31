@@ -323,6 +323,26 @@ const LANG_NO = {
     BGP_ISP_BADGE_UNSAFE:'Ikke trygg',
     BGP_ISP_BADGE_WARP:  'WARP',
     BGP_ISP_BADGE_ERROR: 'Ukjent',
+    // Connection tab (visitor tests)
+    PANEL_CONN:          'Tilkobling',
+    CONN_DNSSEC_TITLE:   'Validerer DNS-resolveren din DNSSEC?',
+    CONN_DNSSEC_OK:      'DNS-resolveren din validerer DNSSEC — et testnavn med en bevisst ødelagt signatur ble korrekt avvist.',
+    CONN_DNSSEC_BAD:     'DNS-resolveren din validerer ikke DNSSEC — et testnavn med en bevisst ødelagt signatur ble likevel slått opp. Forfalskede DNS-svar for signerte domener ville ikke bli oppdaget på denne forbindelsen.',
+    CONN_DNSSEC_ERROR:   'DNSSEC-testendepunktene kunne ikke nås — resultatet er ukjent. Testen kjøres på nytt ved neste skanning.',
+    CONN_DNSSEC_BADGE_OK:    'Validerer',
+    CONN_DNSSEC_BADGE_BAD:   'Validerer ikke',
+    CONN_DNSSEC_BADGE_ERROR: 'Ukjent',
+    CONN_DNSSEC_ATTRIBUTION: 'Testmetode og domener av Matthäus Wander:',
+    CONN_IP_TITLE:       'Dine offentlige IP-adresser',
+    CONN_IP_BOTH:        'Forbindelsen din har både en offentlig IPv4- og en offentlig IPv6-adresse (dual stack).',
+    CONN_IP6_ONLY:       'Forbindelsen din er kun IPv6 — ingen offentlig IPv4-adresse ble funnet.',
+    CONN_IP6_MISSING:    'Ingen IPv6-tilkobling — nettverket eller internettleverandøren din har ikke aktivert IPv6 ennå.',
+    CONN_IP_ERROR:       'De offentlige IP-adressene dine kunne ikke fastslås — testendepunktene var utilgjengelige.',
+    CONN_IP_BADGE_BOTH:  'Dual stack',
+    CONN_IP_BADGE_V6ONLY:'Kun IPv6',
+    CONN_IP_BADGE_NOV6:  'Ingen IPv6',
+    CONN_IP_BADGE_ERROR: 'Ukjent',
+    CONN_IP_NONE:        'ingen adresse funnet',
     OVERVIEW_PROVIDERS: 'Oppdaget e-postinfrastruktur',
   },
   // ── d: dynamic strings (arrow functions) ─────────────────────────────────
@@ -352,7 +372,7 @@ const LANG_NO = {
     TLSA_RECORDS_COUNT:    n => n + ' TLSA-poster',
     RPKI_SUMMARY:          (valid, total, inv, noRoa) => valid + '/' + total + ' IP' + (total !== 1 ? 'er' : '') + ' dekket av gyldig ROA' + (inv > 0 ? ' \u2014 ' + inv + ' ugyldig' : '') + (noRoa > 0 ? ' \u2014 ' + noRoa + ' ingen ROA' : ''),
     ASPA_SUMMARY:          (pub, total) => pub + '/' + total + ' ASN' + (total !== 1 ? 'er' : '') + ' med publisert ASPA',
-    BGP_ISP_NOTE:          dom => 'Dette tester internettforbindelsen du surfer fra — den er urelatert til ' + dom + ' og påvirker aldri noen vurdering, poengsum eller karakter.',
+    CONN_NOTE:             dom => 'Alt i denne fanen tester internettforbindelsen og nettleseren du bruker akkurat nå — det er urelatert til ' + dom + ' og påvirker aldri noen vurdering, poengsum eller karakter.',
     TLSRPT_ENDPOINT:       uri => 'Rapporteringsendepunkt: ' + uri,
     TLSRPT_BAD_URI:        uri => 'Ukjent rua= URI-skjema: ' + uri,
     MTASTS_MAX_AGE_LOW:    age => 'max_age=' + age + 's er under 1 dag \u2014 vurder 604800 (1 uke) eller mer',
@@ -596,11 +616,7 @@ const LANG_NO = {
       '<b>Ingen ROA</b> \u2014 ingen ROA funnet: prefikset er ubeskyttet men kan fortsatt rutes.<br><br>' +
       'Denne sjekken l\u00f8ser opp IP-adresser for alle NS- og MX-verter og sp\u00f8r RIPE Stat for \u00e5 validere hvert prefiks mot sitt opprinnelses-ASN. ' +
       'RPKI beskytter e-postinfrastruktur mot BGP-rutekapring som kan omdirigere eller avskj\u00e6re e-posttrafikk.<br><br>' +
-      '<b>Er internettleverand\u00f8ren din BGP-trygg?</b> tester forbindelsen du surfer fra, ikke det skannede domenet: ' +
-      'den henter \u00e9n testressurs annonsert med en gyldig ROA og \u00e9n annonsert fra et uautorisert ASN. ' +
-      'Hvis den ugyldige lastes, godtar internettleverand\u00f8ren din kaprede ruter. ' +
-      'Basert p\u00e5 Cloudflares <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> (MIT-lisensiert). ' +
-      'Resultatet er kun til informasjon og p\u00e5virker aldri noen poengsum.',
+      'Nysgjerrig p\u00e5 om din egen internettleverand\u00f8r filtrerer kaprede ruter? Se fanen <b>Tilkobling</b>.',
     ASPA:
       '<b>ASPA (Autonomous System Provider Authorization, <a href="https://www.rfc-editor.org/rfc/rfc9582">RFC 9582</a>)</b> lar et AS erkl\u00e6re hvilke oppstr\u00f8ms-leverand\u00f8rer det er autorisert til \u00e5 bruke. ' +
       'Publiserte ASPA-poster muliggj\u00f8r deteksjon av rutelekk: hvis trafikk ankommer gjennom en uautorisert leverand\u00f8r, kan ASPA-bevisste rutere avvise den.<br><br>' +
@@ -610,6 +626,14 @@ const LANG_NO = {
       '<b>Merk:</b> RFC 9582 er fortsatt en foreslått standard og faktisk distribusjon er forel\u00f8pig svært begrenset. ' +
       'Derfor p\u00e5virker manglende ASPA-poster ikke poengsummen din \u2014 denne sjekken er rent informativ for n\u00e5. ' +
       'Likevel er det verdt \u00e5 kontakte din hostingleverand\u00f8r eller internettleverand\u00f8r(er) og sp\u00f8rre om de f\u00f8lger utviklingen av ASPA og vurderer distribusjon.',
+    CONN:
+      '<b>Tilkobling</b> \u2014 i motsetning til alle andre faner tester denne internettforbindelsen og nettleseren du skanner fra, ikke domenet du skrev inn. Ingenting her p\u00e5virker noen vurdering, poengsum eller karakter.<br><br>' +
+      '<b>DNSSEC-validering</b> \u2014 to HTTPS-testnavn hentes: ett korrekt signert og ett med en bevisst \u00f8delagt DNSSEC-signatur. En validerende resolver nekter \u00e5 sl\u00e5 opp det \u00f8delagte navnet, s\u00e5 hvis det likevel lastes, godtar resolveren nettleseren din bruker (operativsystemets, internettleverand\u00f8rens, eller en kryptert DNS-tjeneste (\u00absikker DNS\u00bb) satt opp i nettleseren) forfalskede DNS-svar for signerte domener. ' +
+      'Testmetode og domener fra <a href="https://wander.science/projects/dns/dnssec-resolver-test/">DNSSEC Resolver Test</a> av Matth\u00e4us Wander.<br><br>' +
+      '<b>Offentlige IP-adresser</b> \u2014 dine utad synlige IPv4- og IPv6-adresser slik icanhazip.com (driftet av Cloudflare) rapporterer dem, med annonserende nettverk (ASN og innehaver), dekkende prefiks, og om ruten er beskyttet av en gyldig RPKI ROA. Manglende IPv6 her betyr at internettleverand\u00f8ren eller nettverket ditt ikke har aktivert det enn\u00e5.<br><br>' +
+      '<b>Er internettleverand\u00f8ren din BGP-trygg?</b> \u2014 tester om internettleverand\u00f8ren din filtrerer kaprede BGP-ruter: den henter \u00e9n testressurs annonsert med en gyldig ROA og \u00e9n annonsert fra et uautorisert ASN. Hvis den ugyldige lastes, godtar internettleverand\u00f8ren din kaprede ruter. ' +
+      'Basert p\u00e5 Cloudflares <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> (MIT-lisensiert).<br><br>' +
+      '<b>Personvernmerknad:</b> disse testene kontakter ippacket.stream, icanhazip.com, isbgpsafeyet.com og RIPE Stat, og de offentlige IP-adressene dine sendes til RIPE Stat for \u00e5 sl\u00e5 opp nettverksdataene deres. Resultatene bufres for sidesesjonen: de kj\u00f8res ved f\u00f8rste skanning og gjenbrukes av senere skanninger.',
     STXT:
       '<b>security.txt (<a href="https://www.rfc-editor.org/rfc/rfc9116">RFC 9116</a>)</b> er en standard for publisering av informasjon om s\u00e5rbarhetsavsl\u00f8ring.<br><br>' +
       'Plasser filen p\u00e5 <code>/.well-known/security.txt</code> (foretrukket) eller <code>/security.txt</code>.<br><br>' +

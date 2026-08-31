@@ -316,6 +316,26 @@ const LANG_FR = {
     BGP_ISP_BADGE_UNSAFE:'Non sûr',
     BGP_ISP_BADGE_WARP:  'WARP',
     BGP_ISP_BADGE_ERROR: 'Inconnu',
+    // Connection tab (visitor tests)
+    PANEL_CONN:          'Connexion',
+    CONN_DNSSEC_TITLE:   'Votre résolveur DNS valide-t-il DNSSEC ?',
+    CONN_DNSSEC_OK:      'Votre résolveur DNS valide DNSSEC — un nom de test à la signature délibérément cassée a été correctement refusé.',
+    CONN_DNSSEC_BAD:     'Votre résolveur DNS ne valide pas DNSSEC — un nom de test à la signature délibérément cassée a tout de même été résolu. Des réponses DNS falsifiées pour des domaines signés ne seraient pas détectées sur cette connexion.',
+    CONN_DNSSEC_ERROR:   'Les points de test DNSSEC sont injoignables — résultat inconnu. Le test sera relancé à la prochaine analyse.',
+    CONN_DNSSEC_BADGE_OK:    'Valide',
+    CONN_DNSSEC_BADGE_BAD:   'Ne valide pas',
+    CONN_DNSSEC_BADGE_ERROR: 'Inconnu',
+    CONN_DNSSEC_ATTRIBUTION: 'Méthode de test et domaines par Matthäus Wander :',
+    CONN_IP_TITLE:       'Vos adresses IP publiques',
+    CONN_IP_BOTH:        'Votre connexion dispose à la fois d\'une adresse IPv4 publique et d\'une adresse IPv6 publique (double pile).',
+    CONN_IP6_ONLY:       'Votre connexion est en IPv6 uniquement — aucune adresse IPv4 publique n\'a été détectée.',
+    CONN_IP6_MISSING:    'Pas de connectivité IPv6 — votre réseau ou votre FAI n\'a pas encore activé IPv6.',
+    CONN_IP_ERROR:       'Vos adresses IP publiques n\'ont pas pu être déterminées — les points de test étaient injoignables.',
+    CONN_IP_BADGE_BOTH:  'Double pile',
+    CONN_IP_BADGE_V6ONLY:'IPv6 seul',
+    CONN_IP_BADGE_NOV6:  'Sans IPv6',
+    CONN_IP_BADGE_ERROR: 'Inconnu',
+    CONN_IP_NONE:        'aucune adresse détectée',
     OVERVIEW_PROVIDERS: 'Infrastructure de messagerie détectée',
   },
 
@@ -346,7 +366,7 @@ const LANG_FR = {
     TLSA_RECORDS_COUNT:    n => n + ' enregistrement' + (n !== 1 ? 's' : '') + ' TLSA',
     RPKI_SUMMARY:          (valid, total, inv, noRoa) => valid + '/' + total + ' IP' + (total !== 1 ? 's' : '') + ' couverte' + (total !== 1 ? 's' : '') + ' par un ROA valide' + (inv > 0 ? ' \u2014 ' + inv + ' invalide' + (inv !== 1 ? 's' : '') : '') + (noRoa > 0 ? ' \u2014 ' + noRoa + ' sans ROA' : ''),
     ASPA_SUMMARY:          (pub, total) => pub + '/' + total + ' ASN' + (total !== 1 ? 's' : '') + ' avec ASPA publié',
-    BGP_ISP_NOTE:          dom => 'Ceci teste la connexion internet depuis laquelle vous naviguez — sans rapport avec ' + dom + ' et sans aucun effet sur les notes ou scores.',
+    CONN_NOTE:             dom => 'Tout dans cet onglet teste la connexion internet et le navigateur que vous utilisez en ce moment \u2014 sans rapport avec ' + dom + ' et sans aucun effet sur les notes ou scores.',
     TLSRPT_ENDPOINT:       uri => 'Point de rapport\u00a0: ' + uri,
     TLSRPT_BAD_URI:        uri => 'Schéma URI rua= inconnu\u00a0: ' + uri,
     MTASTS_MAX_AGE_LOW:    age => 'max_age=' + age + 's est inférieur à 1 jour \u2014 envisagez 604800 (1 semaine) ou plus',
@@ -594,11 +614,7 @@ const LANG_FR = {
       '<b>Sans ROA</b> \u2014 aucune ROA trouvée\u00a0: le préfixe n\'est pas protégé mais peut être routé.<br><br>' +
       'Cette vérification résout les IPs pour tous les hôtes NS et MX, puis interroge RIPE Stat pour valider chaque préfixe par rapport à son ASN d\'origine. ' +
       'RPKI protège l\'infrastructure de messagerie contre le détournement de routes BGP qui pourrait rediriger ou intercepter le trafic de messagerie.<br><br>' +
-      '<b>Votre FAI est-il sûr en BGP ?</b> teste la connexion depuis laquelle vous naviguez, pas le domaine analysé : ' +
-      'il récupère une ressource de test annoncée avec une ROA valide et une autre annoncée depuis un ASN non autorisé. ' +
-      'Si la ressource invalide se charge, votre FAI accepte les routes détournées. ' +
-      'Basé sur <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> de Cloudflare (licence MIT). ' +
-      'Le résultat est purement informatif et n\'affecte jamais aucun score.',
+      'Vous voulez savoir si votre propre FAI filtre les routes d\u00e9tourn\u00e9es\u00a0? Consultez l\'onglet <b>Connexion</b>.',
     ASPA:
       '<b>ASPA (Autonomous System Provider Authorization, <a href="https://www.rfc-editor.org/rfc/rfc9582">RFC 9582</a>)</b> permet à un AS de déclarer quels fournisseurs upstream il est autorisé à utiliser. ' +
       'Les enregistrements ASPA publiés permettent de détecter les fuites de routes\u00a0: si le trafic arrive via un fournisseur non autorisé, les routeurs compatibles ASPA peuvent le rejeter.<br><br>' +
@@ -608,6 +624,14 @@ const LANG_FR = {
       '<b>Note\u00a0:</b> RFC 9582 est encore une norme proposée et le déploiement réel est actuellement très limité. ' +
       'C\'est pourquoi l\'absence d\'enregistrements ASPA n\'affecte pas votre score \u2014 cette vérification est purement informative pour l\'instant. ' +
       'Cependant, il vaut la peine de demander à votre hébergeur ou FAI s\'il suit le développement d\'ASPA et envisage son implémentation.',
+    CONN:
+      '<b>Connexion</b> \u2014 contrairement \u00e0 tous les autres onglets, ces tests examinent la connexion internet et le navigateur depuis lesquels vous analysez, pas le domaine saisi. Rien ici n\'affecte les notes ou scores.<br><br>' +
+      '<b>Validation DNSSEC</b> \u2014 deux noms de test sont r\u00e9cup\u00e9r\u00e9s en HTTPS\u00a0: l\'un correctement sign\u00e9, l\'autre avec une signature DNSSEC d\u00e9lib\u00e9r\u00e9ment cass\u00e9e. Un r\u00e9solveur validant refuse de r\u00e9soudre le nom cass\u00e9\u00a0; s\'il se charge malgr\u00e9 tout, le r\u00e9solveur utilis\u00e9 par votre navigateur (celui du syst\u00e8me d\'exploitation, de votre FAI, ou un service de DNS chiffr\u00e9 \u00ab\u00a0DNS s\u00e9curis\u00e9\u00a0\u00bb configur\u00e9 dans le navigateur) accepte des r\u00e9ponses DNS falsifi\u00e9es pour des domaines sign\u00e9s. ' +
+      'M\u00e9thode de test et domaines du <a href="https://wander.science/projects/dns/dnssec-resolver-test/">DNSSEC Resolver Test</a> de Matth\u00e4us Wander.<br><br>' +
+      '<b>Adresses IP publiques</b> \u2014 vos adresses IPv4 et IPv6 visibles de l\'ext\u00e9rieur telles que rapport\u00e9es par icanhazip.com (op\u00e9r\u00e9 par Cloudflare), avec le r\u00e9seau annonceur (ASN et titulaire), le pr\u00e9fixe couvrant, et si cette route est prot\u00e9g\u00e9e par une ROA RPKI valide. L\'absence d\'IPv6 ici signifie que votre FAI ou votre r\u00e9seau ne l\'a pas encore activ\u00e9.<br><br>' +
+      '<b>Votre FAI est-il s\u00fbr en BGP\u00a0?</b> \u2014 teste si votre FAI filtre les routes BGP d\u00e9tourn\u00e9es\u00a0: il r\u00e9cup\u00e8re une ressource de test annonc\u00e9e avec une ROA valide et une autre annonc\u00e9e depuis un ASN non autoris\u00e9. Si la ressource invalide se charge, votre FAI accepte les routes d\u00e9tourn\u00e9es. ' +
+      'Bas\u00e9 sur <a href="https://isbgpsafeyet.com">isbgpsafeyet.com</a> de Cloudflare (licence MIT).<br><br>' +
+      '<b>Note de confidentialit\u00e9\u00a0:</b> ces tests contactent ippacket.stream, icanhazip.com, isbgpsafeyet.com et RIPE Stat, et vos adresses IP publiques sont envoy\u00e9es \u00e0 RIPE Stat pour consulter leurs donn\u00e9es r\u00e9seau. Les r\u00e9sultats sont conserv\u00e9s pour la session de la page\u00a0: ils s\'ex\u00e9cutent \u00e0 la premi\u00e8re analyse et sont r\u00e9utilis\u00e9s ensuite.',
     STXT:
       '<b>security.txt (<a href="https://www.rfc-editor.org/rfc/rfc9116">RFC 9116</a>)</b> est une norme pour publier des informations de divulgation des vulnérabilités.<br><br>' +
       'Placez le fichier à <code>/.well-known/security.txt</code> (préféré) ou <code>/security.txt</code>.<br><br>' +

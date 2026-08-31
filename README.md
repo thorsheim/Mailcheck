@@ -26,8 +26,10 @@ Created by [Per Thorsheim](https://thorsheim.net) · [PasswordsCon](https://pass
 | CAA | RFC 8659 | issue/issuewild/issuemail/iodef tags, DNSSEC per CA domain |
 | RPKI | — | ROA validation per NS/MX host IP via RIPE Stat |
 | ASPA | RFC 9582 | AS Provider Authorization records per ASN via RIPE Stat |
+| IPv6 | — | AAAA presence for the domain, NS and MX hosts; government mandate table |
 | Security.txt | RFC 9116 | Required/optional fields, expiry |
 | WHOIS | RFC 7480 | RDAP lookup via rdap.org |
+| Connection | — | The **visitor's** connection, not the domain: resolver DNSSEC validation, public IPv4/IPv6 addresses with ASN/prefix/ROA, ISP BGP route filtering (isbgpsafeyet.com method) |
 | Fixes | — | Prioritised action list with weights |
 
 ## Scoring
@@ -46,7 +48,7 @@ Weighted grade from nine scored checks:
 | TLS-RPT | 3% |
 | CAA | 2% |
 
-PTR, BIMI, RPKI, ASPA, Security.txt, and WHOIS are informational — shown but not scored.
+PTR, BIMI, RPKI, ASPA, IPv6, Security.txt, and WHOIS are informational — shown but not scored. The Connection tab tests the visitor's own connection and is never scored either.
 
 ## Features
 
@@ -105,6 +107,7 @@ Missing keys fall back to English automatically, so partial translations are wel
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-August-31-1 | 2026-08-31 | New **Connection** tab testing the visitor's own connection, not the scanned domain: DNSSEC validation by the browser's DNS resolver (no-cors probes of `sigok`/`sigfail.ippacket.stream` — method and domains from Matthäus Wander's DNSSEC Resolver Test), public IPv4/IPv6 egress addresses via `ipv4`/`ipv6.icanhazip.com` enriched with ASN, holder, prefix and RPKI ROA status from RIPE Stat, and the "Is your ISP BGP-safe?" test moved here from the RPKI tab (the RPKI explanation now just points at Connection). Session-cached like the BGP test, inconclusive results retried on the next scan; structurally invisible to the grade, score bars and Fixes tab |
 | 2026-August-19-1 | 2026-08-19 | A nonexistent domain (NXDOMAIN) no longer triggers a scan: a single SOA lookup gates the run and a "Domain does not exist. Try another one." modal is shown instead, dismissed with OK, Escape or a click outside. Previous results stay untouched and the dead domain is not pushed into the shareable URL |
 | 2026-August-17-3 | 2026-08-17 | Jan Sandtrø's name in the acknowledgements now links to sandtro.no |
 | 2026-August-17-2 | 2026-08-17 | New "Is your ISP BGP-safe?" section in the RPKI tab, replicating Cloudflare's isbgpsafeyet.com test (MIT): fetches a valid-ROA and an RPKI-invalid beacon from the visitor's browser — if the invalid one loads within 2 s the visitor's ISP does not drop hijacked routes. Detects Cloudflare WARP. Auto-runs once per page session on the first scan; cached for later scans; informational only — measures the visitor's connection, not the scanned domain, and never moves any score |
