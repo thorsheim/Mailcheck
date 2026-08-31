@@ -756,8 +756,14 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-August-31-1 &mdash; click for changelog</summary>
+      <summary>Version 2026-August-31-2 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-August-31-2</span>
+          <ul class="cl-changes">
+            <li>When the &ldquo;Is your ISP BGP-safe?&rdquo; test finds an ISP that accepts RPKI-invalid routes, a new &ldquo;Report this result by email&rdquo; link prefills an email to the author with the verdict, AS number, ISP name and date &mdash; it opens in the visitor&rsquo;s own mail client, so nothing is ever sent automatically and everything can be edited first</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-August-31-1</span>
           <ul class="cl-changes">
@@ -1436,6 +1442,7 @@ const STRINGS = {
       BGP_ISP_BADGE_UNSAFE:'Not safe',
       BGP_ISP_BADGE_WARP:  'WARP',
       BGP_ISP_BADGE_ERROR: 'Unknown',
+      BGP_ISP_REPORT:      'Report this result by email',
       // Connection tab (visitor tests)
       PANEL_CONN:          'Connection',
       CONN_DNSSEC_TITLE:   'Does your DNS resolver validate DNSSEC?',
@@ -2147,6 +2154,7 @@ const STRINGS = {
       BGP_ISP_BADGE_UNSAFE:'Ikke trygg',
       BGP_ISP_BADGE_WARP:  'WARP',
       BGP_ISP_BADGE_ERROR: 'Ukjent',
+      BGP_ISP_REPORT:      'Rapporter dette resultatet på e-post',
       // Connection tab (visitor tests)
       PANEL_CONN:          'Tilkobling',
       CONN_DNSSEC_TITLE:   'Validerer DNS-resolveren din DNSSEC?',
@@ -2820,6 +2828,7 @@ const STRINGS = {
       BGP_ISP_BADGE_UNSAFE:'No seguro',
       BGP_ISP_BADGE_WARP:  'WARP',
       BGP_ISP_BADGE_ERROR: 'Desconocido',
+      BGP_ISP_REPORT:      'Informar de este resultado por correo electrónico',
       // Connection tab (visitor tests)
       PANEL_CONN:          'Conexión',
       CONN_DNSSEC_TITLE:   '¿Valida DNSSEC tu resolutor DNS?',
@@ -3515,6 +3524,7 @@ const STRINGS = {
       BGP_ISP_BADGE_UNSAFE:'Non sûr',
       BGP_ISP_BADGE_WARP:  'WARP',
       BGP_ISP_BADGE_ERROR: 'Inconnu',
+      BGP_ISP_REPORT:      'Signaler ce résultat par e-mail',
       // Connection tab (visitor tests)
       PANEL_CONN:          'Connexion',
       CONN_DNSSEC_TITLE:   'Votre résolveur DNS valide-t-il DNSSEC ?',
@@ -7452,6 +7462,30 @@ function renderBGPSafetySection(body) {
       ispLine.appendChild(nameEl);
     }
     sec.appendChild(ispLine);
+  }
+
+  if (res.status === 'unsafe') {
+    // Report-back link: only for the failing verdict. Opens the visitor's own
+    // mail client — nothing is sent automatically, and the visitor sees and can
+    // edit everything first. The body is deliberately English in every UI
+    // language so the reports arrive uniform.
+    const verEl = document.querySelector('#changelog summary');
+    const verMatch = ((verEl && verEl.textContent) || '').match(/Version (\S+)/);
+    const subject = 'Mailcheck BGP report: AS' + res.asn + ' accepts RPKI-invalid routes';
+    const mailBody = 'My ISP accepted an RPKI-invalid test route (isbgpsafeyet.com method).\n\n' +
+      'Result: unsafe - RPKI-invalid route accepted\n' +
+      'ASN: AS' + res.asn + '\n' +
+      'ISP: ' + (res.name || 'unknown') + '\n' +
+      'Date: ' + new Date().toISOString() + '\n' +
+      (verMatch ? 'Tool: DNS Email Security Checker ' + verMatch[1] + '\n' : '');
+    const reportLine = el('div');
+    reportLine.style.cssText = 'font-size:0.78rem;margin-block-start:0.5rem';
+    const reportLink = document.createElement('a');
+    reportLink.textContent = ts('BGP_ISP_REPORT');
+    reportLink.href = 'mailto:bgprpki@thorsheim.net?subject=' + encodeURIComponent(subject) +
+      '&body=' + encodeURIComponent(mailBody);
+    reportLine.appendChild(reportLink);
+    sec.appendChild(reportLine);
   }
 
   const attrib = el('div', null, ts('BGP_ISP_ATTRIBUTION') + ' ');

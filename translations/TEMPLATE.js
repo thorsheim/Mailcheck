@@ -383,6 +383,7 @@ const LANG_TEMPLATE = {
     BGP_ISP_BADGE_UNSAFE:   '',  // "Not safe"
     BGP_ISP_BADGE_WARP:     '',  // "WARP"
     BGP_ISP_BADGE_ERROR:    '',  // "Unknown"
+    BGP_ISP_REPORT:         '',  // "Report this result by email"
     // Connection tab (visitor tests)
     PANEL_CONN:             '',  // "Connection"
     CONN_DNSSEC_TITLE:      '',  // "Does your DNS resolver validate DNSSEC?"

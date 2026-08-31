@@ -316,6 +316,7 @@ const LANG_FR = {
     BGP_ISP_BADGE_UNSAFE:'Non sûr',
     BGP_ISP_BADGE_WARP:  'WARP',
     BGP_ISP_BADGE_ERROR: 'Inconnu',
+    BGP_ISP_REPORT:      'Signaler ce résultat par e-mail',
     // Connection tab (visitor tests)
     PANEL_CONN:          'Connexion',
     CONN_DNSSEC_TITLE:   'Votre résolveur DNS valide-t-il DNSSEC ?',

@@ -323,6 +323,7 @@ const LANG_NO = {
     BGP_ISP_BADGE_UNSAFE:'Ikke trygg',
     BGP_ISP_BADGE_WARP:  'WARP',
     BGP_ISP_BADGE_ERROR: 'Ukjent',
+    BGP_ISP_REPORT:      'Rapporter dette resultatet på e-post',
     // Connection tab (visitor tests)
     PANEL_CONN:          'Tilkobling',
     CONN_DNSSEC_TITLE:   'Validerer DNS-resolveren din DNSSEC?',

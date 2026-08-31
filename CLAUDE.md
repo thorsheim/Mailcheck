@@ -8,7 +8,7 @@ Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-August-31-1**
+Current version: **2026-August-31-2**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -279,7 +279,7 @@ const resolvedText = iss.textKey
 **Current languages**: `en` (English, default), `es` (Spanish), `fr` (French), `no` (Norwegian Bokmål).
 All four are **complete** — no language relies on the English fallback. When adding a key, add it to every language, and mirror it into `translations/<lang>.js` **and `translations/TEMPLATE.js`** so the contributor files stay in sync. TEMPLATE.js is easy to forget because nothing in the app reads it — it had silently drifted 37 keys behind (the entire IPv6 block, plus `SELECTOR_HELP`, the SPF recursive-lookup counts and the RPKI nameserver-diversity keys) before being backfilled on 2026-08-13. A contributor starting from a stale template simply never sees those strings.
 
-To check for drift, parse the `STRINGS` block out of `index.html` and diff the key sets — the three namespaces should total **405 keys** (s=305, d=80, x=20). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
+To check for drift, parse the `STRINGS` block out of `index.html` and diff the key sets — the three namespaces should total **406 keys** (s=306, d=80, x=20). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
 
 There are now four contributor files — `es.js`, `fr.js`, `no.js` and `TEMPLATE.js` — and all four
 carry the full key set with no value drift from `index.html`.
@@ -428,6 +428,11 @@ rollover.
 - Auto-runs once per page session (user decision): first scan runs it, later scans reuse `bgpSafetyPromise`. `error` results are evicted so the next scan retries. `scanStats.httpRequests += 3` only on real runs.
 - Valid-beacon JSON (`{status, asn, name, blackholed}`) supplies the AS pill + ISP holder name shown in the section.
 - Not gated by the skip-CORS checkbox: these endpoints send proper CORS headers, and the checkbox means "skip checks with expected CORS failures", not "no third-party HTTP".
+- **Report-back link** (`unsafe` verdict only): a `mailto:bgprpki@thorsheim.net` link
+  (`BGP_ISP_REPORT`) prefilled with verdict, ASN, ISP holder, UTC date and the tool version
+  parsed from the `#changelog` summary (guarded — missing/unmatched summary just omits the Tool
+  line). The body is deliberately English in every UI language so reports arrive uniform;
+  nothing is sent automatically — the visitor's own mail client opens with an editable draft.
 
 ### Connection tab details (visitor tests)
 All three sections test the **visitor's** connection, not the scanned domain, and are
