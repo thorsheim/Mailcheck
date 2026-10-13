@@ -586,6 +586,7 @@
     <button class="tab-btn" data-tab="rpki" role="tab" id="tab-rpki" aria-controls="panel-rpki" aria-selected="false" tabindex="-1">RPKI <span class="tab-dot"></span></button>
     <button class="tab-btn" data-tab="aspa" role="tab" id="tab-aspa" aria-controls="panel-aspa" aria-selected="false" tabindex="-1">ASPA <span class="tab-dot"></span></button>
     <button class="tab-btn" data-tab="ipv6" role="tab" id="tab-ipv6" aria-controls="panel-ipv6" aria-selected="false" tabindex="-1">IPv6 <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="zone" role="tab" id="tab-zone" aria-controls="panel-zone" aria-selected="false" tabindex="-1"><span data-i18n="TAB_ZONE">Zone</span> <span class="tab-dot"></span></button>
     <button class="tab-btn" data-tab="security-txt" role="tab" id="tab-security-txt" aria-controls="panel-security-txt" aria-selected="false" tabindex="-1">Security.txt <span class="tab-dot"></span></button>
     <button class="tab-btn" data-tab="whois" role="tab" id="tab-whois" aria-controls="panel-whois" aria-selected="false" tabindex="-1">WHOIS <span class="tab-dot"></span></button>
     <button class="tab-btn" data-tab="autoconf" role="tab" id="tab-autoconf" aria-controls="panel-autoconf" aria-selected="false" tabindex="-1">Autoconfig <span class="tab-dot"></span></button>
@@ -722,6 +723,14 @@
       <div class="panel-body"></div>
     </div>
 
+    <div class="tab-panel" id="panel-zone" role="tabpanel" aria-labelledby="tab-zone" tabindex="0">
+      <div class="panel-header">
+        <span class="panel-icon">&#128203;</span>
+        <span class="panel-title" data-i18n="PANEL_ZONE">DNS zone hygiene</span>
+      </div>
+      <div class="panel-body"></div>
+    </div>
+
     <div class="tab-panel" id="panel-security-txt" role="tabpanel" aria-labelledby="tab-security-txt" tabindex="0">
       <div class="panel-header">
         <span class="panel-icon">&#128220;</span>
@@ -768,8 +777,16 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-October-13-6 &mdash; click for changelog</summary>
+      <summary>Version 2026-October-13-7 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-October-13-7</span>
+          <ul class="cl-changes">
+            <li><b>New Zone tab</b> (informational). Hygiene of the DNS zone itself: SOA timers against RFC 1912 &sect;2.2 (refresh, retry, expire, negative-cache TTL, retry &lt; refresh, expire &gt; refresh + retry, an <code>@</code> in the contact), nameserver count (RFC 1034 / RFC 2182) with the AS diversity from the RPKI data, a CNAME at the apex (RFC 2181 &sect;10.1), the size of the apex TXT answer against the 1232-byte EDNS buffer and the verification tokens that make it up, and wildcard A/AAAA/CNAME/MX/TXT records &mdash; a wildcard TXT answers <code>_dmarc</code>, <code>_mta-sts</code> and <code>_smtp._tls</code> discovery for every non-existent subdomain. Timer findings are notes, since the large anycast providers set them deliberately. Never scored.</li>
+            <li><b>CAA on the hosts that present certificates.</b> The CAA tab now also evaluates CAA the way a CA would for every MX host and for <code>mta-sts.&lt;domain&gt;</code> (own record, else the nearest parent per RFC 8659 &sect;3) and lists the authorized CAs per host. Informational &mdash; the CAA rating is unchanged, since MX hosts usually sit in the mail provider&rsquo;s zone.</li>
+            <li><b>Fix:</b> the Autoconfig tab threw while rendering a domain listed in the Thunderbird ISPDB (gmail.com, posteo.de), which left the Overview spinning with no grade. The server table&rsquo;s collapsible block appended its content before it existed; the test DOM stub now rejects that like a browser does.</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-October-13-6</span>
           <ul class="cl-changes">
@@ -1194,6 +1211,45 @@ const STRINGS = {
   en: {
     // ── s: static strings ────────────────────────────────────────────────────
     s: {
+      PANEL_ZONE:          'DNS zone hygiene',
+      TAB_ZONE:            'Zone',
+      ZONE_SOA_TITLE:      'SOA (zone authority)',
+      ZONE_ROW_MNAME:      'Primary nameserver (MNAME)',
+      ZONE_ROW_RNAME:      'Zone contact (RNAME)',
+      ZONE_ROW_SERIAL:     'Serial',
+      ZONE_ROW_REFRESH:    'Refresh',
+      ZONE_ROW_RETRY:      'Retry',
+      ZONE_ROW_EXPIRE:     'Expire',
+      ZONE_ROW_MINIMUM:    'Negative-cache TTL (minimum)',
+      ZONE_SOA_OK:         'SOA timers are within the ranges RFC 1912 §2.2 recommends',
+      ZONE_SOA_RETRY_GE_REFRESH: 'SOA retry is not smaller than refresh — after a failed refresh, secondaries wait longer than the normal refresh interval before trying again (RFC 1912 §2.2)',
+      ZONE_SOA_EXPIRE_SHORT: 'SOA expire is not larger than refresh + retry — secondaries can drop the zone after a single failed refresh (RFC 1912 §2.2)',
+      ZONE_SOA_RNAME_AT:   'SOA contact contains an @ — the mailbox is written with a dot instead (hostmaster.example.com), RFC 1035 §3.3.13',
+      ZONE_NS_TITLE:       'Nameservers',
+      ZONE_NS_NONE:        'No NS records returned for the zone',
+      ZONE_NS_SINGLE:      'Only one nameserver — RFC 1034 §4.1 requires at least two, in different networks, for redundancy',
+      ZONE_NS_TWO:         'Two nameservers — RFC 2182 §5 recommends at least three',
+      ZONE_APEX_CNAME:     'CNAME at the zone apex — RFC 2181 §10.1 forbids a CNAME next to the SOA, NS and MX records; resolvers disagree on what to return and mail delivery can fail',
+      ZONE_TXT_TITLE:      'Apex TXT records',
+      ZONE_TXT_TOKENS_TITLE: 'Verification tokens',
+      ZONE_WILDCARD_TITLE: 'Wildcard records (*.zone)',
+      ZONE_WILDCARD_NONE:  'No wildcard records in the zone',
+      ZONE_WILDCARD_MX:    'Wildcard MX — mail to any undefined subdomain, including typos, is accepted at this zone; make sure SPF and the DMARC sp= policy cover subdomains',
+      ZONE_WILDCARD_TXT:   'Wildcard TXT — every TXT lookup under an undefined name is answered with it, including _dmarc, _mta-sts and _smtp._tls discovery for subdomains that do not exist',
+      ZONE_WILDCARD_SPF:   'Wildcard TXT is an SPF record — every undefined hostname gets an SPF policy for HELO/EHLO checks, a recommended practice (RFC 7208 §2.3)',
+      ZONE_WILDCARD_ADDR:  'Wildcard address record (A/AAAA/CNAME) — every undefined subdomain resolves, so mistyped hostnames reach this server (informational)',
+      ZONE_PILL_FOUND:     'present',
+      ZONE_PILL_NONE:      'none',
+      CAA_HOSTS_TITLE:     'CAA on the hosts that present certificates',
+      CAA_HOSTS_NOTE:      'CAA at the mail domain says nothing about certificates for the MX hosts (STARTTLS) or the MTA-STS policy host (HTTPS). Shown as a CA evaluates it: the host’s own record, else the nearest parent. Informational — MX hosts usually belong to the mail provider.',
+      CAA_TH_HOST:         'Host',
+      CAA_TH_ROLE:         'Role',
+      CAA_TH_STATUS:       'CAA',
+      CAA_TH_CAS:          'Authorized CAs',
+      CAA_HOST_RESTRICTED: 'Restricted',
+      CAA_HOST_NONE:       'No restriction',
+      CAA_HOST_ERROR:      'Lookup failed',
+      CAA_HOST_PROHIBITED: 'issuance prohibited',
       APP_TITLE:           'DNS Email Security Checker',
       APP_SUBTITLE:        'Check DNSSEC, MX, SPF, DKIM and more for any domain',
       LABEL_DOMAIN:        'Domain',
@@ -1631,6 +1687,19 @@ const STRINGS = {
     // function body, using the same argument names.  Example:
     //   MX_HOSTS_FOUND: n => n + ' MX hosts found.'
     d: {
+      ZONE_SUMMARY:        zone => 'Zone hygiene for ' + zone,
+      ZONE_APEX_NOTE:      (zone, name) => name + ' is not a zone apex — SOA, nameservers, TXT size and wildcards are reported for its zone ' + zone,
+      ZONE_SOA_RANGE:      (field, value, lo, hi) => 'SOA ' + field + ' is ' + value + ' s — RFC 1912 §2.2 recommends ' + lo + '–' + hi + ' s',
+      ZONE_SOA_SERIAL_ODD: serial => 'SOA serial is ' + serial + ' — harmless, but the usual form is YYYYMMDDnn so a zone-transfer problem is visible',
+      ZONE_SOA_MNAME_HIDDEN: mname => 'SOA primary ' + mname + ' is not in the NS set — a hidden primary (common, informational)',
+      ZONE_NS_OK:          n => n + ' nameservers',
+      ZONE_TXT_SIZE:       (count, bytes) => count + ' TXT record(s), about ' + bytes + ' bytes on the wire',
+      ZONE_TXT_LARGE:      bytes => 'The apex TXT answer is about ' + bytes + ' bytes — over the 1232-byte EDNS buffer of DNS Flag Day 2020, so resolvers retry over TCP or get a truncated answer; remove stale records',
+      ZONE_TXT_TOKENS:     n => n + ' domain-verification token(s) published — whether each is still needed cannot be seen from outside; review them now and then',
+      ZONE_DUR:            n => n + ' s' + (n >= 86400 ? ' (' + Math.round(n / 8640) / 10 + ' d)' : n >= 3600 ? ' (' + Math.round(n / 360) / 10 + ' h)' : n >= 60 ? ' (' + Math.round(n / 6) / 10 + ' min)' : ''),
+      CAA_HOSTS_COVERED:   n => 'All ' + n + ' certificate-presenting host(s) (MX, MTA-STS) are covered by a CAA restriction',
+      CAA_HOSTS_UNCOVERED: (n, total, hosts) => n + ' of ' + total + ' certificate-presenting host(s) have no CAA restriction: ' + hosts + ' (informational — usually the mail provider’s zone)',
+      CAA_HOST_FROM:       parent => 'from ' + parent,
       MX_HOSTS_FOUND:        n => n + ' MX host' + (n !== 1 ? 's' : '') + ' found.',
       DKIM_SELECTORS_FOUND:  n => n + ' selector' + (n !== 1 ? 's' : '') + ' found',
       DKIM_ACROSS_PROVIDERS: n => 'across ' + n + ' provider' + (n !== 1 ? 's' : ''),
@@ -1792,6 +1861,14 @@ const STRINGS = {
     // section at the bottom of each tab.
     // Allowed tags: <b>  <a href="…">  <code>  <br>
     x: {
+      ZONE:
+        '<b>Zone hygiene</b> looks at the DNS zone itself rather than at any single email record: the settings that decide how the zone replicates, how many servers answer for it, how large the apex answer has become, and what a lookup of a name that does <b>not</b> exist returns. None of it is scored.<br><br>' +
+        '<b>SOA timers.</b> The Start of Authority record carries five numbers. <code>refresh</code> is how often secondaries ask the primary for changes, <code>retry</code> how long they wait after a failed refresh, <code>expire</code> how long they keep serving the zone when the primary is unreachable, and <code>minimum</code> is the negative-caching TTL (RFC 2308) — how long a resolver remembers that a name does not exist. RFC 1912 §2.2 gives working ranges; retry must be smaller than refresh, and expire must be larger than both combined, or a single failed transfer can take the zone offline. The serial is only compared, never interpreted, so an odd value such as 1 is harmless; the YYYYMMDDnn convention just makes a stuck transfer easy to spot. These timers only matter for zones replicated with AXFR/IXFR; the large anycast providers (Google, Cloudflare, Azure) replicate differently and choose values outside the ranges on purpose, so timer findings are notes, never warnings.<br><br>' +
+        '<b>Nameservers.</b> RFC 1034 requires at least two, RFC 2182 recommends three or more on separate networks. The AS diversity line reuses the RPKI tab’s data: all servers behind one autonomous system is one routing incident away from the domain disappearing, mail included — MX records cannot be found when the zone cannot be resolved.<br><br>' +
+        '<b>CNAME at the apex.</b> A zone apex owns SOA and NS records, so RFC 2181 §10.1 forbids a CNAME there; the MX record for the domain would be an alias too. Hosting providers emulate the effect with “CNAME flattening” or <code>ALIAS</code> records, which are invisible here — only a real CNAME in the answer is flagged.<br><br>' +
+        '<b>Apex TXT size.</b> SPF, DMARC and a handful of domain-verification tokens all live in the apex TXT RRset, and every one of them is returned together on each lookup. Since DNS Flag Day 2020 resolvers use a 1232-byte EDNS buffer; an answer above that is truncated and retried over TCP, which some networks block. Verification tokens are listed so they can be reviewed — whether a token from a service dropped years ago is still needed cannot be seen from the outside.<br><br>' +
+        '<b>Wildcards.</b> A record at <code>*.<domain></code> answers for every name that does not exist. A wildcard <b>MX</b> makes the zone accept mail for any subdomain, typos included, and the DMARC <code>sp=</code> policy then matters for all of them. A wildcard <b>TXT</b> is worse than it looks: it also answers <code>_dmarc.<sub></code>, <code>_mta-sts.<sub></code> and <code>_smtp._tls.<sub></code> for subdomains that were never created, so receivers find a “policy” that is really a verification token. The exception is a wildcard <code>v=spf1 -all</code>, which gives every hostname an SPF policy for HELO/EHLO checks and is a recommended practice. A wildcard A/AAAA is common and only noted.<br><br>' +
+        '<b>What cannot be checked from a browser:</b> whether the parent’s delegation matches the zone’s own NS set (lame delegation), whether zone transfers (AXFR) are open, and whether the servers answer at all — all of that needs direct queries to the authoritative servers, which a DNS-over-HTTPS resolver does not expose.',
       DMARC:
         '<b>DMARC (Domain-based Message Authentication, Reporting and Conformance)</b> ' +
         'ties SPF and DKIM together with a policy that tells receivers what to do when authentication fails. ' +
@@ -2073,6 +2150,45 @@ const STRINGS = {
   no: {
     // ── s: static strings ────────────────────────────────────────────────────
     s: {
+      PANEL_ZONE:          'DNS-sonehygiene',
+      TAB_ZONE:            'Sone',
+      ZONE_SOA_TITLE:      'SOA (soneautoritet)',
+      ZONE_ROW_MNAME:      'Primær navnetjener (MNAME)',
+      ZONE_ROW_RNAME:      'Sonekontakt (RNAME)',
+      ZONE_ROW_SERIAL:     'Serienummer',
+      ZONE_ROW_REFRESH:    'Refresh',
+      ZONE_ROW_RETRY:      'Retry',
+      ZONE_ROW_EXPIRE:     'Expire',
+      ZONE_ROW_MINIMUM:    'Negativ-cache-TTL (minimum)',
+      ZONE_SOA_OK:         'SOA-tidsverdiene ligger innenfor områdene RFC 1912 §2.2 anbefaler',
+      ZONE_SOA_RETRY_GE_REFRESH: 'SOA retry er ikke mindre enn refresh — etter en mislykket oppdatering venter sekundærene lenger enn det vanlige oppdateringsintervallet før de prøver igjen (RFC 1912 §2.2)',
+      ZONE_SOA_EXPIRE_SHORT: 'SOA expire er ikke større enn refresh + retry — sekundærene kan slippe sonen etter én mislykket oppdatering (RFC 1912 §2.2)',
+      ZONE_SOA_RNAME_AT:   'SOA-kontakten inneholder en @ — postkassen skrives med punktum i stedet (hostmaster.example.com), RFC 1035 §3.3.13',
+      ZONE_NS_TITLE:       'Navnetjenere',
+      ZONE_NS_NONE:        'Ingen NS-poster returnert for sonen',
+      ZONE_NS_SINGLE:      'Bare én navnetjener — RFC 1034 §4.1 krever minst to, i ulike nett, for redundans',
+      ZONE_NS_TWO:         'To navnetjenere — RFC 2182 §5 anbefaler minst tre',
+      ZONE_APEX_CNAME:     'CNAME på sonetoppen — RFC 2181 §10.1 forbyr CNAME ved siden av SOA-, NS- og MX-postene; resolvere er uenige om hva som skal returneres, og e-postlevering kan feile',
+      ZONE_TXT_TITLE:      'TXT-poster på sonetoppen',
+      ZONE_TXT_TOKENS_TITLE: 'Verifiseringstokener',
+      ZONE_WILDCARD_TITLE: 'Jokertegn-poster (*.sone)',
+      ZONE_WILDCARD_NONE:  'Ingen jokertegn-poster i sonen',
+      ZONE_WILDCARD_MX:    'Jokertegn-MX — e-post til ethvert udefinert underdomene, skrivefeil inkludert, tas imot i denne sonen; sørg for at SPF og DMARC-policyen sp= dekker underdomener',
+      ZONE_WILDCARD_TXT:   'Jokertegn-TXT — ethvert TXT-oppslag under et udefinert navn besvares med den, inkludert _dmarc-, _mta-sts- og _smtp._tls-oppslag for underdomener som ikke finnes',
+      ZONE_WILDCARD_SPF:   'Jokertegn-TXT er en SPF-post — ethvert udefinert vertsnavn får en SPF-policy for HELO/EHLO-kontroller, en anbefalt praksis (RFC 7208 §2.3)',
+      ZONE_WILDCARD_ADDR:  'Jokertegn-adressepost (A/AAAA/CNAME) — ethvert udefinert underdomene slås opp, så feilstavede vertsnavn når denne tjeneren (informativt)',
+      ZONE_PILL_FOUND:     'finnes',
+      ZONE_PILL_NONE:      'ingen',
+      CAA_HOSTS_TITLE:     'CAA på vertene som presenterer sertifikater',
+      CAA_HOSTS_NOTE:      'CAA på e-postdomenet sier ingenting om sertifikater for MX-vertene (STARTTLS) eller MTA-STS-policyverten (HTTPS). Vist slik en CA vurderer det: vertens egen post, ellers nærmeste overordnede. Informativt — MX-verter tilhører som regel e-postleverandøren.',
+      CAA_TH_HOST:         'Vert',
+      CAA_TH_ROLE:         'Rolle',
+      CAA_TH_STATUS:       'CAA',
+      CAA_TH_CAS:          'Godkjente CA-er',
+      CAA_HOST_RESTRICTED: 'Begrenset',
+      CAA_HOST_NONE:       'Ingen begrensning',
+      CAA_HOST_ERROR:      'Oppslag feilet',
+      CAA_HOST_PROHIBITED: 'utstedelse forbudt',
       APP_TITLE:           'DNS e-postsikkerhetssjekk',
       APP_SUBTITLE:        'Sjekk DNSSEC, MX, SPF, DKIM og mer for et domene',
       LABEL_DOMAIN:        'Domene',
@@ -2502,6 +2618,19 @@ const STRINGS = {
     },
     // ── d: dynamic strings (arrow functions) ─────────────────────────────────
     d: {
+      ZONE_SUMMARY:        zone => 'Sonehygiene for ' + zone,
+      ZONE_APEX_NOTE:      (zone, name) => name + ' er ikke en sonetopp — SOA, navnetjenere, TXT-størrelse og jokertegn rapporteres for sonen ' + zone,
+      ZONE_SOA_RANGE:      (field, value, lo, hi) => 'SOA ' + field + ' er ' + value + ' s — RFC 1912 §2.2 anbefaler ' + lo + '–' + hi + ' s',
+      ZONE_SOA_SERIAL_ODD: serial => 'SOA-serienummeret er ' + serial + ' — ufarlig, men den vanlige formen er ÅÅÅÅMMDDnn slik at et soneoverføringsproblem blir synlig',
+      ZONE_SOA_MNAME_HIDDEN: mname => 'SOA-primæren ' + mname + ' er ikke i NS-settet — en skjult primær (vanlig, informativt)',
+      ZONE_NS_OK:          n => n + ' navnetjenere',
+      ZONE_TXT_SIZE:       (count, bytes) => count + ' TXT-post(er), omtrent ' + bytes + ' byte på linjen',
+      ZONE_TXT_LARGE:      bytes => 'TXT-svaret for sonetoppen er omtrent ' + bytes + ' byte — over EDNS-bufferet på 1232 byte fra DNS Flag Day 2020, så resolvere prøver på nytt over TCP eller får et avkortet svar; fjern utdaterte poster',
+      ZONE_TXT_TOKENS:     n => n + ' domeneverifiseringstoken(er) publisert — om hvert enkelt fortsatt trengs kan ikke ses utenfra; gå gjennom dem nå og da',
+      ZONE_DUR:            n => n + ' s' + (n >= 86400 ? ' (' + Math.round(n / 8640) / 10 + ' d)' : n >= 3600 ? ' (' + Math.round(n / 360) / 10 + ' t)' : n >= 60 ? ' (' + Math.round(n / 6) / 10 + ' min)' : ''),
+      CAA_HOSTS_COVERED:   n => 'Alle ' + n + ' sertifikatpresenterende vert(er) (MX, MTA-STS) er dekket av en CAA-begrensning',
+      CAA_HOSTS_UNCOVERED: (n, total, hosts) => n + ' av ' + total + ' sertifikatpresenterende vert(er) har ingen CAA-begrensning: ' + hosts + ' (informativt — som regel e-postleverandørens sone)',
+      CAA_HOST_FROM:       parent => 'fra ' + parent,
       MX_HOSTS_FOUND:        n => n + ' MX-vert' + (n !== 1 ? 'er' : '') + ' funnet.',
       DKIM_SELECTORS_FOUND:  n => n + ' selektor' + (n !== 1 ? 'er' : '') + ' funnet',
       DKIM_ACROSS_PROVIDERS: n => 'hos ' + n + ' leverand\u00f8r' + (n !== 1 ? 'er' : ''),
@@ -2659,6 +2788,14 @@ const STRINGS = {
     },
     // ── x: explanation strings (HTML) ────────────────────────────────────────
     x: {
+      ZONE:
+        '<b>Sonehygiene</b> ser på selve DNS-sonen i stedet for på én enkelt e-postpost: innstillingene som styrer hvordan sonen replikeres, hvor mange tjenere som svarer for den, hvor stort svaret for sonetoppen har blitt, og hva et oppslag av et navn som <b>ikke</b> finnes returnerer. Ingenting av dette telles i karakteren.<br><br>' +
+        '<b>SOA-tidsverdier.</b> Start of Authority-posten bærer fem tall. <code>refresh</code> er hvor ofte sekundærene spør primæren om endringer, <code>retry</code> hvor lenge de venter etter en mislykket oppdatering, <code>expire</code> hvor lenge de fortsetter å svare for sonen når primæren er utilgjengelig, og <code>minimum</code> er TTL for negativ caching (RFC 2308) — hvor lenge en resolver husker at et navn ikke finnes. RFC 1912 §2.2 gir fungerende områder; retry må være mindre enn refresh, og expire må være større enn begge til sammen, ellers kan én mislykket overføring ta sonen ned. Serienummeret sammenlignes bare, tolkes aldri, så en rar verdi som 1 er ufarlig; konvensjonen ÅÅÅÅMMDDnn gjør bare en stoppet overføring lett å se. Disse tidsverdiene betyr bare noe for soner som replikeres med AXFR/IXFR; de store anycast-leverandørene (Google, Cloudflare, Azure) replikerer annerledes og velger med vilje verdier utenfor områdene, så funn om tidsverdier er merknader, aldri advarsler.<br><br>' +
+        '<b>Navnetjenere.</b> RFC 1034 krever minst to, RFC 2182 anbefaler tre eller flere i separate nett. Linjen om AS-mangfold gjenbruker RPKI-fanens data: alle tjenere bak ett autonomt system er én rutingshendelse unna at domenet forsvinner, e-post inkludert — MX-poster kan ikke finnes når sonen ikke kan slås opp.<br><br>' +
+        '<b>CNAME på sonetoppen.</b> En sonetopp eier SOA- og NS-poster, så RFC 2181 §10.1 forbyr CNAME der; MX-posten for domenet ville også vært et alias. Leverandører etterligner effekten med «CNAME flattening» eller <code>ALIAS</code>-poster, som er usynlige her — bare en ekte CNAME i svaret flagges.<br><br>' +
+        '<b>TXT-størrelse på sonetoppen.</b> SPF, DMARC og en håndfull domeneverifiseringstokener bor alle i TXT-settet på sonetoppen, og alle returneres sammen ved hvert oppslag. Siden DNS Flag Day 2020 bruker resolvere et EDNS-buffer på 1232 byte; et svar over det avkortes og prøves på nytt over TCP, som noen nett blokkerer. Verifiseringstokener listes slik at de kan gjennomgås — om et token fra en tjeneste som ble sagt opp for år siden fortsatt trengs, kan ikke ses utenfra.<br><br>' +
+        '<b>Jokertegn.</b> En post på <code>*.<domain></code> svarer for ethvert navn som ikke finnes. En jokertegn-<b>MX</b> får sonen til å ta imot e-post for ethvert underdomene, skrivefeil inkludert, og DMARC-policyen <code>sp=</code> gjelder da for alle. En jokertegn-<b>TXT</b> er verre enn den ser ut: den svarer også på <code>_dmarc.<sub></code>, <code>_mta-sts.<sub></code> og <code>_smtp._tls.<sub></code> for underdomener som aldri ble opprettet, så mottakere finner en «policy» som egentlig er et verifiseringstoken. Unntaket er en jokertegn-<code>v=spf1 -all</code>, som gir ethvert vertsnavn en SPF-policy for HELO/EHLO-kontroller og er en anbefalt praksis. En jokertegn-A/AAAA er vanlig og bare notert.<br><br>' +
+        '<b>Hva som ikke kan sjekkes fra en nettleser:</b> om delegeringen hos forelderen stemmer med sonens eget NS-sett (lam delegering), om soneoverføringer (AXFR) er åpne, og om tjenerne svarer i det hele tatt — alt dette krever direkte spørringer mot de autoritative tjenerne, som en DNS-over-HTTPS-resolver ikke eksponerer.',
       DMARC:
         '<b>DMARC (Domain-based Message Authentication, Reporting and Conformance)</b> ' +
         'knytter SPF og DKIM sammen med en policy som forteller mottakere hva de skal gj\u00f8re n\u00e5r autentisering mislykkes. ' +
@@ -2937,6 +3074,45 @@ const STRINGS = {
   },
   es: {
     s: {
+      PANEL_ZONE:          'Higiene de la zona DNS',
+      TAB_ZONE:            'Zona',
+      ZONE_SOA_TITLE:      'SOA (autoridad de la zona)',
+      ZONE_ROW_MNAME:      'Servidor de nombres primario (MNAME)',
+      ZONE_ROW_RNAME:      'Contacto de la zona (RNAME)',
+      ZONE_ROW_SERIAL:     'Serial',
+      ZONE_ROW_REFRESH:    'Refresh',
+      ZONE_ROW_RETRY:      'Retry',
+      ZONE_ROW_EXPIRE:     'Expire',
+      ZONE_ROW_MINIMUM:    'TTL de caché negativa (minimum)',
+      ZONE_SOA_OK:         'Los temporizadores SOA están dentro de los rangos que recomienda RFC 1912 §2.2',
+      ZONE_SOA_RETRY_GE_REFRESH: 'SOA retry no es menor que refresh — tras un refresco fallido, los secundarios esperan más que el intervalo normal de refresco antes de reintentar (RFC 1912 §2.2)',
+      ZONE_SOA_EXPIRE_SHORT: 'SOA expire no es mayor que refresh + retry — los secundarios pueden abandonar la zona tras un solo refresco fallido (RFC 1912 §2.2)',
+      ZONE_SOA_RNAME_AT:   'El contacto SOA contiene una @ — el buzón se escribe con un punto (hostmaster.example.com), RFC 1035 §3.3.13',
+      ZONE_NS_TITLE:       'Servidores de nombres',
+      ZONE_NS_NONE:        'No se devolvieron registros NS para la zona',
+      ZONE_NS_SINGLE:      'Un solo servidor de nombres — RFC 1034 §4.1 exige al menos dos, en redes distintas, por redundancia',
+      ZONE_NS_TWO:         'Dos servidores de nombres — RFC 2182 §5 recomienda al menos tres',
+      ZONE_APEX_CNAME:     'CNAME en el ápice de la zona — RFC 2181 §10.1 prohíbe un CNAME junto a los registros SOA, NS y MX; los resolutores discrepan sobre qué devolver y la entrega de correo puede fallar',
+      ZONE_TXT_TITLE:      'Registros TXT del ápice',
+      ZONE_TXT_TOKENS_TITLE: 'Tokens de verificación',
+      ZONE_WILDCARD_TITLE: 'Registros comodín (*.zona)',
+      ZONE_WILDCARD_NONE:  'No hay registros comodín en la zona',
+      ZONE_WILDCARD_MX:    'MX comodín — el correo a cualquier subdominio no definido, erratas incluidas, se acepta en esta zona; asegúrese de que SPF y la política DMARC sp= cubran los subdominios',
+      ZONE_WILDCARD_TXT:   'TXT comodín — toda consulta TXT bajo un nombre no definido se responde con él, incluido el descubrimiento de _dmarc, _mta-sts y _smtp._tls para subdominios que no existen',
+      ZONE_WILDCARD_SPF:   'El TXT comodín es un registro SPF — todo nombre de host no definido recibe una política SPF para las comprobaciones HELO/EHLO, una práctica recomendada (RFC 7208 §2.3)',
+      ZONE_WILDCARD_ADDR:  'Registro de dirección comodín (A/AAAA/CNAME) — todo subdominio no definido resuelve, así que los nombres de host mal escritos llegan a este servidor (informativo)',
+      ZONE_PILL_FOUND:     'presente',
+      ZONE_PILL_NONE:      'ninguno',
+      CAA_HOSTS_TITLE:     'CAA en los hosts que presentan certificados',
+      CAA_HOSTS_NOTE:      'El CAA del dominio de correo no dice nada sobre los certificados de los hosts MX (STARTTLS) ni del host de política MTA-STS (HTTPS). Se muestra como lo evalúa una CA: el registro propio del host o, si no, el del padre más cercano. Informativo — los hosts MX suelen pertenecer al proveedor de correo.',
+      CAA_TH_HOST:         'Host',
+      CAA_TH_ROLE:         'Rol',
+      CAA_TH_STATUS:       'CAA',
+      CAA_TH_CAS:          'CA autorizadas',
+      CAA_HOST_RESTRICTED: 'Restringido',
+      CAA_HOST_NONE:       'Sin restricción',
+      CAA_HOST_ERROR:      'Consulta fallida',
+      CAA_HOST_PROHIBITED: 'emisión prohibida',
       APP_TITLE:           'Verificador de seguridad DNS para correo',
       APP_SUBTITLE:        'Comprueba DNSSEC, MX, SPF, DKIM y m\u00e1s para cualquier dominio',
       LABEL_DOMAIN:        'Dominio',
@@ -3338,6 +3514,19 @@ const STRINGS = {
       SPF_HELO_MULTI:      'varios registros SPF (permerror)',
     },
     d: {
+      ZONE_SUMMARY:        zone => 'Higiene de la zona para ' + zone,
+      ZONE_APEX_NOTE:      (zone, name) => name + ' no es un ápice de zona — SOA, servidores de nombres, tamaño TXT y comodines se informan para su zona ' + zone,
+      ZONE_SOA_RANGE:      (field, value, lo, hi) => 'SOA ' + field + ' es ' + value + ' s — RFC 1912 §2.2 recomienda ' + lo + '–' + hi + ' s',
+      ZONE_SOA_SERIAL_ODD: serial => 'El serial SOA es ' + serial + ' — inofensivo, pero la forma habitual es AAAAMMDDnn para que un problema de transferencia de zona sea visible',
+      ZONE_SOA_MNAME_HIDDEN: mname => 'El primario SOA ' + mname + ' no está en el conjunto NS — un primario oculto (habitual, informativo)',
+      ZONE_NS_OK:          n => n + ' servidores de nombres',
+      ZONE_TXT_SIZE:       (count, bytes) => count + ' registro(s) TXT, unos ' + bytes + ' bytes en el cable',
+      ZONE_TXT_LARGE:      bytes => 'La respuesta TXT del ápice ocupa unos ' + bytes + ' bytes — supera el búfer EDNS de 1232 bytes del DNS Flag Day 2020, así que los resolutores reintentan por TCP o reciben una respuesta truncada; elimine registros obsoletos',
+      ZONE_TXT_TOKENS:     n => n + ' token(s) de verificación de dominio publicado(s) — desde fuera no se puede ver si cada uno sigue siendo necesario; revíselos de vez en cuando',
+      ZONE_DUR:            n => n + ' s' + (n >= 86400 ? ' (' + Math.round(n / 8640) / 10 + ' d)' : n >= 3600 ? ' (' + Math.round(n / 360) / 10 + ' h)' : n >= 60 ? ' (' + Math.round(n / 6) / 10 + ' min)' : ''),
+      CAA_HOSTS_COVERED:   n => 'Los ' + n + ' host(s) que presentan certificados (MX, MTA-STS) están cubiertos por una restricción CAA',
+      CAA_HOSTS_UNCOVERED: (n, total, hosts) => n + ' de ' + total + ' host(s) que presentan certificados no tienen restricción CAA: ' + hosts + ' (informativo — normalmente la zona del proveedor de correo)',
+      CAA_HOST_FROM:       parent => 'de ' + parent,
       MX_HOSTS_FOUND:        n => n + ' servidor' + (n !== 1 ? 'es' : '') + ' MX encontrado' + (n !== 1 ? 's' : '') + '.',
       DKIM_SELECTORS_FOUND:  n => n + ' selector' + (n !== 1 ? 'es' : '') + ' encontrado' + (n !== 1 ? 's' : ''),
       DKIM_ACROSS_PROVIDERS: n => 'en ' + n + ' proveedor' + (n !== 1 ? 'es' : ''),
@@ -3494,6 +3683,14 @@ const STRINGS = {
       SPF_VOID_LOOKUPS:      n => n + ' consultas vac\u00edas (NXDOMAIN o respuestas vac\u00edas) en el \u00e1rbol de include \u2014 m\u00e1s de 2 es un permerror (RFC 7208 \u00a74.6.4)',
     },
     x: {
+      ZONE:
+        '<b>La higiene de la zona</b> examina la propia zona DNS en lugar de un registro de correo concreto: los ajustes que deciden cómo se replica la zona, cuántos servidores responden por ella, cuánto ha crecido la respuesta del ápice y qué devuelve la consulta de un nombre que <b>no</b> existe. Nada de esto puntúa.<br><br>' +
+        '<b>Temporizadores SOA.</b> El registro Start of Authority lleva cinco números. <code>refresh</code> es cada cuánto los secundarios piden cambios al primario, <code>retry</code> cuánto esperan tras un refresco fallido, <code>expire</code> cuánto siguen sirviendo la zona cuando el primario no responde, y <code>minimum</code> es el TTL de caché negativa (RFC 2308): cuánto recuerda un resolutor que un nombre no existe. RFC 1912 §2.2 da rangos que funcionan; retry debe ser menor que refresh, y expire mayor que ambos juntos, o una sola transferencia fallida puede dejar la zona fuera de línea. El serial solo se compara, nunca se interpreta, así que un valor raro como 1 es inofensivo; la convención AAAAMMDDnn solo hace fácil detectar una transferencia atascada. Estos temporizadores solo importan en zonas replicadas con AXFR/IXFR; los grandes proveedores anycast (Google, Cloudflare, Azure) replican de otra forma y eligen a prop\u00f3sito valores fuera de los rangos, as\u00ed que los hallazgos sobre temporizadores son notas, nunca advertencias.<br><br>' +
+        '<b>Servidores de nombres.</b> RFC 1034 exige al menos dos, RFC 2182 recomienda tres o más en redes separadas. La línea de diversidad de AS reutiliza los datos de la pestaña RPKI: todos los servidores tras un solo sistema autónomo están a un incidente de enrutamiento de que el dominio desaparezca, correo incluido — los registros MX no se encuentran cuando la zona no se puede resolver.<br><br>' +
+        '<b>CNAME en el ápice.</b> Un ápice de zona posee registros SOA y NS, así que RFC 2181 §10.1 prohíbe un CNAME ahí; el registro MX del dominio también sería un alias. Los proveedores de alojamiento emulan el efecto con «CNAME flattening» o registros <code>ALIAS</code>, invisibles aquí — solo se marca un CNAME real en la respuesta.<br><br>' +
+        '<b>Tamaño TXT del ápice.</b> SPF, DMARC y un puñado de tokens de verificación de dominio viven todos en el conjunto TXT del ápice, y todos se devuelven juntos en cada consulta. Desde el DNS Flag Day 2020 los resolutores usan un búfer EDNS de 1232 bytes; una respuesta mayor se trunca y se reintenta por TCP, que algunas redes bloquean. Los tokens de verificación se listan para poder revisarlos — si un token de un servicio abandonado hace años sigue siendo necesario no se puede ver desde fuera.<br><br>' +
+        '<b>Comodines.</b> Un registro en <code>*.<domain></code> responde por todo nombre que no existe. Un <b>MX</b> comodín hace que la zona acepte correo para cualquier subdominio, erratas incluidas, y la política DMARC <code>sp=</code> importa entonces para todos. Un <b>TXT</b> comodín es peor de lo que parece: también responde a <code>_dmarc.<sub></code>, <code>_mta-sts.<sub></code> y <code>_smtp._tls.<sub></code> para subdominios que nunca se crearon, así que los receptores encuentran una «política» que en realidad es un token de verificación. La excepción es un <code>v=spf1 -all</code> comodín, que da a todo nombre de host una política SPF para las comprobaciones HELO/EHLO y es una práctica recomendada. Un A/AAAA comodín es habitual y solo se anota.<br><br>' +
+        '<b>Lo que no se puede comprobar desde un navegador:</b> si la delegación del padre coincide con el conjunto NS propio de la zona (delegación coja), si las transferencias de zona (AXFR) están abiertas y si los servidores responden siquiera — todo eso requiere consultas directas a los servidores autoritativos, que un resolutor DNS sobre HTTPS no expone.',
       DMARC:
         '<b>DMARC (Domain-based Message Authentication, Reporting and Conformance)</b> ' +
         'une SPF y DKIM con una pol\u00edtica que indica a los receptores qu\u00e9 hacer cuando falla la autenticaci\u00f3n. ' +
@@ -3773,6 +3970,45 @@ const STRINGS = {
   fr: {
     // ── s: chaînes statiques ──────────────────────────────────────────────────
     s: {
+      PANEL_ZONE:          'Hygiène de la zone DNS',
+      TAB_ZONE:            'Zone',
+      ZONE_SOA_TITLE:      'SOA (autorité de la zone)',
+      ZONE_ROW_MNAME:      'Serveur de noms primaire (MNAME)',
+      ZONE_ROW_RNAME:      'Contact de la zone (RNAME)',
+      ZONE_ROW_SERIAL:     'Serial',
+      ZONE_ROW_REFRESH:    'Refresh',
+      ZONE_ROW_RETRY:      'Retry',
+      ZONE_ROW_EXPIRE:     'Expire',
+      ZONE_ROW_MINIMUM:    'TTL de cache négatif (minimum)',
+      ZONE_SOA_OK:         'Les temporisations SOA sont dans les plages recommandées par la RFC 1912 §2.2',
+      ZONE_SOA_RETRY_GE_REFRESH: 'SOA retry n’est pas inférieur à refresh — après un rafraîchissement raté, les secondaires attendent plus longtemps que l’intervalle normal avant de réessayer (RFC 1912 §2.2)',
+      ZONE_SOA_EXPIRE_SHORT: 'SOA expire n’est pas supérieur à refresh + retry — les secondaires peuvent abandonner la zone après un seul rafraîchissement raté (RFC 1912 §2.2)',
+      ZONE_SOA_RNAME_AT:   'Le contact SOA contient un @ — la boîte aux lettres s’écrit avec un point (hostmaster.example.com), RFC 1035 §3.3.13',
+      ZONE_NS_TITLE:       'Serveurs de noms',
+      ZONE_NS_NONE:        'Aucun enregistrement NS renvoyé pour la zone',
+      ZONE_NS_SINGLE:      'Un seul serveur de noms — la RFC 1034 §4.1 en exige au moins deux, sur des réseaux différents, pour la redondance',
+      ZONE_NS_TWO:         'Deux serveurs de noms — la RFC 2182 §5 en recommande au moins trois',
+      ZONE_APEX_CNAME:     'CNAME à l’apex de la zone — la RFC 2181 §10.1 interdit un CNAME à côté des enregistrements SOA, NS et MX ; les résolveurs ne s’accordent pas sur la réponse et la livraison du courrier peut échouer',
+      ZONE_TXT_TITLE:      'Enregistrements TXT de l’apex',
+      ZONE_TXT_TOKENS_TITLE: 'Jetons de vérification',
+      ZONE_WILDCARD_TITLE: 'Enregistrements joker (*.zone)',
+      ZONE_WILDCARD_NONE:  'Aucun enregistrement joker dans la zone',
+      ZONE_WILDCARD_MX:    'MX joker — le courrier vers tout sous-domaine non défini, fautes de frappe comprises, est accepté dans cette zone ; assurez-vous que SPF et la politique DMARC sp= couvrent les sous-domaines',
+      ZONE_WILDCARD_TXT:   'TXT joker — toute requête TXT sous un nom non défini reçoit cette réponse, y compris la découverte _dmarc, _mta-sts et _smtp._tls pour des sous-domaines qui n’existent pas',
+      ZONE_WILDCARD_SPF:   'Le TXT joker est un enregistrement SPF — tout nom d’hôte non défini reçoit une politique SPF pour les vérifications HELO/EHLO, une pratique recommandée (RFC 7208 §2.3)',
+      ZONE_WILDCARD_ADDR:  'Enregistrement d’adresse joker (A/AAAA/CNAME) — tout sous-domaine non défini se résout, donc les noms d’hôte mal orthographiés atteignent ce serveur (informatif)',
+      ZONE_PILL_FOUND:     'présent',
+      ZONE_PILL_NONE:      'aucun',
+      CAA_HOSTS_TITLE:     'CAA sur les hôtes qui présentent des certificats',
+      CAA_HOSTS_NOTE:      'Le CAA du domaine de messagerie ne dit rien des certificats des hôtes MX (STARTTLS) ni de l’hôte de politique MTA-STS (HTTPS). Affiché tel qu’une AC l’évalue : l’enregistrement propre de l’hôte, sinon celui du parent le plus proche. Informatif — les hôtes MX appartiennent généralement au fournisseur de messagerie.',
+      CAA_TH_HOST:         'Hôte',
+      CAA_TH_ROLE:         'Rôle',
+      CAA_TH_STATUS:       'CAA',
+      CAA_TH_CAS:          'AC autorisées',
+      CAA_HOST_RESTRICTED: 'Restreint',
+      CAA_HOST_NONE:       'Sans restriction',
+      CAA_HOST_ERROR:      'Échec de la requête',
+      CAA_HOST_PROHIBITED: 'émission interdite',
       APP_TITLE:           'V\u00e9rificateur de s\u00e9curit\u00e9 DNS pour le courrier',
       APP_SUBTITLE:        'V\u00e9rifiez DNSSEC, MX, SPF, DKIM et plus pour n\'importe quel domaine',
       LABEL_DOMAIN:        'Domaine',
@@ -4199,6 +4435,19 @@ const STRINGS = {
 
     // ── d: chaînes dynamiques (fonctions fléchées) ────────────────────────────
     d: {
+      ZONE_SUMMARY:        zone => 'Hygiène de la zone pour ' + zone,
+      ZONE_APEX_NOTE:      (zone, name) => name + ' n’est pas un apex de zone — SOA, serveurs de noms, taille TXT et jokers sont rapportés pour sa zone ' + zone,
+      ZONE_SOA_RANGE:      (field, value, lo, hi) => 'SOA ' + field + ' vaut ' + value + ' s — la RFC 1912 §2.2 recommande ' + lo + '–' + hi + ' s',
+      ZONE_SOA_SERIAL_ODD: serial => 'Le serial SOA vaut ' + serial + ' — sans danger, mais la forme habituelle est AAAAMMJJnn pour qu’un problème de transfert de zone soit visible',
+      ZONE_SOA_MNAME_HIDDEN: mname => 'Le primaire SOA ' + mname + ' n’est pas dans l’ensemble NS — un primaire caché (courant, informatif)',
+      ZONE_NS_OK:          n => n + ' serveurs de noms',
+      ZONE_TXT_SIZE:       (count, bytes) => count + ' enregistrement(s) TXT, environ ' + bytes + ' octets sur le réseau',
+      ZONE_TXT_LARGE:      bytes => 'La réponse TXT de l’apex fait environ ' + bytes + ' octets — au-delà du tampon EDNS de 1232 octets du DNS Flag Day 2020, les résolveurs réessaient en TCP ou reçoivent une réponse tronquée ; supprimez les enregistrements obsolètes',
+      ZONE_TXT_TOKENS:     n => n + ' jeton(s) de vérification de domaine publié(s) — impossible de voir de l’extérieur si chacun est encore nécessaire ; passez-les en revue de temps en temps',
+      ZONE_DUR:            n => n + ' s' + (n >= 86400 ? ' (' + Math.round(n / 8640) / 10 + ' j)' : n >= 3600 ? ' (' + Math.round(n / 360) / 10 + ' h)' : n >= 60 ? ' (' + Math.round(n / 6) / 10 + ' min)' : ''),
+      CAA_HOSTS_COVERED:   n => 'Les ' + n + ' hôte(s) présentant des certificats (MX, MTA-STS) sont tous couverts par une restriction CAA',
+      CAA_HOSTS_UNCOVERED: (n, total, hosts) => n + ' hôte(s) sur ' + total + ' présentant des certificats n’ont aucune restriction CAA : ' + hosts + ' (informatif — généralement la zone du fournisseur de messagerie)',
+      CAA_HOST_FROM:       parent => 'de ' + parent,
       MX_HOSTS_FOUND:        n => n + ' serveur' + (n !== 1 ? 's' : '') + ' MX trouv\u00e9' + (n !== 1 ? 's' : '') + '.',
       DKIM_SELECTORS_FOUND:  n => n + ' s\u00e9lecteur' + (n !== 1 ? 's' : '') + ' trouv\u00e9' + (n !== 1 ? 's' : ''),
       DKIM_ACROSS_PROVIDERS: n => 'sur ' + n + ' fournisseur' + (n !== 1 ? 's' : ''),
@@ -4357,6 +4606,14 @@ const STRINGS = {
 
     // ── x: textes d'explication (HTML) ────────────────────────────────────────
     x: {
+      ZONE:
+        '<b>L’hygiène de la zone</b> examine la zone DNS elle-même plutôt qu’un enregistrement de messagerie particulier : les réglages qui décident de la réplication de la zone, le nombre de serveurs qui y répondent, la taille qu’a prise la réponse de l’apex, et ce que renvoie la requête d’un nom qui n’existe <b>pas</b>. Rien de tout cela n’est noté.<br><br>' +
+        '<b>Temporisations SOA.</b> L’enregistrement Start of Authority porte cinq nombres. <code>refresh</code> est la fréquence à laquelle les secondaires demandent les changements au primaire, <code>retry</code> le délai après un rafraîchissement raté, <code>expire</code> la durée pendant laquelle ils continuent de servir la zone quand le primaire est injoignable, et <code>minimum</code> est le TTL de cache négatif (RFC 2308) : combien de temps un résolveur se souvient qu’un nom n’existe pas. La RFC 1912 §2.2 donne des plages qui fonctionnent ; retry doit être inférieur à refresh, et expire supérieur aux deux réunis, sinon un seul transfert raté peut mettre la zone hors ligne. Le serial n’est que comparé, jamais interprété ; une valeur étrange comme 1 est donc sans danger, la convention AAAAMMJJnn rend seulement un transfert bloqué facile à repérer. Ces temporisations ne comptent que pour les zones répliquées par AXFR/IXFR ; les grands fournisseurs anycast (Google, Cloudflare, Azure) répliquent autrement et choisissent à dessein des valeurs hors plages, les constats sur les temporisations sont donc des notes, jamais des avertissements.<br><br>' +
+        '<b>Serveurs de noms.</b> La RFC 1034 en exige au moins deux, la RFC 2182 en recommande trois ou plus sur des réseaux distincts. La ligne sur la diversité des AS réutilise les données de l’onglet RPKI : tous les serveurs derrière un seul système autonome sont à un incident de routage de la disparition du domaine, courrier compris — les enregistrements MX sont introuvables quand la zone ne se résout pas.<br><br>' +
+        '<b>CNAME à l’apex.</b> Un apex de zone possède des enregistrements SOA et NS, la RFC 2181 §10.1 y interdit donc un CNAME ; l’enregistrement MX du domaine serait lui aussi un alias. Les hébergeurs imitent l’effet avec le « CNAME flattening » ou des enregistrements <code>ALIAS</code>, invisibles ici — seul un vrai CNAME dans la réponse est signalé.<br><br>' +
+        '<b>Taille TXT de l’apex.</b> SPF, DMARC et une poignée de jetons de vérification de domaine vivent tous dans l’ensemble TXT de l’apex, et tous sont renvoyés ensemble à chaque requête. Depuis le DNS Flag Day 2020, les résolveurs utilisent un tampon EDNS de 1232 octets ; une réponse plus grande est tronquée et réessayée en TCP, que certains réseaux bloquent. Les jetons de vérification sont listés pour pouvoir être passés en revue — impossible de voir de l’extérieur si un jeton d’un service abandonné depuis des années est encore nécessaire.<br><br>' +
+        '<b>Jokers.</b> Un enregistrement en <code>*.<domain></code> répond pour tout nom qui n’existe pas. Un <b>MX</b> joker fait accepter à la zone le courrier de n’importe quel sous-domaine, fautes de frappe comprises, et la politique DMARC <code>sp=</code> compte alors pour tous. Un <b>TXT</b> joker est pire qu’il n’y paraît : il répond aussi à <code>_dmarc.<sub></code>, <code>_mta-sts.<sub></code> et <code>_smtp._tls.<sub></code> pour des sous-domaines jamais créés, et les destinataires trouvent une « politique » qui est en réalité un jeton de vérification. L’exception est un <code>v=spf1 -all</code> joker, qui donne à chaque nom d’hôte une politique SPF pour les vérifications HELO/EHLO et constitue une pratique recommandée. Un A/AAAA joker est courant et seulement noté.<br><br>' +
+        '<b>Ce qui ne peut pas être vérifié depuis un navigateur :</b> si la délégation du parent correspond à l’ensemble NS propre de la zone (délégation boiteuse), si les transferts de zone (AXFR) sont ouverts et si les serveurs répondent tout court — tout cela exige des requêtes directes aux serveurs autoritaires, qu’un résolveur DNS sur HTTPS n’expose pas.',
       DMARC:
         '<b>DMARC (Domain-based Message Authentication, Reporting and Conformance)</b> ' +
         'combine SPF et DKIM avec une politique indiquant aux destinataires quoi faire en cas d\'\u00e9chec d\'authentification. ' +
@@ -7041,18 +7298,11 @@ async function checkCAA(domain) {
 
     // RFC 8659 §3: when a name has no CAA records, the closest ancestor's set
     // applies. Climb towards the registrable domain so that scanning a
-    // subdomain reports the policy a CA would actually enforce. Stops at the
-    // first set found, or when fewer than two labels remain.
+    // subdomain reports the policy a CA would actually enforce.
     let climbedTo = null;
     if (rawRecords.length === 0) {
-      const labels = domain.split('.');
-      for (let i = 1; i < labels.length - 1 && rawRecords.length === 0; i++) {
-        const parent = labels.slice(i).join('.');
-        const pResp = await dohQuery(parent, 'CAA');
-        if (pResp.Status !== 0) continue;
-        const recs = (pResp.Answer || []).filter(r => r.type === 257);
-        if (recs.length > 0) { rawRecords = recs; climbedTo = parent; }
-      }
+      const up = await caaClimbParents(domain);
+      rawRecords = up.records; climbedTo = up.climbedTo;
     }
     if (rawRecords.length === 0) {
       return { rating: 'warning', records: [], parsed: [], issues: [{ rating: 'warning', textKey: 'CAA_NO_RECORDS_ISSUE' }] };
@@ -7112,13 +7362,80 @@ async function checkCAA(domain) {
         .filter(v => v && /^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/i.test(v))
     )];
     const caDnssec = {};
-    const dsResults = await parallelLimit(caDomains.map(ca => () => checkDNSSEC(ca)), DNS_CONCURRENCY);
+    const [dsResults, tlsHosts] = await Promise.all([
+      parallelLimit(caDomains.map(ca => () => checkDNSSEC(ca)), DNS_CONCURRENCY),
+      checkCAATLSHosts(domain),
+    ]);
     caDomains.forEach((ca, i) => { if (dsResults[i].status === 'fulfilled') caDnssec[ca] = dsResults[i].value; });
 
-    return { rating, records: rawRecords, parsed, issues, caDnssec, climbedTo };
+    // Coverage of the hosts that actually present TLS certificates for this
+    // domain's mail. Informational: the MX hosts usually belong to someone
+    // else, so their CAA is not this domain's to fix — rating untouched.
+    if (tlsHosts.length) {
+      const uncovered = tlsHosts.filter(h => h.status === 'none');
+      const errored   = tlsHosts.filter(h => h.status === 'error');
+      if (uncovered.length === 0 && errored.length === 0) issues.push({ rating: 'good', textKey: 'CAA_HOSTS_COVERED', textArgs: [tlsHosts.length], info: true });
+      else if (uncovered.length) issues.push({ rating: 'warning', textKey: 'CAA_HOSTS_UNCOVERED', textArgs: [uncovered.length, tlsHosts.length, uncovered.map(h => h.host).join(', ')], info: true });
+    }
+
+    return { rating, records: rawRecords, parsed, issues, caDnssec, climbedTo, tlsHosts };
   } catch (e) {
     return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
+}
+
+// RFC 8659 §3 parent climb: the first ancestor (below the TLD) with a CAA
+// RRset decides. Returns { records, climbedTo }; records empty if none.
+// Non-zero statuses on the way up are skipped — a SERVFAIL at one level
+// does not stop a CA from finding the set at the next.
+async function caaClimbParents(name) {
+  const labels = name.split('.');
+  for (let i = 1; i < labels.length - 1; i++) {
+    const parent = labels.slice(i).join('.');
+    const pResp = await dohQuery(parent, 'CAA');
+    if (pResp.Status !== 0) continue;
+    const recs = (pResp.Answer || []).filter(r => r.type === 257);
+    if (recs.length > 0) return { records: recs, climbedTo: parent };
+  }
+  return { records: [], climbedTo: null };
+}
+
+// CAA as a CA would evaluate it for one hostname: the name's own RRset
+// (DoH follows a CNAME, so an alias target's records come back under the
+// alias — RFC 8659 §3 wants exactly that), else the parent climb.
+// status: restricted | none | error. `cas` lists the issue/issuewild CAs.
+async function caaForHost(host, role) {
+  try {
+    const resp = await dohQuery(host, 'CAA');
+    const problem = dohStatusProblem(resp);
+    if (problem) return { host, role, status: 'error', problem, cas: [], climbedTo: null };
+    let records = resp.Status === 0 ? (resp.Answer || []).filter(r => r.type === 257) : [];
+    let climbedTo = null;
+    if (records.length === 0) ({ records, climbedTo } = await caaClimbParents(host));
+    const parsed = records.map(r => parseCAAData(r.data)).filter(Boolean);
+    const issueVals = parsed.filter(p => p.tag === 'issue' || p.tag === 'issuewild').map(p => p.value.trim());
+    const cas = [...new Set(issueVals.filter(v => v && v !== ';').map(v => v.split(';')[0].trim()))];
+    const restricted = cas.length > 0 || issueVals.some(v => v === ';' || v === '');
+    return { host, role, status: restricted ? 'restricted' : 'none', cas, climbedTo, prohibited: restricted && cas.length === 0 };
+  } catch (e) {
+    return { host, role, status: 'error', message: describeFetchError(e), cas: [], climbedTo: null };
+  }
+}
+
+// The hosts whose certificates matter for this domain's mail transport:
+// every MX host (STARTTLS on port 25) and the MTA-STS policy host
+// (mta-sts.<domain>, HTTPS) when it exists. CAA at the mail domain's apex
+// says nothing about certificates issued for these names.
+async function checkCAATLSHosts(domain) {
+  const [mxRes, aRes, aaaaRes] = await Promise.allSettled([
+    getMXHostnames(domain), dohQuery('mta-sts.' + domain, 'A'), dohQuery('mta-sts.' + domain, 'AAAA'),
+  ]);
+  const hosts = (mxRes.status === 'fulfilled' ? mxRes.value : []).filter(h => h && h !== domain).map(h => ({ host: h, role: 'mx' }));
+  const hasAddr = res => res.status === 'fulfilled' && res.value && res.value.Status === 0 && (res.value.Answer || []).some(r => r.type === 1 || r.type === 28);
+  if (hasAddr(aRes) || hasAddr(aaaaRes)) hosts.push({ host: 'mta-sts.' + domain, role: 'mta-sts' });
+  if (hosts.length === 0) return [];
+  const settled = await parallelLimit(hosts.map(h => () => caaForHost(h.host, h.role)), DNS_CONCURRENCY);
+  return settled.map((r, i) => r.status === 'fulfilled' ? r.value : { ...hosts[i], status: 'error', message: describeFetchError(r.reason), cas: [], climbedTo: null });
 }
 
 // ── Security.txt (RFC 9116) ───────────────────────────────────────────────────
@@ -8064,6 +8381,118 @@ async function checkIPv6(domain) {
 
 // ── DOM helpers ───────────────────────────────────────────────────────────────
 
+// ── Zone hygiene ──────────────────────────────────────────────────────────────
+// Informational. Looks at the zone the scanned name lives in: SOA timers
+// (RFC 1912 §2.2 ranges, RFC 2308 negative TTL), nameserver count (RFC 1034
+// §4.1, RFC 2182 §5), a CNAME at the apex (RFC 2181 §10.1), the size and
+// content of the apex TXT RRset (DNS Flag Day 2020's 1232-byte EDNS buffer;
+// verification tokens that accumulate), and wildcard records — a wildcard
+// TXT answers _dmarc / _mta-sts / _smtp._tls discovery for every undefined
+// subdomain, a wildcard MX accepts mail for every typo.
+const ZONE_SOA_RANGES = { refresh: [1200, 43200], retry: [180, 7200], expire: [1209600, 2419200], minimum: [300, 86400] };
+const ZONE_POLICY_RE  = /^v=(?:spf1|dmarc1|dkim1|stsv1|tlsrptv1|bimi1)\b/i;
+const ZONE_TOKEN_RE   = /^(?:[a-z0-9_.-]*(?:verif|valid|challenge|site|domain|code|key|auth)[a-z0-9_.-]*\s*[=:]|ms=|asv=|docusign=|loaderio=|amazonses:|pardot|firebase=|_github-|keybase-io=|logmein-|miro-|smartsheet-|stripe-|twilio-|zoom-|wiz-|citrix-|dropbox-|atlassian-|adobe-|apple-|facebook-|google-|openai-|canva-|notion|protonmail-|slack-|calendly-|sophos-|docker-|cloudflare-|1password-|fastly-|h1-|intacct-|segment-|pinterest-|yandex-|mailru-|shopify-|ahrefs-|status-page-|onetrust-|mongodb-|cisco-|knowbe4-|brevo-|sendinblue-|hubspot-|postman-|webex|teamviewer-|box-|d365)/i;
+
+function parseSOAData(data) {
+  const p = data.trim().split(/\s+/);
+  if (p.length < 7) return null;
+  const n = i => { const v = parseInt(p[i], 10); return Number.isFinite(v) ? v : null; };
+  const mname = p[0].replace(/\.$/, '').toLowerCase();
+  const rname = p[1].replace(/\.$/, '');
+  // RFC 1035 §3.3.13: the first unescaped dot separates mailbox and domain.
+  const m = rname.match(/^((?:\\.|[^.])*)\.(.+)$/);
+  const rnameEmail = m ? m[1].replace(/\\\./g, '.') + '@' + m[2] : rname;
+  return { mname, rname, rnameEmail, serial: n(2), refresh: n(3), retry: n(4), expire: n(5), minimum: n(6) };
+}
+
+async function checkZone(domain) {
+  const issues = [];
+  const push = (rating, textKey, textArgs, info) => issues.push({ rating, textKey, textArgs: textArgs && textArgs.length ? textArgs : undefined, ...(info ? { info: true } : {}) });
+  const empty = { issues: [], zone: domain, isApex: true, soa: null, ns: [], txt: { count: 0, bytes: 0, tokens: [], records: [] }, wildcard: {}, apexCname: false };
+  try {
+    const soaResp = await dohQuery(domain, 'SOA');
+    const problem = dohStatusProblem(soaResp);
+    if (problem) return { ...problem, ...empty };
+    const own = (soaResp.Answer || []).find(r => r.type === 6 && r.name.replace(/\.$/, '').toLowerCase() === domain);
+    const auth = own || (soaResp.Answer || []).find(r => r.type === 6) || (soaResp.Authority || []).find(r => r.type === 6);
+    const zone = auth ? auth.name.replace(/\.$/, '').toLowerCase() : domain;
+    const isApex = zone === domain;
+    const soa = auth ? parseSOAData(auth.data) : null;
+    if (!isApex) push('good', 'ZONE_APEX_NOTE', [zone, domain]);
+
+    const [nsRes, aRes, txtRes, wA, wAAAA, wMX, wTXT] = await parallelLimit([
+      () => dohQuery(zone, 'NS'), () => dohQuery(domain, 'A'), () => dohQuery(zone, 'TXT'),
+      () => dohQuery('*.' + zone, 'A'), () => dohQuery('*.' + zone, 'AAAA'), () => dohQuery('*.' + zone, 'MX'), () => dohQuery('*.' + zone, 'TXT'),
+    ], DNS_CONCURRENCY);
+    const answers = (res, type) => res.status === 'fulfilled' && res.value && res.value.Status === 0 ? (res.value.Answer || []).filter(r => r.type === type) : [];
+
+    // SOA timers
+    if (soa) {
+      let soaOk = true;
+      for (const [field, [lo, hi]] of Object.entries(ZONE_SOA_RANGES)) {
+        const v = soa[field];
+        if (v === null) continue;
+        if (v < lo || v > hi) { soaOk = false; push('good', 'ZONE_SOA_RANGE', [field, v, lo, hi]); }
+      }
+      // Timer findings are notes, not warnings: they only matter for zones
+      // replicated with AXFR/IXFR, and the large anycast providers (Google,
+      // Cloudflare, Azure) set values outside the ranges on purpose.
+      if (soa.retry !== null && soa.refresh !== null && soa.retry >= soa.refresh) { soaOk = false; push('good', 'ZONE_SOA_RETRY_GE_REFRESH'); }
+      if (soa.expire !== null && soa.refresh !== null && soa.retry !== null && soa.expire <= soa.refresh + soa.retry) { soaOk = false; push('good', 'ZONE_SOA_EXPIRE_SHORT'); }
+      if (soa.rname.includes('@')) { soaOk = false; push('warning', 'ZONE_SOA_RNAME_AT'); }
+      if (soaOk) push('excellent', 'ZONE_SOA_OK');
+      if (soa.serial !== null && soa.serial <= 1) push('good', 'ZONE_SOA_SERIAL_ODD', [soa.serial]);
+    }
+
+    // Nameservers
+    const ns = [...new Set(answers(nsRes, 2).map(r => r.data.trim().replace(/\.$/, '').toLowerCase()).filter(Boolean))].sort();
+    if (nsRes.status === 'fulfilled') {
+      if (ns.length === 0) push('warning', 'ZONE_NS_NONE');
+      else if (ns.length === 1) push('warning', 'ZONE_NS_SINGLE');
+      else if (ns.length === 2) push('good', 'ZONE_NS_TWO');
+      else push('excellent', 'ZONE_NS_OK', [ns.length]);
+      if (soa && ns.length && !ns.includes(soa.mname)) push('good', 'ZONE_SOA_MNAME_HIDDEN', [soa.mname]);
+    }
+
+    // CNAME at the scanned name alongside SOA/NS/MX (only meaningful at an apex)
+    const apexCname = isApex && answers(aRes, 5).some(r => r.name.replace(/\.$/, '').toLowerCase() === domain);
+    if (apexCname) push('warning', 'ZONE_APEX_CNAME');
+
+    // Apex TXT RRset: approximate wire size (compressed owner 2 + fixed 10 +
+    // one length byte per 255-byte segment + data) plus header and question.
+    const txtRecords = answers(txtRes, 16).map(r => parseTxtData(r.data));
+    const bytes = txtRecords.length ? 12 + zone.length + 6 + txtRecords.reduce((n, t) => n + 12 + t.length + Math.max(1, Math.ceil(t.length / 255)), 0) : 0;
+    const tokens = txtRecords.filter(t => !ZONE_POLICY_RE.test(t) && (ZONE_TOKEN_RE.test(t) || /^[A-Za-z0-9+/=_-]{24,}$/.test(t)));
+    if (txtRecords.length) {
+      if (bytes > 1232) push('warning', 'ZONE_TXT_LARGE', [bytes]);
+      if (tokens.length) push('good', 'ZONE_TXT_TOKENS', [tokens.length]);
+    }
+
+    // Wildcards: a record is a wildcard only when its owner is literally *.zone.
+    const star = '*.' + zone;
+    const owned = (res, type) => answers(res, type).filter(r => r.name.replace(/\.$/, '').toLowerCase() === star);
+    const wildcard = {
+      a: owned(wA, 1).length > 0, aaaa: owned(wAAAA, 28).length > 0,
+      cname: [...owned(wA, 5), ...owned(wAAAA, 5)].length > 0,
+      mx: owned(wMX, 15).map(r => r.data.trim()),
+      txt: owned(wTXT, 16).map(r => parseTxtData(r.data)),
+    };
+    if (wildcard.mx.length) push('warning', 'ZONE_WILDCARD_MX');
+    if (wildcard.txt.length) {
+      if (wildcard.txt.every(isSPFRecord)) push('good', 'ZONE_WILDCARD_SPF');
+      else push('warning', 'ZONE_WILDCARD_TXT');
+    }
+    if (wildcard.a || wildcard.aaaa || wildcard.cname) push('good', 'ZONE_WILDCARD_ADDR');
+    const anyWild = wildcard.a || wildcard.aaaa || wildcard.cname || wildcard.mx.length || wildcard.txt.length;
+    if (!anyWild && [wA, wAAAA, wMX, wTXT].every(r => r.status === 'fulfilled')) push('excellent', 'ZONE_WILDCARD_NONE');
+
+    const rating = issues.filter(i => !i.info).reduce((acc, i) => worstRating(acc, i.rating), 'excellent');
+    return { rating, issues, zone, isApex, soa, ns, txt: { count: txtRecords.length, bytes, tokens, records: txtRecords }, wildcard, apexCname };
+  } catch (e) {
+    return { error: true, rating: 'fail', message: describeFetchError(e), ...empty };
+  }
+}
+
 function el(tag, cls, text) {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
@@ -8162,7 +8591,10 @@ function makeDetails(summaryText, contentNode) {
   sum.textContent = summaryText;
   det.appendChild(sum);
   const wrap = el('div', 'details-content');
-  wrap.appendChild(contentNode);
+  // Callers may build the details first and append the content afterwards
+  // (renderAutoconfig's ISPDB table, renderZone's token list). A real DOM
+  // throws on appendChild(undefined); the test stub used to accept it.
+  if (contentNode) wrap.appendChild(contentNode);
   det.appendChild(wrap);
   return det;
 }
@@ -9185,6 +9617,34 @@ function renderCAA(result) {
             frag.appendChild(dnssecSec);
           }
 
+          // CAA as seen from the hosts that present certificates for this
+          // domain's mail (MX hosts, MTA-STS policy host). Informational.
+          const tlsHosts = d.tlsHosts || [];
+          if (tlsHosts.length > 0) {
+            const hostSec = el('div', 'panel-section');
+            hostSec.appendChild(el('div', 'panel-section-title', ts('CAA_HOSTS_TITLE')));
+            hostSec.appendChild(el('div', 'card-summary', ts('CAA_HOSTS_NOTE')));
+            const table = el('table', 'provider-table');
+            const head = document.createElement('tr');
+            for (const k of ['CAA_TH_HOST', 'CAA_TH_ROLE', 'CAA_TH_STATUS', 'CAA_TH_CAS']) head.appendChild(el('th', null, ts(k)));
+            table.appendChild(head);
+            for (const h of tlsHosts) {
+              const tr = document.createElement('tr');
+              const hc = document.createElement('td'); hc.appendChild(el('code', 'mono', h.host)); tr.appendChild(hc);
+              tr.appendChild(el('td', null, h.role === 'mx' ? 'MX' : 'MTA-STS'));
+              const sc = document.createElement('td');
+              if (h.status === 'restricted') sc.appendChild(el('span', 'badge badge-good', ts('CAA_HOST_RESTRICTED')));
+              else if (h.status === 'none') sc.appendChild(el('span', 'badge badge-warning', ts('CAA_HOST_NONE')));
+              else sc.appendChild(el('span', 'badge badge-warning', h.problem ? msgText(h.problem, 'CAA_HOST_ERROR') : ts('CAA_HOST_ERROR')));
+              if (h.climbedTo) { sc.appendChild(document.createTextNode(' ')); sc.appendChild(el('span', 'tag-pill', td('CAA_HOST_FROM', h.climbedTo))); }
+              tr.appendChild(sc);
+              tr.appendChild(el('td', null, h.status === 'restricted' ? (h.prohibited ? ts('CAA_HOST_PROHIBITED') : h.cas.join(', ')) : '\u2014'));
+              table.appendChild(tr);
+            }
+            hostSec.appendChild(table);
+            frag.appendChild(hostSec);
+          }
+
           body.appendChild(makeDetails(ts('CAA_RECORDS_ANALYSIS'), frag));
         } else {
           body.appendChild(issueList);
@@ -9680,6 +10140,107 @@ function renderIPv6(result) {
   });
 }
 
+function renderZone(result) {
+  const d = result && result.status === 'fulfilled' ? result.value
+    : { error: true, rating: 'fail', messageKey: 'ERR_CHECK_FAILED', issues: [], zone: currentDomain, soa: null, ns: [], txt: { count: 0, bytes: 0, tokens: [], records: [] }, wildcard: {} };
+  setTabResult('zone', d.rating, body => {
+    if (d.error) {
+      body.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + msgText(d, 'ERR_CHECK_FAILED')));
+      addExplanation(body, tx('ZONE'));
+      return;
+    }
+    const sum = el('div', 'card-summary');
+    sum.appendChild(el('b', null, td('ZONE_SUMMARY', d.zone)));
+    body.appendChild(sum);
+
+    // Nameserver AS diversity comes from the RPKI result at render time, like
+    // the MX tab's single-AS note; the keys are shared with the RPKI tab.
+    const issues = [...d.issues];
+    const rpkiVal = lastResults && lastResults.rpki && lastResults.rpki.status === 'fulfilled' ? lastResults.rpki.value : null;
+    if (rpkiVal && !rpkiVal.error && Array.isArray(rpkiVal.nsAsns) && rpkiVal.nsAsns.length && d.ns.length > 1) {
+      const asns = rpkiVal.nsAsns;
+      if (asns.length === 1) issues.push({ rating: 'good', textKey: 'RPKI_NS_SINGLE_ASN', textArgs: ['AS' + asns[0], (rpkiVal.asnInfo && rpkiVal.asnInfo[asns[0]]) || null] });
+      else issues.push({ rating: 'excellent', textKey: 'RPKI_NS_MULTI_ASN', textArgs: [asns.length] });
+    }
+    if (issues.length) body.appendChild(makeIssueList(issues));
+
+    const kvRow = (table, k, v) => {
+      const tr = document.createElement('tr');
+      tr.appendChild(el('td', null, k));
+      const cell = document.createElement('td');
+      if (typeof v === 'string') cell.textContent = v; else cell.appendChild(v);
+      tr.appendChild(cell);
+      table.appendChild(tr);
+    };
+    const pill = (text, cls) => el('span', 'tag-pill' + (cls ? ' ' + cls : ''), text);
+    const dur = n => n === null ? '—' : td('ZONE_DUR', n);
+
+    if (d.soa) {
+      const sec = el('div', 'panel-section');
+      sec.appendChild(el('div', 'panel-section-title', ts('ZONE_SOA_TITLE')));
+      const t = el('table', 'kv-table');
+      kvRow(t, ts('ZONE_ROW_MNAME'), el('code', 'mono', d.soa.mname));
+      kvRow(t, ts('ZONE_ROW_RNAME'), el('code', 'mono', d.soa.rnameEmail));
+      kvRow(t, ts('ZONE_ROW_SERIAL'), d.soa.serial === null ? '—' : String(d.soa.serial));
+      kvRow(t, ts('ZONE_ROW_REFRESH'), dur(d.soa.refresh));
+      kvRow(t, ts('ZONE_ROW_RETRY'), dur(d.soa.retry));
+      kvRow(t, ts('ZONE_ROW_EXPIRE'), dur(d.soa.expire));
+      kvRow(t, ts('ZONE_ROW_MINIMUM'), dur(d.soa.minimum));
+      sec.appendChild(t);
+      body.appendChild(sec);
+    }
+
+    const nsSec = el('div', 'panel-section');
+    nsSec.appendChild(el('div', 'panel-section-title', ts('ZONE_NS_TITLE') + ' (' + d.ns.length + ')'));
+    if (d.ns.length) {
+      const ul = el('ul', 'issue-list');
+      for (const h of d.ns) {
+        const li = el('li', 'issue-item');
+        li.appendChild(el('span', 'issue-dot dot-info', ''));
+        li.appendChild(el('code', 'mono', h));
+        ul.appendChild(li);
+      }
+      nsSec.appendChild(ul);
+    }
+    body.appendChild(nsSec);
+
+    const txtSec = el('div', 'panel-section');
+    txtSec.appendChild(el('div', 'panel-section-title', ts('ZONE_TXT_TITLE')));
+    txtSec.appendChild(el('div', 'card-summary', td('ZONE_TXT_SIZE', d.txt.count, d.txt.bytes)));
+    if (d.txt.tokens.length) {
+      const det = makeDetails(ts('ZONE_TXT_TOKENS_TITLE') + ' (' + d.txt.tokens.length + ')');
+      det.open = false;
+      const ul = el('ul', 'issue-list');
+      for (const tkn of d.txt.tokens) {
+        const li = el('li', 'issue-item');
+        li.appendChild(el('span', 'issue-dot dot-info', ''));
+        li.appendChild(el('code', 'mono', tkn.length > 90 ? tkn.slice(0, 87) + '…' : tkn));
+        ul.appendChild(li);
+      }
+      det.appendChild(ul);
+      txtSec.appendChild(det);
+    }
+    body.appendChild(txtSec);
+
+    const w = d.wildcard || {};
+    const wSec = el('div', 'panel-section');
+    wSec.appendChild(el('div', 'panel-section-title', ts('ZONE_WILDCARD_TITLE')));
+    const wt = el('table', 'kv-table');
+    const yn = v => pill(v ? ts('ZONE_PILL_FOUND') : ts('ZONE_PILL_NONE'), v ? 'tag-pill-warn' : '');
+    kvRow(wt, 'A', yn(w.a)); kvRow(wt, 'AAAA', yn(w.aaaa)); kvRow(wt, 'CNAME', yn(w.cname));
+    const mxCell = el('span'); mxCell.appendChild(yn(w.mx && w.mx.length));
+    if (w.mx && w.mx.length) { mxCell.appendChild(document.createTextNode(' ')); mxCell.appendChild(el('code', 'mono', w.mx.join(', '))); }
+    kvRow(wt, 'MX', mxCell);
+    const txtCell = el('span'); txtCell.appendChild(yn(w.txt && w.txt.length));
+    if (w.txt && w.txt.length) { txtCell.appendChild(document.createTextNode(' ')); txtCell.appendChild(el('code', 'mono', w.txt.map(t => t.length > 60 ? t.slice(0, 57) + '…' : t).join(' | '))); }
+    kvRow(wt, 'TXT', txtCell);
+    wSec.appendChild(wt);
+    body.appendChild(wSec);
+
+    addExplanation(body, tx('ZONE'));
+  });
+}
+
 function renderSecurityTxt(result) {
   const d = result.status === 'fulfilled' ? result.value : { rating: 'fail', error: true, found: false, messageKey: 'ERR_CHECK_FAILED' };
   if (d.skipped) { setTabResult('security-txt', 'skip', body => { body.appendChild(el('div', 'card-summary', ts('CHECK_SKIPPED'))); }); return; }
@@ -9987,6 +10548,7 @@ const INFO_CHECKS = [
   { key: 'rpki',        tabId: 'rpki',         label: 'RPKI' },
   { key: 'aspa',        tabId: 'aspa',         label: 'ASPA' },
   { key: 'ipv6',        tabId: 'ipv6',         label: 'IPv6' },
+  { key: 'zone',        tabId: 'zone',         label: 'Zone' },
   { key: 'securityTxt', tabId: 'security-txt', label: 'Security.txt', barLabel: 'Sec.txt' },
   { key: 'whois',       tabId: 'whois',        label: 'WHOIS' },
   { key: 'autoconf',    tabId: 'autoconf',     label: 'Autoconfig' },
@@ -10447,7 +11009,7 @@ function timed(name, promise) {
 function rerenderAll(r) {
   renderDNSSEC(r.dnssec); renderMX(r.mx); renderPTR(r.ptr); renderDANE(r.dane); renderSPF(r.spf);
   renderDKIM(r.dkim); renderDMARC(r.dmarc); renderBIMI(r.bimi); renderTLSRPT(r.tlsrpt); renderMTASTS(r.mtasts); renderCAA(r.caa);
-  renderRPKI(r.rpki); renderASPA(r.rpki); renderIPv6(r.ipv6); renderSecurityTxt(r.securityTxt); renderWHOIS(r.whois);
+  renderRPKI(r.rpki); renderASPA(r.rpki); renderIPv6(r.ipv6); renderZone(r.zone); renderSecurityTxt(r.securityTxt); renderWHOIS(r.whois);
   renderAutoconfig(r.autoconf);
   renderConnection(r.conn);
   renderSummary(r);
@@ -10504,7 +11066,7 @@ async function runChecks(domain, customSelectors, opts = {}) {
   document.getElementById('overview-content').style.display = 'none';
   announce(ts('RUNNING_CHECKS'));
 
-  const tabsToLoad = ['recs','dnssec','mx','ptr','dane','spf','dkim','dmarc','bimi','tlsrpt','caa','rpki','aspa','ipv6','whois','autoconf','connection'];
+  const tabsToLoad = ['recs','dnssec','mx','ptr','dane','spf','dkim','dmarc','bimi','tlsrpt','caa','rpki','aspa','ipv6','zone','whois','autoconf','connection'];
   if (!skipMTASTS) tabsToLoad.push('mtasts');
   if (!skipSecTxt) tabsToLoad.push('security-txt');
   tabsToLoad.forEach(setTabLoading);
@@ -10518,7 +11080,7 @@ async function runChecks(domain, customSelectors, opts = {}) {
   const pBimi   = timed('bimi',    checkBIMI(domain));
   const pTlsrpt = timed('tlsrpt',  checkTLSRPT(domain));
   const pMtasts = timed('mtasts',  skipMTASTS ? Promise.resolve(SKIPPED) : checkMTASTS(domain));
-  const [dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois, autoconf, bgp, conn, coherence] = await Promise.allSettled([
+  const [dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, zone, securityTxt, whois, autoconf, bgp, conn, coherence] = await Promise.allSettled([
     timed('dnssec',  checkDNSSECFull(domain)),
     timed('mx',      checkMX(domain)),
     timed('ptr',     checkPTR(domain)),
@@ -10532,6 +11094,7 @@ async function runChecks(domain, customSelectors, opts = {}) {
     timed('caa',     checkCAA(domain)),
     timed('rpki',    checkRPKI(domain)),
     timed('ipv6',    checkIPv6(domain)),
+    timed('zone',    checkZone(domain)),
     timed('stxt',    skipSecTxt ? Promise.resolve(SKIPPED) : checkSecurityTxt(domain)),
     timed('whois',   checkWHOIS(domain)),
     timed('autoconf', checkAutoconfig(domain)),
@@ -10542,7 +11105,7 @@ async function runChecks(domain, customSelectors, opts = {}) {
   if (gen !== scanGeneration) return;   // superseded — see scanGeneration
   if (scanStats) scanStats.totalMs = Date.now() - scanStats.startMs;
 
-  lastResults = { dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois, autoconf, bgp, conn, coherence };
+  lastResults = { dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, zone, securityTxt, whois, autoconf, bgp, conn, coherence };
   scanning = false;
   rerenderAll(lastResults);
   announce(td('SCAN_DONE', domain, document.getElementById('summary-grade').textContent));

@@ -4,6 +4,45 @@ const LANG_FR = {
 
   // ── s: chaînes statiques ──────────────────────────────────────────────────
   s: {
+    PANEL_ZONE:          'Hygiène de la zone DNS',
+    TAB_ZONE:            'Zone',
+    ZONE_SOA_TITLE:      'SOA (autorité de la zone)',
+    ZONE_ROW_MNAME:      'Serveur de noms primaire (MNAME)',
+    ZONE_ROW_RNAME:      'Contact de la zone (RNAME)',
+    ZONE_ROW_SERIAL:     'Serial',
+    ZONE_ROW_REFRESH:    'Refresh',
+    ZONE_ROW_RETRY:      'Retry',
+    ZONE_ROW_EXPIRE:     'Expire',
+    ZONE_ROW_MINIMUM:    'TTL de cache négatif (minimum)',
+    ZONE_SOA_OK:         'Les temporisations SOA sont dans les plages recommandées par la RFC 1912 §2.2',
+    ZONE_SOA_RETRY_GE_REFRESH: 'SOA retry n’est pas inférieur à refresh — après un rafraîchissement raté, les secondaires attendent plus longtemps que l’intervalle normal avant de réessayer (RFC 1912 §2.2)',
+    ZONE_SOA_EXPIRE_SHORT: 'SOA expire n’est pas supérieur à refresh + retry — les secondaires peuvent abandonner la zone après un seul rafraîchissement raté (RFC 1912 §2.2)',
+    ZONE_SOA_RNAME_AT:   'Le contact SOA contient un @ — la boîte aux lettres s’écrit avec un point (hostmaster.example.com), RFC 1035 §3.3.13',
+    ZONE_NS_TITLE:       'Serveurs de noms',
+    ZONE_NS_NONE:        'Aucun enregistrement NS renvoyé pour la zone',
+    ZONE_NS_SINGLE:      'Un seul serveur de noms — la RFC 1034 §4.1 en exige au moins deux, sur des réseaux différents, pour la redondance',
+    ZONE_NS_TWO:         'Deux serveurs de noms — la RFC 2182 §5 en recommande au moins trois',
+    ZONE_APEX_CNAME:     'CNAME à l’apex de la zone — la RFC 2181 §10.1 interdit un CNAME à côté des enregistrements SOA, NS et MX ; les résolveurs ne s’accordent pas sur la réponse et la livraison du courrier peut échouer',
+    ZONE_TXT_TITLE:      'Enregistrements TXT de l’apex',
+    ZONE_TXT_TOKENS_TITLE: 'Jetons de vérification',
+    ZONE_WILDCARD_TITLE: 'Enregistrements joker (*.zone)',
+    ZONE_WILDCARD_NONE:  'Aucun enregistrement joker dans la zone',
+    ZONE_WILDCARD_MX:    'MX joker — le courrier vers tout sous-domaine non défini, fautes de frappe comprises, est accepté dans cette zone ; assurez-vous que SPF et la politique DMARC sp= couvrent les sous-domaines',
+    ZONE_WILDCARD_TXT:   'TXT joker — toute requête TXT sous un nom non défini reçoit cette réponse, y compris la découverte _dmarc, _mta-sts et _smtp._tls pour des sous-domaines qui n’existent pas',
+    ZONE_WILDCARD_SPF:   'Le TXT joker est un enregistrement SPF — tout nom d’hôte non défini reçoit une politique SPF pour les vérifications HELO/EHLO, une pratique recommandée (RFC 7208 §2.3)',
+    ZONE_WILDCARD_ADDR:  'Enregistrement d’adresse joker (A/AAAA/CNAME) — tout sous-domaine non défini se résout, donc les noms d’hôte mal orthographiés atteignent ce serveur (informatif)',
+    ZONE_PILL_FOUND:     'présent',
+    ZONE_PILL_NONE:      'aucun',
+    CAA_HOSTS_TITLE:     'CAA sur les hôtes qui présentent des certificats',
+    CAA_HOSTS_NOTE:      'Le CAA du domaine de messagerie ne dit rien des certificats des hôtes MX (STARTTLS) ni de l’hôte de politique MTA-STS (HTTPS). Affiché tel qu’une AC l’évalue : l’enregistrement propre de l’hôte, sinon celui du parent le plus proche. Informatif — les hôtes MX appartiennent généralement au fournisseur de messagerie.',
+    CAA_TH_HOST:         'Hôte',
+    CAA_TH_ROLE:         'Rôle',
+    CAA_TH_STATUS:       'CAA',
+    CAA_TH_CAS:          'AC autorisées',
+    CAA_HOST_RESTRICTED: 'Restreint',
+    CAA_HOST_NONE:       'Sans restriction',
+    CAA_HOST_ERROR:      'Échec de la requête',
+    CAA_HOST_PROHIBITED: 'émission interdite',
     APP_TITLE:           'Vérificateur de sécurité DNS pour le courrier',
     APP_SUBTITLE:        'Vérifiez DNSSEC, MX, SPF, DKIM et plus pour n\'importe quel domaine',
     LABEL_DOMAIN:        'Domaine',
@@ -430,6 +469,19 @@ const LANG_FR = {
 
   // ── d: chaînes dynamiques (fonctions fléchées) ────────────────────────────
   d: {
+    ZONE_SUMMARY:        zone => 'Hygiène de la zone pour ' + zone,
+    ZONE_APEX_NOTE:      (zone, name) => name + ' n’est pas un apex de zone — SOA, serveurs de noms, taille TXT et jokers sont rapportés pour sa zone ' + zone,
+    ZONE_SOA_RANGE:      (field, value, lo, hi) => 'SOA ' + field + ' vaut ' + value + ' s — la RFC 1912 §2.2 recommande ' + lo + '–' + hi + ' s',
+    ZONE_SOA_SERIAL_ODD: serial => 'Le serial SOA vaut ' + serial + ' — sans danger, mais la forme habituelle est AAAAMMJJnn pour qu’un problème de transfert de zone soit visible',
+    ZONE_SOA_MNAME_HIDDEN: mname => 'Le primaire SOA ' + mname + ' n’est pas dans l’ensemble NS — un primaire caché (courant, informatif)',
+    ZONE_NS_OK:          n => n + ' serveurs de noms',
+    ZONE_TXT_SIZE:       (count, bytes) => count + ' enregistrement(s) TXT, environ ' + bytes + ' octets sur le réseau',
+    ZONE_TXT_LARGE:      bytes => 'La réponse TXT de l’apex fait environ ' + bytes + ' octets — au-delà du tampon EDNS de 1232 octets du DNS Flag Day 2020, les résolveurs réessaient en TCP ou reçoivent une réponse tronquée ; supprimez les enregistrements obsolètes',
+    ZONE_TXT_TOKENS:     n => n + ' jeton(s) de vérification de domaine publié(s) — impossible de voir de l’extérieur si chacun est encore nécessaire ; passez-les en revue de temps en temps',
+    ZONE_DUR:            n => n + ' s' + (n >= 86400 ? ' (' + Math.round(n / 8640) / 10 + ' j)' : n >= 3600 ? ' (' + Math.round(n / 360) / 10 + ' h)' : n >= 60 ? ' (' + Math.round(n / 6) / 10 + ' min)' : ''),
+    CAA_HOSTS_COVERED:   n => 'Les ' + n + ' hôte(s) présentant des certificats (MX, MTA-STS) sont tous couverts par une restriction CAA',
+    CAA_HOSTS_UNCOVERED: (n, total, hosts) => n + ' hôte(s) sur ' + total + ' présentant des certificats n’ont aucune restriction CAA : ' + hosts + ' (informatif — généralement la zone du fournisseur de messagerie)',
+    CAA_HOST_FROM:       parent => 'de ' + parent,
     MX_HOSTS_FOUND:        n => n + ' serveur' + (n !== 1 ? 's' : '') + ' MX trouvé' + (n !== 1 ? 's' : '') + '.',
     DKIM_SELECTORS_FOUND:  n => n + ' sélecteur' + (n !== 1 ? 's' : '') + ' trouvé' + (n !== 1 ? 's' : ''),
     DKIM_ACROSS_PROVIDERS: n => 'sur ' + n + ' fournisseur' + (n !== 1 ? 's' : ''),
@@ -588,6 +640,14 @@ const LANG_FR = {
 
   // ── x: textes d'explication (HTML) ───────────────────────────────────────
   x: {
+    ZONE:
+      '<b>L’hygiène de la zone</b> examine la zone DNS elle-même plutôt qu’un enregistrement de messagerie particulier : les réglages qui décident de la réplication de la zone, le nombre de serveurs qui y répondent, la taille qu’a prise la réponse de l’apex, et ce que renvoie la requête d’un nom qui n’existe <b>pas</b>. Rien de tout cela n’est noté.<br><br>' +
+      '<b>Temporisations SOA.</b> L’enregistrement Start of Authority porte cinq nombres. <code>refresh</code> est la fréquence à laquelle les secondaires demandent les changements au primaire, <code>retry</code> le délai après un rafraîchissement raté, <code>expire</code> la durée pendant laquelle ils continuent de servir la zone quand le primaire est injoignable, et <code>minimum</code> est le TTL de cache négatif (RFC 2308) : combien de temps un résolveur se souvient qu’un nom n’existe pas. La RFC 1912 §2.2 donne des plages qui fonctionnent ; retry doit être inférieur à refresh, et expire supérieur aux deux réunis, sinon un seul transfert raté peut mettre la zone hors ligne. Le serial n’est que comparé, jamais interprété ; une valeur étrange comme 1 est donc sans danger, la convention AAAAMMJJnn rend seulement un transfert bloqué facile à repérer. Ces temporisations ne comptent que pour les zones répliquées par AXFR/IXFR ; les grands fournisseurs anycast (Google, Cloudflare, Azure) répliquent autrement et choisissent à dessein des valeurs hors plages, les constats sur les temporisations sont donc des notes, jamais des avertissements.<br><br>' +
+      '<b>Serveurs de noms.</b> La RFC 1034 en exige au moins deux, la RFC 2182 en recommande trois ou plus sur des réseaux distincts. La ligne sur la diversité des AS réutilise les données de l’onglet RPKI : tous les serveurs derrière un seul système autonome sont à un incident de routage de la disparition du domaine, courrier compris — les enregistrements MX sont introuvables quand la zone ne se résout pas.<br><br>' +
+      '<b>CNAME à l’apex.</b> Un apex de zone possède des enregistrements SOA et NS, la RFC 2181 §10.1 y interdit donc un CNAME ; l’enregistrement MX du domaine serait lui aussi un alias. Les hébergeurs imitent l’effet avec le « CNAME flattening » ou des enregistrements <code>ALIAS</code>, invisibles ici — seul un vrai CNAME dans la réponse est signalé.<br><br>' +
+      '<b>Taille TXT de l’apex.</b> SPF, DMARC et une poignée de jetons de vérification de domaine vivent tous dans l’ensemble TXT de l’apex, et tous sont renvoyés ensemble à chaque requête. Depuis le DNS Flag Day 2020, les résolveurs utilisent un tampon EDNS de 1232 octets ; une réponse plus grande est tronquée et réessayée en TCP, que certains réseaux bloquent. Les jetons de vérification sont listés pour pouvoir être passés en revue — impossible de voir de l’extérieur si un jeton d’un service abandonné depuis des années est encore nécessaire.<br><br>' +
+      '<b>Jokers.</b> Un enregistrement en <code>*.<domain></code> répond pour tout nom qui n’existe pas. Un <b>MX</b> joker fait accepter à la zone le courrier de n’importe quel sous-domaine, fautes de frappe comprises, et la politique DMARC <code>sp=</code> compte alors pour tous. Un <b>TXT</b> joker est pire qu’il n’y paraît : il répond aussi à <code>_dmarc.<sub></code>, <code>_mta-sts.<sub></code> et <code>_smtp._tls.<sub></code> pour des sous-domaines jamais créés, et les destinataires trouvent une « politique » qui est en réalité un jeton de vérification. L’exception est un <code>v=spf1 -all</code> joker, qui donne à chaque nom d’hôte une politique SPF pour les vérifications HELO/EHLO et constitue une pratique recommandée. Un A/AAAA joker est courant et seulement noté.<br><br>' +
+      '<b>Ce qui ne peut pas être vérifié depuis un navigateur :</b> si la délégation du parent correspond à l’ensemble NS propre de la zone (délégation boiteuse), si les transferts de zone (AXFR) sont ouverts et si les serveurs répondent tout court — tout cela exige des requêtes directes aux serveurs autoritaires, qu’un résolveur DNS sur HTTPS n’expose pas.',
     DMARC:
       '<b>DMARC (Domain-based Message Authentication, Reporting and Conformance)</b> ' +
       'combine SPF et DKIM avec une politique indiquant aux destinataires quoi faire en cas d\'\u00e9chec d\'authentification. ' +

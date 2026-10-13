@@ -23,12 +23,14 @@ Created by [Per Thorsheim](https://thorsheim.net) · [PasswordsCon](https://pass
 | BIMI | — | Logo URL, VMC authority record |
 | TLS-RPT | RFC 8460 | Reporting record, rua= endpoint DNSSEC |
 | MTA-STS | RFC 8461 | DNS record, HTTPS policy fetch, MX pattern matching |
-| CAA | RFC 8659 | issue/issuewild/issuemail/iodef tags, DNSSEC per CA domain |
+| CAA | RFC 8659 | issue/issuewild/issuemail/iodef tags, parent inheritance, DNSSEC per CA domain; CAA as a CA evaluates it for each MX host and the MTA-STS policy host |
 | RPKI | — | ROA validation per NS/MX host IP via RIPE Stat |
 | ASPA | RFC 9582 | AS Provider Authorization records per ASN via RIPE Stat |
 | IPv6 | — | AAAA presence for the domain, NS and MX hosts; government mandate table |
+| Zone | RFC 1912, RFC 2181 | DNS zone hygiene: SOA timers, nameserver count and AS diversity, CNAME at the apex, apex TXT size and verification tokens, wildcard records |
 | Security.txt | RFC 9116 | Required/optional fields, expiry |
 | WHOIS | RFC 7480 | RDAP lookup via rdap.org |
+| Autoconfig | RFC 6186, RFC 8314, RFC 8620 | Mail client autoconfiguration: SRV records, Microsoft Autodiscover, Mozilla autoconfig host and Thunderbird ISPDB |
 | Connection | — | The **visitor's** connection, not the domain: resolver DNSSEC validation, public IPv4/IPv6 addresses with ASN/prefix/ROA, ISP BGP route filtering (isbgpsafeyet.com method) |
 | Fixes | — | Prioritised action list with weights |
 
@@ -48,7 +50,7 @@ Weighted grade from nine scored checks:
 | TLS-RPT | 3% |
 | CAA | 2% |
 
-PTR, BIMI, RPKI, ASPA, IPv6, Security.txt, and WHOIS are informational — shown but not scored. The Connection tab tests the visitor's own connection and is never scored either.
+PTR, BIMI, RPKI, ASPA, IPv6, Zone, Security.txt, WHOIS and Autoconfig are informational — shown but not scored. The Connection tab tests the visitor's own connection and is never scored either.
 
 ## Features
 
@@ -120,6 +122,7 @@ node tests/live.js     # every check + every renderer against real DNS for a set
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-October-13-7 | 2026-10-13 | New informational Zone tab: SOA timers against RFC 1912 (findings are notes, since large anycast providers set them deliberately), nameserver count with AS diversity from the RPKI data, CNAME at the apex, apex TXT answer size against the 1232-byte EDNS buffer with the verification tokens listed, wildcard A/AAAA/CNAME/MX/TXT records (a wildcard TXT answers `_dmarc`/`_mta-sts`/`_smtp._tls` discovery for every non-existent subdomain). CAA tab: CAA evaluated per MX host and for `mta-sts.<domain>` (own record, else nearest parent) with the authorized CAs per host; informational, CAA rating unchanged. Fix: the Autoconfig tab threw while rendering ISPDB-listed domains (gmail.com, posteo.de), leaving the Overview without a grade |
 | 2026-October-13-6 | 2026-10-13 | New informational Autoconfig tab: RFC 6186 / 8314 / 8620 SRV records (targets resolved, "not offered" targets, cleartext-only services, CNAME or unresolvable targets, non-standard ports, DNSSEC status), Microsoft Autodiscover (SRV and host, Microsoft 365 recognised), Mozilla autoconfig host and the Thunderbird ISPDB entry with its servers. WHOIS: registrar vs registry locks, partial lock sets, pendingTransfer, registries without status codes, registry DNSSEC flag cross-checked against DNS; excellent now needs all three locks |
 | 2026-October-13-5 | 2026-10-13 | MX hygiene (CNAME or IP-literal targets, unresolvable or duplicate hosts, single host, single AS), HELO/EHLO SPF per MX host in the SPF tab, and SPF depth: permerrors (unknown mechanism, syntax, duplicate modifiers, include without or with several SPF records, more than ten MX hosts, more than two void lookups) rate fail, records over ~450 bytes flagged |
 | 2026-October-13-4 | 2026-10-13 | **DANE fix (grades move up):** TLSA records in parenthesised multi-line form, which Cloudflare returns for every SHA-256/SHA-512 digest, were flagged malformed since 2026-October-13-1; correct DANE deployments rated warning or fail. Cross-protocol coherence section at the top of the Fixes tab (display-only): TLS-RPT without MTA-STS/DANE, MTA-STS testing without TLS-RPT, BIMI vs DMARC enforcement, DMARC enforcing without SPF, undeliverable DMARC/TLS-RPT report destinations, DANE + MTA-STS enforce noted |

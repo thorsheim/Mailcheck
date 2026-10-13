@@ -628,6 +628,93 @@ test('D6 autoconfig: SRV parse, declined target, cleartext-only, targets, Autodi
   app.renderAutoconfig({ status: 'fulfilled', value: r }); app.renderAutoconfig({ status: 'rejected', reason: new Error('x') });
 });
 
+test('D7 zone hygiene: SOA timers, NS count, apex CNAME, TXT size and tokens, wildcards', async () => {
+  let app = load();
+  app.rr('example.com', 'SOA', 6, ['ns1.example.com. hostmaster.example.com. 2026101301 14400 3600 1209600 3600']);
+  app.rr('example.com', 'NS', 2, ['ns1.example.com.', 'ns2.example.com.', 'ns3.example.com.']);
+  app.txt('example.com', 'v=spf1 -all', 'google-site-verification=abcdefghijklmnop', 'MS=ms12345678');
+  let r = await app.checkZone('example.com');
+  eq(r.rating, 'good'); eq(r.zone, 'example.com'); eq(r.isApex, true);
+  for (const k of ['ZONE_SOA_OK', 'ZONE_NS_OK', 'ZONE_TXT_TOKENS', 'ZONE_WILDCARD_NONE']) has(r.issues, k);
+  lacks(r.issues, 'ZONE_SOA_MNAME_HIDDEN'); lacks(r.issues, 'ZONE_APEX_NOTE');
+  eq(r.txt.tokens.length, 2); eq(r.txt.count, 3); eq(r.soa.rnameEmail, 'hostmaster@example.com'); eq(r.ns.length, 3);
+  // everything wrong at once
+  app = load();
+  app.rr('bad.example', 'SOA', 6, ['ns1.bad.example. hostmaster@bad.example. 1 900 900 1800 60']);
+  app.rr('bad.example', 'NS', 2, ['ns1.bad.example.']);
+  app.dns.set('bad.example|A', { Status: 0, Answer: [{ name: 'bad.example', type: 5, data: 'www.bad.example.' }, { name: 'www.bad.example', type: 1, data: '192.0.2.1' }] });
+  app.txt('bad.example', 'v=spf1 -all', ...Array.from({ length: 12 }, (_, i) => 'svc' + i + '-domain-verification=' + 'x'.repeat(120)));
+  app.rr('*.bad.example', 'MX', 15, ['10 mail.bad.example.']);
+  app.txt('*.bad.example', 'some-site-verification=abc');
+  app.rr('*.bad.example', 'A', 1, ['192.0.2.9']);
+  r = await app.checkZone('bad.example');
+  eq(r.rating, 'warning');
+  for (const k of ['ZONE_SOA_RETRY_GE_REFRESH', 'ZONE_SOA_EXPIRE_SHORT', 'ZONE_SOA_RNAME_AT', 'ZONE_SOA_SERIAL_ODD', 'ZONE_NS_SINGLE', 'ZONE_APEX_CNAME',
+    'ZONE_TXT_LARGE', 'ZONE_WILDCARD_MX', 'ZONE_WILDCARD_TXT', 'ZONE_WILDCARD_ADDR']) has(r.issues, k);
+  for (const k of ['ZONE_SOA_OK', 'ZONE_WILDCARD_NONE', 'ZONE_WILDCARD_SPF']) lacks(r.issues, k);
+  eq(r.issues.filter(i => i.textKey === 'ZONE_SOA_RANGE').map(i => i.textArgs[0]).join(), 'refresh,expire,minimum');
+  // timer findings are notes: only the structural errors rate
+  eq(r.issues.filter(i => i.textKey === 'ZONE_SOA_RANGE' || i.textKey === 'ZONE_SOA_EXPIRE_SHORT').every(i => i.rating === 'good'), true);
+  eq(r.txt.tokens.length, 12); eq(r.txt.bytes > 1232, true); eq(r.wildcard.mx, ['10 mail.bad.example.']); eq(r.apexCname, true);
+  // hostname inside a zone: SOA from the Authority section, hidden primary, two NS, wildcard SPF
+  app = load();
+  app.dns.set('host.sub.example|SOA', { Status: 0, Answer: [], Authority: [{ name: 'sub.example', type: 6, data: 'hidden.sub.example. hostmaster.sub.example. 2026101301 14400 3600 1209600 3600' }] });
+  app.rr('sub.example', 'NS', 2, ['ns1.sub.example.', 'ns2.sub.example.']);
+  app.txt('*.sub.example', 'v=spf1 -all');
+  r = await app.checkZone('host.sub.example');
+  eq(r.zone, 'sub.example'); eq(r.isApex, false); eq(r.rating, 'good');
+  for (const k of ['ZONE_APEX_NOTE', 'ZONE_NS_TWO', 'ZONE_SOA_MNAME_HIDDEN', 'ZONE_WILDCARD_SPF']) has(r.issues, k);
+  lacks(r.issues, 'ZONE_WILDCARD_TXT'); lacks(r.issues, 'ZONE_APEX_CNAME');
+  for (const lang of ['en', 'no', 'es', 'fr']) {
+    app.currentLang = lang;
+    for (const i of r.issues) { const s = i.textArgs ? app.td(i.textKey, ...i.textArgs) : app.ts(i.textKey); if (s === i.textKey) throw new Error('unresolved ' + i.textKey + ' in ' + lang); }
+    app.renderZone({ status: 'fulfilled', value: r });
+  }
+  app.renderZone({ status: 'rejected', reason: new Error('x') });
+  // SERVFAIL on the SOA is an error, never "no zone"
+  app.dns.set('sf.example|SOA', { Status: 2, Answer: [] });
+  r = await app.checkZone('sf.example');
+  eq(r.error, true); eq(r.messageKey, 'DNS_SERVFAIL');
+});
+
+test('D9 CAA on certificate-presenting hosts: parent climb, mta-sts host, uncovered provider zone, errors', async () => {
+  let app = load();
+  app.rr('example.com', 'CAA', 257, ['0 issue "letsencrypt.org"', '0 iodef "mailto:sec@example.com"']);
+  app.rr('example.com', 'MX', 15, ['10 aspmx.l.google.com.', '20 mx.example.com.']);
+  app.rr('google.com', 'CAA', 257, ['0 issue "pki.goog"']);
+  app.rr('mta-sts.example.com', 'A', 1, ['192.0.2.5']);
+  let r = await app.checkCAA('example.com');
+  const H = h => r.tlsHosts.find(x => x.host === h);
+  eq(r.rating, 'excellent'); eq(r.tlsHosts.length, 3);
+  eq(H('aspmx.l.google.com').status, 'restricted'); eq(H('aspmx.l.google.com').climbedTo, 'google.com'); eq(H('aspmx.l.google.com').cas, ['pki.goog']);
+  eq(H('mx.example.com').climbedTo, 'example.com'); eq(H('mx.example.com').cas, ['letsencrypt.org']);
+  eq(H('mta-sts.example.com').role, 'mta-sts'); eq(H('mta-sts.example.com').status, 'restricted');
+  has(r.issues, 'CAA_HOSTS_COVERED'); lacks(r.issues, 'CAA_HOSTS_UNCOVERED');
+  eq(r.issues.find(i => i.textKey === 'CAA_HOSTS_COVERED').info, true);
+  // provider zone without any CAA → informational only; issue ";" counts as restricted
+  app = load();
+  app.rr('example.org', 'CAA', 257, ['0 issue "letsencrypt.org"', '0 iodef "mailto:sec@example.org"']);
+  app.rr('example.org', 'MX', 15, ['10 mx1.provider.net.', '20 mx.locked.net.']);
+  app.rr('locked.net', 'CAA', 257, ['0 issue ";"']);
+  r = await app.checkCAA('example.org');
+  eq(r.rating, 'excellent', 'host coverage never moves the CAA rating'); eq(r.tlsHosts.length, 2, 'no mta-sts host');
+  eq(H('mx1.provider.net').status, 'none'); eq(H('mx1.provider.net').climbedTo, null);
+  eq(H('mx.locked.net').status, 'restricted'); eq(H('mx.locked.net').prohibited, true);
+  has(r.issues, 'CAA_HOSTS_UNCOVERED'); eq(r.issues.find(i => i.textKey === 'CAA_HOSTS_UNCOVERED').textArgs, [1, 2, 'mx1.provider.net']);
+  for (const lang of ['en', 'no', 'es', 'fr']) { app.currentLang = lang; app.renderCAA({ status: 'fulfilled', value: r }); }
+  // SERVFAIL on a host's CAA is an error status, not "no restriction"
+  app.dns.set('mx1.provider.net|CAA', { Status: 2, Answer: [] });
+  app.resetScan();
+  r = await app.checkCAA('example.org');
+  eq(H('mx1.provider.net').status, 'error'); eq(H('mx1.provider.net').problem.messageKey, 'DNS_SERVFAIL');
+  lacks(r.issues, 'CAA_HOSTS_COVERED'); lacks(r.issues, 'CAA_HOSTS_UNCOVERED');
+  // no CAA at the apex at all → the host section is not built (nothing to compare against)
+  app = load();
+  app.rr('bare.example', 'MX', 15, ['10 mx.bare.example.']);
+  r = await app.checkCAA('bare.example');
+  eq(r.rating, 'warning'); eq(r.tlsHosts, undefined);
+});
+
 (async () => {
   for (const t of tests) {
     try { await t.fn(); pass++; console.log('PASS', t.name); }

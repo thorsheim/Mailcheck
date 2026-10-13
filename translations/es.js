@@ -4,6 +4,45 @@ const LANG_ES = {
 
   // ── s: cadenas estáticas ──────────────────────────────────────────────────
   s: {
+    PANEL_ZONE:          'Higiene de la zona DNS',
+    TAB_ZONE:            'Zona',
+    ZONE_SOA_TITLE:      'SOA (autoridad de la zona)',
+    ZONE_ROW_MNAME:      'Servidor de nombres primario (MNAME)',
+    ZONE_ROW_RNAME:      'Contacto de la zona (RNAME)',
+    ZONE_ROW_SERIAL:     'Serial',
+    ZONE_ROW_REFRESH:    'Refresh',
+    ZONE_ROW_RETRY:      'Retry',
+    ZONE_ROW_EXPIRE:     'Expire',
+    ZONE_ROW_MINIMUM:    'TTL de caché negativa (minimum)',
+    ZONE_SOA_OK:         'Los temporizadores SOA están dentro de los rangos que recomienda RFC 1912 §2.2',
+    ZONE_SOA_RETRY_GE_REFRESH: 'SOA retry no es menor que refresh — tras un refresco fallido, los secundarios esperan más que el intervalo normal de refresco antes de reintentar (RFC 1912 §2.2)',
+    ZONE_SOA_EXPIRE_SHORT: 'SOA expire no es mayor que refresh + retry — los secundarios pueden abandonar la zona tras un solo refresco fallido (RFC 1912 §2.2)',
+    ZONE_SOA_RNAME_AT:   'El contacto SOA contiene una @ — el buzón se escribe con un punto (hostmaster.example.com), RFC 1035 §3.3.13',
+    ZONE_NS_TITLE:       'Servidores de nombres',
+    ZONE_NS_NONE:        'No se devolvieron registros NS para la zona',
+    ZONE_NS_SINGLE:      'Un solo servidor de nombres — RFC 1034 §4.1 exige al menos dos, en redes distintas, por redundancia',
+    ZONE_NS_TWO:         'Dos servidores de nombres — RFC 2182 §5 recomienda al menos tres',
+    ZONE_APEX_CNAME:     'CNAME en el ápice de la zona — RFC 2181 §10.1 prohíbe un CNAME junto a los registros SOA, NS y MX; los resolutores discrepan sobre qué devolver y la entrega de correo puede fallar',
+    ZONE_TXT_TITLE:      'Registros TXT del ápice',
+    ZONE_TXT_TOKENS_TITLE: 'Tokens de verificación',
+    ZONE_WILDCARD_TITLE: 'Registros comodín (*.zona)',
+    ZONE_WILDCARD_NONE:  'No hay registros comodín en la zona',
+    ZONE_WILDCARD_MX:    'MX comodín — el correo a cualquier subdominio no definido, erratas incluidas, se acepta en esta zona; asegúrese de que SPF y la política DMARC sp= cubran los subdominios',
+    ZONE_WILDCARD_TXT:   'TXT comodín — toda consulta TXT bajo un nombre no definido se responde con él, incluido el descubrimiento de _dmarc, _mta-sts y _smtp._tls para subdominios que no existen',
+    ZONE_WILDCARD_SPF:   'El TXT comodín es un registro SPF — todo nombre de host no definido recibe una política SPF para las comprobaciones HELO/EHLO, una práctica recomendada (RFC 7208 §2.3)',
+    ZONE_WILDCARD_ADDR:  'Registro de dirección comodín (A/AAAA/CNAME) — todo subdominio no definido resuelve, así que los nombres de host mal escritos llegan a este servidor (informativo)',
+    ZONE_PILL_FOUND:     'presente',
+    ZONE_PILL_NONE:      'ninguno',
+    CAA_HOSTS_TITLE:     'CAA en los hosts que presentan certificados',
+    CAA_HOSTS_NOTE:      'El CAA del dominio de correo no dice nada sobre los certificados de los hosts MX (STARTTLS) ni del host de política MTA-STS (HTTPS). Se muestra como lo evalúa una CA: el registro propio del host o, si no, el del padre más cercano. Informativo — los hosts MX suelen pertenecer al proveedor de correo.',
+    CAA_TH_HOST:         'Host',
+    CAA_TH_ROLE:         'Rol',
+    CAA_TH_STATUS:       'CAA',
+    CAA_TH_CAS:          'CA autorizadas',
+    CAA_HOST_RESTRICTED: 'Restringido',
+    CAA_HOST_NONE:       'Sin restricción',
+    CAA_HOST_ERROR:      'Consulta fallida',
+    CAA_HOST_PROHIBITED: 'emisión prohibida',
     APP_TITLE:           'Verificador de seguridad DNS para correo',
     APP_SUBTITLE:        'Comprueba DNSSEC, MX, SPF, DKIM y más para cualquier dominio',
     LABEL_DOMAIN:        'Dominio',
@@ -428,6 +467,19 @@ const LANG_ES = {
 
   // ── d: cadenas dinámicas (funciones flecha) ───────────────────────────────
   d: {
+    ZONE_SUMMARY:        zone => 'Higiene de la zona para ' + zone,
+    ZONE_APEX_NOTE:      (zone, name) => name + ' no es un ápice de zona — SOA, servidores de nombres, tamaño TXT y comodines se informan para su zona ' + zone,
+    ZONE_SOA_RANGE:      (field, value, lo, hi) => 'SOA ' + field + ' es ' + value + ' s — RFC 1912 §2.2 recomienda ' + lo + '–' + hi + ' s',
+    ZONE_SOA_SERIAL_ODD: serial => 'El serial SOA es ' + serial + ' — inofensivo, pero la forma habitual es AAAAMMDDnn para que un problema de transferencia de zona sea visible',
+    ZONE_SOA_MNAME_HIDDEN: mname => 'El primario SOA ' + mname + ' no está en el conjunto NS — un primario oculto (habitual, informativo)',
+    ZONE_NS_OK:          n => n + ' servidores de nombres',
+    ZONE_TXT_SIZE:       (count, bytes) => count + ' registro(s) TXT, unos ' + bytes + ' bytes en el cable',
+    ZONE_TXT_LARGE:      bytes => 'La respuesta TXT del ápice ocupa unos ' + bytes + ' bytes — supera el búfer EDNS de 1232 bytes del DNS Flag Day 2020, así que los resolutores reintentan por TCP o reciben una respuesta truncada; elimine registros obsoletos',
+    ZONE_TXT_TOKENS:     n => n + ' token(s) de verificación de dominio publicado(s) — desde fuera no se puede ver si cada uno sigue siendo necesario; revíselos de vez en cuando',
+    ZONE_DUR:            n => n + ' s' + (n >= 86400 ? ' (' + Math.round(n / 8640) / 10 + ' d)' : n >= 3600 ? ' (' + Math.round(n / 360) / 10 + ' h)' : n >= 60 ? ' (' + Math.round(n / 6) / 10 + ' min)' : ''),
+    CAA_HOSTS_COVERED:   n => 'Los ' + n + ' host(s) que presentan certificados (MX, MTA-STS) están cubiertos por una restricción CAA',
+    CAA_HOSTS_UNCOVERED: (n, total, hosts) => n + ' de ' + total + ' host(s) que presentan certificados no tienen restricción CAA: ' + hosts + ' (informativo — normalmente la zona del proveedor de correo)',
+    CAA_HOST_FROM:       parent => 'de ' + parent,
     MX_HOSTS_FOUND:        n => n + ' servidor' + (n !== 1 ? 'es' : '') + ' MX encontrado' + (n !== 1 ? 's' : '') + '.',
     DKIM_SELECTORS_FOUND:  n => n + ' selector' + (n !== 1 ? 'es' : '') + ' encontrado' + (n !== 1 ? 's' : ''),
     DKIM_ACROSS_PROVIDERS: n => 'en ' + n + ' proveedor' + (n !== 1 ? 'es' : ''),
@@ -585,6 +637,14 @@ const LANG_ES = {
 
   // ── x: textos de explicación (HTML) ──────────────────────────────────────
   x: {
+    ZONE:
+      '<b>La higiene de la zona</b> examina la propia zona DNS en lugar de un registro de correo concreto: los ajustes que deciden cómo se replica la zona, cuántos servidores responden por ella, cuánto ha crecido la respuesta del ápice y qué devuelve la consulta de un nombre que <b>no</b> existe. Nada de esto puntúa.<br><br>' +
+      '<b>Temporizadores SOA.</b> El registro Start of Authority lleva cinco números. <code>refresh</code> es cada cuánto los secundarios piden cambios al primario, <code>retry</code> cuánto esperan tras un refresco fallido, <code>expire</code> cuánto siguen sirviendo la zona cuando el primario no responde, y <code>minimum</code> es el TTL de caché negativa (RFC 2308): cuánto recuerda un resolutor que un nombre no existe. RFC 1912 §2.2 da rangos que funcionan; retry debe ser menor que refresh, y expire mayor que ambos juntos, o una sola transferencia fallida puede dejar la zona fuera de línea. El serial solo se compara, nunca se interpreta, así que un valor raro como 1 es inofensivo; la convención AAAAMMDDnn solo hace fácil detectar una transferencia atascada. Estos temporizadores solo importan en zonas replicadas con AXFR/IXFR; los grandes proveedores anycast (Google, Cloudflare, Azure) replican de otra forma y eligen a prop\u00f3sito valores fuera de los rangos, as\u00ed que los hallazgos sobre temporizadores son notas, nunca advertencias.<br><br>' +
+      '<b>Servidores de nombres.</b> RFC 1034 exige al menos dos, RFC 2182 recomienda tres o más en redes separadas. La línea de diversidad de AS reutiliza los datos de la pestaña RPKI: todos los servidores tras un solo sistema autónomo están a un incidente de enrutamiento de que el dominio desaparezca, correo incluido — los registros MX no se encuentran cuando la zona no se puede resolver.<br><br>' +
+      '<b>CNAME en el ápice.</b> Un ápice de zona posee registros SOA y NS, así que RFC 2181 §10.1 prohíbe un CNAME ahí; el registro MX del dominio también sería un alias. Los proveedores de alojamiento emulan el efecto con «CNAME flattening» o registros <code>ALIAS</code>, invisibles aquí — solo se marca un CNAME real en la respuesta.<br><br>' +
+      '<b>Tamaño TXT del ápice.</b> SPF, DMARC y un puñado de tokens de verificación de dominio viven todos en el conjunto TXT del ápice, y todos se devuelven juntos en cada consulta. Desde el DNS Flag Day 2020 los resolutores usan un búfer EDNS de 1232 bytes; una respuesta mayor se trunca y se reintenta por TCP, que algunas redes bloquean. Los tokens de verificación se listan para poder revisarlos — si un token de un servicio abandonado hace años sigue siendo necesario no se puede ver desde fuera.<br><br>' +
+      '<b>Comodines.</b> Un registro en <code>*.<domain></code> responde por todo nombre que no existe. Un <b>MX</b> comodín hace que la zona acepte correo para cualquier subdominio, erratas incluidas, y la política DMARC <code>sp=</code> importa entonces para todos. Un <b>TXT</b> comodín es peor de lo que parece: también responde a <code>_dmarc.<sub></code>, <code>_mta-sts.<sub></code> y <code>_smtp._tls.<sub></code> para subdominios que nunca se crearon, así que los receptores encuentran una «política» que en realidad es un token de verificación. La excepción es un <code>v=spf1 -all</code> comodín, que da a todo nombre de host una política SPF para las comprobaciones HELO/EHLO y es una práctica recomendada. Un A/AAAA comodín es habitual y solo se anota.<br><br>' +
+      '<b>Lo que no se puede comprobar desde un navegador:</b> si la delegación del padre coincide con el conjunto NS propio de la zona (delegación coja), si las transferencias de zona (AXFR) están abiertas y si los servidores responden siquiera — todo eso requiere consultas directas a los servidores autoritativos, que un resolutor DNS sobre HTTPS no expone.',
     DMARC:
       '<b>DMARC (Domain-based Message Authentication, Reporting and Conformance)</b> ' +
       'une SPF y DKIM con una pol\u00edtica que indica a los receptores qu\u00e9 hacer cuando falla la autenticaci\u00f3n. ' +

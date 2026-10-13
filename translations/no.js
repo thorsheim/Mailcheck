@@ -7,6 +7,45 @@
 const LANG_NO = {
   // ── s: static strings ────────────────────────────────────────────────────
   s: {
+    PANEL_ZONE:          'DNS-sonehygiene',
+    TAB_ZONE:            'Sone',
+    ZONE_SOA_TITLE:      'SOA (soneautoritet)',
+    ZONE_ROW_MNAME:      'Primær navnetjener (MNAME)',
+    ZONE_ROW_RNAME:      'Sonekontakt (RNAME)',
+    ZONE_ROW_SERIAL:     'Serienummer',
+    ZONE_ROW_REFRESH:    'Refresh',
+    ZONE_ROW_RETRY:      'Retry',
+    ZONE_ROW_EXPIRE:     'Expire',
+    ZONE_ROW_MINIMUM:    'Negativ-cache-TTL (minimum)',
+    ZONE_SOA_OK:         'SOA-tidsverdiene ligger innenfor områdene RFC 1912 §2.2 anbefaler',
+    ZONE_SOA_RETRY_GE_REFRESH: 'SOA retry er ikke mindre enn refresh — etter en mislykket oppdatering venter sekundærene lenger enn det vanlige oppdateringsintervallet før de prøver igjen (RFC 1912 §2.2)',
+    ZONE_SOA_EXPIRE_SHORT: 'SOA expire er ikke større enn refresh + retry — sekundærene kan slippe sonen etter én mislykket oppdatering (RFC 1912 §2.2)',
+    ZONE_SOA_RNAME_AT:   'SOA-kontakten inneholder en @ — postkassen skrives med punktum i stedet (hostmaster.example.com), RFC 1035 §3.3.13',
+    ZONE_NS_TITLE:       'Navnetjenere',
+    ZONE_NS_NONE:        'Ingen NS-poster returnert for sonen',
+    ZONE_NS_SINGLE:      'Bare én navnetjener — RFC 1034 §4.1 krever minst to, i ulike nett, for redundans',
+    ZONE_NS_TWO:         'To navnetjenere — RFC 2182 §5 anbefaler minst tre',
+    ZONE_APEX_CNAME:     'CNAME på sonetoppen — RFC 2181 §10.1 forbyr CNAME ved siden av SOA-, NS- og MX-postene; resolvere er uenige om hva som skal returneres, og e-postlevering kan feile',
+    ZONE_TXT_TITLE:      'TXT-poster på sonetoppen',
+    ZONE_TXT_TOKENS_TITLE: 'Verifiseringstokener',
+    ZONE_WILDCARD_TITLE: 'Jokertegn-poster (*.sone)',
+    ZONE_WILDCARD_NONE:  'Ingen jokertegn-poster i sonen',
+    ZONE_WILDCARD_MX:    'Jokertegn-MX — e-post til ethvert udefinert underdomene, skrivefeil inkludert, tas imot i denne sonen; sørg for at SPF og DMARC-policyen sp= dekker underdomener',
+    ZONE_WILDCARD_TXT:   'Jokertegn-TXT — ethvert TXT-oppslag under et udefinert navn besvares med den, inkludert _dmarc-, _mta-sts- og _smtp._tls-oppslag for underdomener som ikke finnes',
+    ZONE_WILDCARD_SPF:   'Jokertegn-TXT er en SPF-post — ethvert udefinert vertsnavn får en SPF-policy for HELO/EHLO-kontroller, en anbefalt praksis (RFC 7208 §2.3)',
+    ZONE_WILDCARD_ADDR:  'Jokertegn-adressepost (A/AAAA/CNAME) — ethvert udefinert underdomene slås opp, så feilstavede vertsnavn når denne tjeneren (informativt)',
+    ZONE_PILL_FOUND:     'finnes',
+    ZONE_PILL_NONE:      'ingen',
+    CAA_HOSTS_TITLE:     'CAA på vertene som presenterer sertifikater',
+    CAA_HOSTS_NOTE:      'CAA på e-postdomenet sier ingenting om sertifikater for MX-vertene (STARTTLS) eller MTA-STS-policyverten (HTTPS). Vist slik en CA vurderer det: vertens egen post, ellers nærmeste overordnede. Informativt — MX-verter tilhører som regel e-postleverandøren.',
+    CAA_TH_HOST:         'Vert',
+    CAA_TH_ROLE:         'Rolle',
+    CAA_TH_STATUS:       'CAA',
+    CAA_TH_CAS:          'Godkjente CA-er',
+    CAA_HOST_RESTRICTED: 'Begrenset',
+    CAA_HOST_NONE:       'Ingen begrensning',
+    CAA_HOST_ERROR:      'Oppslag feilet',
+    CAA_HOST_PROHIBITED: 'utstedelse forbudt',
     APP_TITLE:           'DNS e-postsikkerhetssjekk',
     APP_SUBTITLE:        'Sjekk DNSSEC, MX, SPF, DKIM og mer for et domene',
     LABEL_DOMAIN:        'Domene',
@@ -436,6 +475,19 @@ const LANG_NO = {
   },
   // ── d: dynamic strings (arrow functions) ─────────────────────────────────
   d: {
+    ZONE_SUMMARY:        zone => 'Sonehygiene for ' + zone,
+    ZONE_APEX_NOTE:      (zone, name) => name + ' er ikke en sonetopp — SOA, navnetjenere, TXT-størrelse og jokertegn rapporteres for sonen ' + zone,
+    ZONE_SOA_RANGE:      (field, value, lo, hi) => 'SOA ' + field + ' er ' + value + ' s — RFC 1912 §2.2 anbefaler ' + lo + '–' + hi + ' s',
+    ZONE_SOA_SERIAL_ODD: serial => 'SOA-serienummeret er ' + serial + ' — ufarlig, men den vanlige formen er ÅÅÅÅMMDDnn slik at et soneoverføringsproblem blir synlig',
+    ZONE_SOA_MNAME_HIDDEN: mname => 'SOA-primæren ' + mname + ' er ikke i NS-settet — en skjult primær (vanlig, informativt)',
+    ZONE_NS_OK:          n => n + ' navnetjenere',
+    ZONE_TXT_SIZE:       (count, bytes) => count + ' TXT-post(er), omtrent ' + bytes + ' byte på linjen',
+    ZONE_TXT_LARGE:      bytes => 'TXT-svaret for sonetoppen er omtrent ' + bytes + ' byte — over EDNS-bufferet på 1232 byte fra DNS Flag Day 2020, så resolvere prøver på nytt over TCP eller får et avkortet svar; fjern utdaterte poster',
+    ZONE_TXT_TOKENS:     n => n + ' domeneverifiseringstoken(er) publisert — om hvert enkelt fortsatt trengs kan ikke ses utenfra; gå gjennom dem nå og da',
+    ZONE_DUR:            n => n + ' s' + (n >= 86400 ? ' (' + Math.round(n / 8640) / 10 + ' d)' : n >= 3600 ? ' (' + Math.round(n / 360) / 10 + ' t)' : n >= 60 ? ' (' + Math.round(n / 6) / 10 + ' min)' : ''),
+    CAA_HOSTS_COVERED:   n => 'Alle ' + n + ' sertifikatpresenterende vert(er) (MX, MTA-STS) er dekket av en CAA-begrensning',
+    CAA_HOSTS_UNCOVERED: (n, total, hosts) => n + ' av ' + total + ' sertifikatpresenterende vert(er) har ingen CAA-begrensning: ' + hosts + ' (informativt — som regel e-postleverandørens sone)',
+    CAA_HOST_FROM:       parent => 'fra ' + parent,
     MX_HOSTS_FOUND:        n => n + ' MX-vert' + (n !== 1 ? 'er' : '') + ' funnet.',
     DKIM_SELECTORS_FOUND:  n => n + ' selektor' + (n !== 1 ? 'er' : '') + ' funnet',
     DKIM_ACROSS_PROVIDERS: n => 'hos ' + n + ' leverand\u00f8r' + (n !== 1 ? 'er' : ''),
@@ -593,6 +645,14 @@ const LANG_NO = {
   },
   // ── x: explanation strings (HTML) ────────────────────────────────────────
   x: {
+    ZONE:
+      '<b>Sonehygiene</b> ser på selve DNS-sonen i stedet for på én enkelt e-postpost: innstillingene som styrer hvordan sonen replikeres, hvor mange tjenere som svarer for den, hvor stort svaret for sonetoppen har blitt, og hva et oppslag av et navn som <b>ikke</b> finnes returnerer. Ingenting av dette telles i karakteren.<br><br>' +
+      '<b>SOA-tidsverdier.</b> Start of Authority-posten bærer fem tall. <code>refresh</code> er hvor ofte sekundærene spør primæren om endringer, <code>retry</code> hvor lenge de venter etter en mislykket oppdatering, <code>expire</code> hvor lenge de fortsetter å svare for sonen når primæren er utilgjengelig, og <code>minimum</code> er TTL for negativ caching (RFC 2308) — hvor lenge en resolver husker at et navn ikke finnes. RFC 1912 §2.2 gir fungerende områder; retry må være mindre enn refresh, og expire må være større enn begge til sammen, ellers kan én mislykket overføring ta sonen ned. Serienummeret sammenlignes bare, tolkes aldri, så en rar verdi som 1 er ufarlig; konvensjonen ÅÅÅÅMMDDnn gjør bare en stoppet overføring lett å se. Disse tidsverdiene betyr bare noe for soner som replikeres med AXFR/IXFR; de store anycast-leverandørene (Google, Cloudflare, Azure) replikerer annerledes og velger med vilje verdier utenfor områdene, så funn om tidsverdier er merknader, aldri advarsler.<br><br>' +
+      '<b>Navnetjenere.</b> RFC 1034 krever minst to, RFC 2182 anbefaler tre eller flere i separate nett. Linjen om AS-mangfold gjenbruker RPKI-fanens data: alle tjenere bak ett autonomt system er én rutingshendelse unna at domenet forsvinner, e-post inkludert — MX-poster kan ikke finnes når sonen ikke kan slås opp.<br><br>' +
+      '<b>CNAME på sonetoppen.</b> En sonetopp eier SOA- og NS-poster, så RFC 2181 §10.1 forbyr CNAME der; MX-posten for domenet ville også vært et alias. Leverandører etterligner effekten med «CNAME flattening» eller <code>ALIAS</code>-poster, som er usynlige her — bare en ekte CNAME i svaret flagges.<br><br>' +
+      '<b>TXT-størrelse på sonetoppen.</b> SPF, DMARC og en håndfull domeneverifiseringstokener bor alle i TXT-settet på sonetoppen, og alle returneres sammen ved hvert oppslag. Siden DNS Flag Day 2020 bruker resolvere et EDNS-buffer på 1232 byte; et svar over det avkortes og prøves på nytt over TCP, som noen nett blokkerer. Verifiseringstokener listes slik at de kan gjennomgås — om et token fra en tjeneste som ble sagt opp for år siden fortsatt trengs, kan ikke ses utenfra.<br><br>' +
+      '<b>Jokertegn.</b> En post på <code>*.<domain></code> svarer for ethvert navn som ikke finnes. En jokertegn-<b>MX</b> får sonen til å ta imot e-post for ethvert underdomene, skrivefeil inkludert, og DMARC-policyen <code>sp=</code> gjelder da for alle. En jokertegn-<b>TXT</b> er verre enn den ser ut: den svarer også på <code>_dmarc.<sub></code>, <code>_mta-sts.<sub></code> og <code>_smtp._tls.<sub></code> for underdomener som aldri ble opprettet, så mottakere finner en «policy» som egentlig er et verifiseringstoken. Unntaket er en jokertegn-<code>v=spf1 -all</code>, som gir ethvert vertsnavn en SPF-policy for HELO/EHLO-kontroller og er en anbefalt praksis. En jokertegn-A/AAAA er vanlig og bare notert.<br><br>' +
+      '<b>Hva som ikke kan sjekkes fra en nettleser:</b> om delegeringen hos forelderen stemmer med sonens eget NS-sett (lam delegering), om soneoverføringer (AXFR) er åpne, og om tjenerne svarer i det hele tatt — alt dette krever direkte spørringer mot de autoritative tjenerne, som en DNS-over-HTTPS-resolver ikke eksponerer.',
     DMARC:
       '<b>DMARC (Domain-based Message Authentication, Reporting and Conformance)</b> ' +
       'knytter SPF og DKIM sammen med en policy som forteller mottakere hva de skal gj\u00f8re n\u00e5r autentisering mislykkes. ' +

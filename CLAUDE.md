@@ -8,7 +8,7 @@ Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-October-13-6**
+Current version: **2026-October-13-7**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -19,8 +19,8 @@ The changelog is hardcoded HTML in the footer — not part of the i18n system.
 ## Architecture
 
 ### UI layout
-Tab-based: `#tab-bar` (20 `.tab-btn` elements) + `#tab-panels` (20 `.tab-panel` divs).
-Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**, TLS-RPT, MTA-STS, CAA, RPKI, **ASPA**, **IPv6**, Security.txt, WHOIS, **Autoconfig**, **Connection**, **Fixes**.
+Tab-based: `#tab-bar` (21 `.tab-btn` elements) + `#tab-panels` (21 `.tab-panel` divs).
+Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**, TLS-RPT, MTA-STS, CAA, RPKI, **ASPA**, **IPv6**, **Zone**, Security.txt, WHOIS, **Autoconfig**, **Connection**, **Fixes**.
 - Tab bar hidden until first `runChecks()` call (`.visible` class).
 - **Tab semantics.** `#tab-bar` is `role="tablist"`, each button `role="tab"` with
   `aria-controls`/`aria-selected`, each panel `role="tabpanel"` with `aria-labelledby`. A roving
@@ -31,7 +31,7 @@ Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**
 - Tab dots (`.tab-dot`) colored per rating after each check completes; `setTabResult` also sets
   `title`, `role="img"` and `aria-label` to the translated rating so the colour is not the only signal.
 - `applyI18n()` handles `data-i18n`, `data-i18n-placeholder` and `data-i18n-aria` (→ `aria-label`).
-  The Overview/Connection/Fixes tab labels are `<span data-i18n>` inside the button so the dot span
+  The Overview/Zone/Connection/Fixes tab labels are `<span data-i18n>` inside the button so the dot span
   survives the text swap. `#scan-status` (`.sr-only`, `role="status"`) is the live region.
 - Each panel: `.panel-header` (icon + name + badge) + `.panel-body` (summary, issues, details, explanation).
 - Overview panel contains `#summary-grade`, `#summary-title`, `#summary-desc`, `#score-bars`.
@@ -48,7 +48,7 @@ Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**
 - `#lang-row` inline language buttons (below input row): English / Norsk / Español / Français. Each is a `.lang-btn` carrying `data-lang`; `.lang-sep` spans (`aria-hidden`) render the separator dots so they stay outside each button's hover/active background. Active state is `aria-pressed="true"`, which both announces the selection and drives the highlight through a CSS attribute selector — there is no separate active class to keep in sync. Persisted in `localStorage('mailcheck-lang')`.
 - Single skip checkbox (`#skip-cors-cb`) on the same row as the language selector. Persisted in `localStorage('mailcheck-skip-cors')`. When checked, `runChecks` receives `opts.skipMTASTS`/`opts.skipSecTxt` and passes a pre-resolved `{ skipped: true, rating: 'skip' }` result instead of calling the check. Skipped tabs show a grey dot + "Skipped" badge. MTA-STS weight (15%) is excluded from the score and the remaining 85% normalised to 100. Skipped checks are filtered from `renderRecommendations`.
 - `#footer` below `#tab-panels`: attribution to Per Thorsheim + links to thorsheim.net and passwordscon.org. Version string on a second line via `<br>`, wrapped in `<details id="changelog">` — clicking expands the full changelog.
-- **Mobile tab bar**: `flex-wrap: nowrap; overflow-x: auto` so all 20 tabs scroll horizontally in a single row. Scrollbar hidden (`scrollbar-width: none`). Edge fade via CSS `mask-image` gradient. `flex-shrink: 0` on `.tab-btn` prevents wrapping. Tab click handler calls `btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })` to keep the active tab visible.
+- **Mobile tab bar**: `flex-wrap: nowrap; overflow-x: auto` so all 21 tabs scroll horizontally in a single row. Scrollbar hidden (`scrollbar-width: none`). Edge fade via CSS `mask-image` gradient. `flex-shrink: 0` on `.tab-btn` prevents wrapping. Tab click handler calls `btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })` to keep the active tab visible.
 
 ### Network layer
 Every outbound request goes through `fetchJSON()`, which applies a deadline via `timeoutSignal()`
@@ -109,12 +109,13 @@ Every fan-out is bounded by `parallelLimit()`: `DKIM_CONCURRENCY` 10, `RIPE_CONC
 | BIMI | `default._bimi.<domain>` TXT | Parses l= (logo URL) and a= (authority/VMC); does not affect grade |
 | TLS-RPT | `_smtp._tls.<domain>` TXT | RFC 8460; DNSSEC checked for rua= endpoint domains |
 | MTA-STS | `_mta-sts.<domain>` TXT + HTTPS policy fetch | RFC 8461; collects all `mx:` lines as array; cross-checks against actual MX hosts |
-| CAA | `<domain>` CAA (type 257), climbing to parents when empty | Hex format parsed by `parseCAAData()`; RFC 8659 §3 parent inheritance (`climbedTo`); excellent = issue restriction **and** iodef, iodef alone = warning; `issuemail` reported separately (S/MIME, RFC 9495); DNSSEC checked for each CA domain; values linkified |
+| CAA | `<domain>` CAA (type 257), climbing to parents when empty; then CAA (with the same climb) for every MX host and `mta-sts.<domain>` | Hex format parsed by `parseCAAData()`; RFC 8659 §3 parent inheritance (`climbedTo`); excellent = issue restriction **and** iodef, iodef alone = warning; `issuemail` reported separately (S/MIME, RFC 9495); DNSSEC checked for each CA domain; values linkified; `tlsHosts` per-host coverage is informational (`info: true`, never rated) |
 | RPKI | RIPE Stat `network-info` + `rpki-validation` + `as-overview` + `aspa` | Checks NS+MX host IPs; includes ASPA section |
 | Coherence | no DNS of its own except MX / A+AAAA for each `mailto:` report host | `checkCoherence()` — between-check findings (TLS-RPT without MTA-STS/DANE, MTA-STS testing without TLS-RPT, BIMI vs DMARC, DMARC enforcing without SPF, undeliverable rua/ruf hosts, DANE + MTA-STS enforce); section at the top of the Fixes tab; never scored |
 | ISP BGP safety | isbgpsafeyet.com `cdn-cgi/trace` + valid/invalid RPKI beacons | Tests the **visitor's** connection, not the domain; renders in the Connection tab; cached per page session; never scored |
 | Connection | `sigok`/`sigfail.ippacket.stream` (no-cors probes) + `ipv4`/`ipv6.icanhazip.com` + RIPE Stat per visitor IP | Tests the **visitor's** connection: resolver DNSSEC validation, public IPv4/IPv6 egress addresses with ASN/prefix/ROA; cached per page session; never scored |
 | IPv6 | `<domain>` A+AAAA, `<domain>` NS → AAAA per NS host, `<domain>` MX → AAAA per MX host | Informational only; does not affect grade |
+| Zone | `<domain>` SOA (cached from the NXDOMAIN gate), `<zone>` NS + TXT, `<domain>` A, `*.<zone>` A/AAAA/MX/TXT | `checkZone()` — SOA timers (RFC 1912 §2.2, notes only), NS count (RFC 1034/2182), apex CNAME (RFC 2181 §10.1), apex TXT wire size vs 1232 bytes + verification tokens, wildcard records; NS AS diversity added at render time from `lastResults.rpki.nsAsns`; informational only |
 | Security.txt | `https://<domain>/.well-known/security.txt` (fallback `/security.txt`) | RFC 9116; parsed fields shown |
 | WHOIS | `https://rdap.org/domain/<domain>` (registrable domain) | RDAP JSON; registrar, dates, nameservers, status; EPP locks (registrar `client*` vs registry `server*`, partial sets, `pendingTransfer`, registries without status codes) and the `secureDNS` flag cross-checked against the DNSSEC tab |
 | Autoconfig | `_submission/_submissions/_imap/_imaps/_pop3/_pop3s/_jmap._tcp.<domain>` SRV, `_autodiscover._tcp.<domain>` SRV, `autodiscover.<domain>` + `autoconfig.<domain>` A/AAAA, A/AAAA per SRV target, `https://autoconfig.thunderbird.net/v1.1/<domain>` | `checkAutoconfig()` — RFC 6186 / 8314 / 8620 SRV, Microsoft Autodiscover, Mozilla autoconfig + ISPDB; informational only |
@@ -212,7 +213,18 @@ checkTLSRPT()       _smtp._tls.<domain> TXT; runs checkDNSSEC for all rua= endpo
                       returns endpointDnssec map
 checkMTASTS()       collects all mx: lines as array (not last-wins); cross-checks MX hosts against
                       policy patterns (supports *.example.com wildcards); returns mxMatch issues
-checkCAA()          also runs checkDNSSEC() for each CA domain; returns caDnssec map
+checkCAA()          also runs checkDNSSEC() for each CA domain; returns caDnssec map, plus
+                      tlsHosts[] from checkCAATLSHosts (informational, after the rating is decided)
+caaClimbParents(name) RFC 8659 §3 parent climb shared by checkCAA and caaForHost
+caaForHost(host, role) CAA as a CA evaluates it for one hostname: own RRset (DoH follows the CNAME)
+                      else the climb; status restricted | none | error, cas[], climbedTo, prohibited
+checkCAATLSHosts()  MX hosts (getMXHostnames) + mta-sts.<domain> when it has A/AAAA → caaForHost each
+parseSOAData()      mname, rname (+ rnameEmail per RFC 1035 §3.3.13), serial, refresh, retry, expire, minimum
+checkZone()         zone hygiene (see section below); returns { rating, issues, zone, isApex, soa, ns,
+                      txt { count, bytes, tokens, records }, wildcard { a, aaaa, cname, mx[], txt[] }, apexCname }
+renderZone()        Zone tab: summary, issue list (+ NS AS-diversity row reusing RPKI_NS_* keys from
+                      lastResults.rpki), SOA kv-table (ZONE_DUR humanised), NS list, TXT size + token
+                      <details>, wildcard kv-table, tx('ZONE')
 checkSecurityTxt()  fetches and parses RFC 9116 security.txt
 checkWHOIS()        RDAP lookup via rdap.org (registrable domain, max 3 label strips); returns locks
                       {transfer,delete,update}, registryLock, lockLevel (registry|registrar|none|unknown),
@@ -303,9 +315,9 @@ renderRecommendations(r)
 renderSummary()     Weighted grade from CHECK_WEIGHTS: DKIM 20%, SPF 15%, DMARC 15%, MTA-STS 15%,
                       DNSSEC 10%, MX 10%, DANE 10%, TLS-RPT 3%, CAA 2%; skipped checks drop out of
                       numerator and denominator. Bar rating labels go through ts('RATING_…')
-                      Shows 17 bars: 9 scored bars first, then a labeled separator
-                      "Informational (not scored)", then PTR, BIMI, RPKI, ASPA, IPv6, Security.txt,
-                      WHOIS, Autoconfig bars (weight=0). Overview, Connection and Fixes have no bar —
+                      Shows 18 bars: 9 scored bars first, then a labeled separator
+                      "Informational (not scored)", then PTR, BIMI, RPKI, ASPA, IPv6, Zone, Security.txt,
+                      Zone, WHOIS, Autoconfig bars (weight=0). Overview, Connection and Fixes have no bar —
                       Connection is about the visitor, not the domain. Grade calculation unchanged.
 currentDomain       module-level domain state (set in runChecks)
 scanning            true from the NXDOMAIN gate passing until rerenderAll; the language-switch
@@ -321,12 +333,12 @@ scanStats           module-level stats object (null before first scan); reset at
                       fields: startMs, totalMs, checks{}, dohRequests, ripeStatRequests,
                       ripeStatCacheHits, httpRequests
 timed(name, p)      wraps a promise; records elapsed ms into scanStats.checks[name] on settle
-rerenderAll(r)      re-renders all 19 panels from stored results (no DNS re-query)
+rerenderAll(r)      re-renders all 20 panels from stored results (no DNS re-query)
 domainExists()      NXDOMAIN gate: one SOA dohQuery, false only on Status 3; fails open on error
 showNXDomainModal() shows #nxdomain-modal-backdrop and focuses the OK button
 runChecks()         orchestrator; accepts opts={skipMTASTS,skipSecTxt}; NXDOMAIN-gates the domain
                       first (returns false, no UI touched, modal shown); resets scanStats; wraps
-                      all 17 checks in timed(); saves lastResults; calls rerenderAll()
+                      all 18 checks in timed(); saves lastResults; calls rerenderAll()
 renderStatsPanel(dkim, rpki)
                     appends/replaces <details id="stats-panel"> to #overview-content; reads
                       scanStats for counts and check timings; called at end of renderSummary()
@@ -338,7 +350,7 @@ Three namespaces per language in the `STRINGS` object:
 
 - **`s` (static)** — plain string key→value. Access with `ts('KEY')`.
 - **`d` (dynamic)** — arrow functions for pluralised/interpolated strings. Access with `td('KEY', ...args)`.
-- **`x` (explanations)** — full explanation markup strings for `addExplanation()` (21 keys: DMARC, DMARCBIS, DNSSEC, MX, PTR, DANE, SPF, DKIM, DKIM2, TLSRPT, MTASTS, CAA, RPKI, ASPA, CONN, BIMI, STXT, WHOIS, IPV6, AUTOCONF, SELECTOR_HELP). Access with `tx('KEY')`.
+- **`x` (explanations)** — full explanation markup strings for `addExplanation()` (22 keys: DMARC, DMARCBIS, DNSSEC, MX, PTR, DANE, SPF, DKIM, DKIM2, TLSRPT, MTASTS, CAA, RPKI, ASPA, CONN, BIMI, STXT, WHOIS, IPV6, AUTOCONF, ZONE, SELECTOR_HELP). Access with `tx('KEY')`.
   `safeMarkup()` builds **text nodes**, so HTML entities are *not* decoded — write `<domain>` literally, never `&lt;domain&gt;`.
 
 Lookup order: current language → English fallback → key name as visible fallback.
@@ -364,7 +376,7 @@ const resolvedText = iss.textKey
 **Current languages**: `en` (English, default), `es` (Spanish), `fr` (French), `no` (Norwegian Bokmål).
 All four are **complete** — no language relies on the English fallback. When adding a key, add it to every language, and mirror it into `translations/<lang>.js` **and `translations/TEMPLATE.js`** so the contributor files stay in sync. TEMPLATE.js is easy to forget because nothing in the app reads it — it had silently drifted 37 keys behind (the entire IPv6 block, plus `SELECTOR_HELP`, the SPF recursive-lookup counts and the RPKI nameserver-diversity keys) before being backfilled on 2026-08-13. A contributor starting from a stale template simply never sees those strings.
 
-To check for drift, run `node tests/static.js` — it parses the `STRINGS` block out of `index.html`, diffs the key sets across the four languages and the four `translations/*.js` files, and compares `d`-function *outputs* (not source text, which differs in whitespace between files). The three namespaces currently total **560 keys** (s=393, d=146, x=21). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
+To check for drift, run `node tests/static.js` — it parses the `STRINGS` block out of `index.html`, diffs the key sets across the four languages and the four `translations/*.js` files, and compares `d`-function *outputs* (not source text, which differs in whitespace between files). The three namespaces currently total **613 keys** (s=432, d=159, x=22). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
 
 There are now four contributor files — `es.js`, `fr.js`, `no.js` and `TEMPLATE.js` — and all four
 carry the full key set with no value drift from `index.html`.
@@ -732,6 +744,43 @@ plus `getMXHosts` (cached) and one HTTPS fetch of the Thunderbird ISPDB, then `p
   `/.well-known/autoconfig/mail/config-v1.1.xml`, `autoconfig.<domain>/mail/config-v1.1.xml`) are not
   fetched — CORS and third-party hosts; the explanation says so.
 
+### Zone hygiene — `checkZone`, 2026-October-13-7
+Informational tab (`INFO_CHECKS`, weight 0). One SOA lookup (served from `dohCache` by the NXDOMAIN
+gate) decides the zone: the Answer SOA owned by the scanned name, else the Answer/Authority SOA's owner
+(`zone`, `isApex`). Then NS and TXT at the zone, A at the scanned name and `*.<zone>` A/AAAA/MX/TXT through
+`parallelLimit(DNS_CONCURRENCY)`.
+- **SOA timers** (`parseSOAData`, `ZONE_SOA_RANGES` = RFC 1912 §2.2 refresh 1200–43200, retry 180–7200,
+  expire 1209600–2419200, minimum 300–86400): out-of-range values, retry ≥ refresh and expire ≤ refresh +
+  retry are all **`good`-rated notes**, not warnings — gmail.com publishes 900/900/1800/60 and Cloudflare
+  expire 604800 on purpose; the timers only matter for AXFR/IXFR-replicated zones. Only an `@` in RNAME
+  (`ZONE_SOA_RNAME_AT`) is a warning. Serial ≤ 1 → `ZONE_SOA_SERIAL_ODD` (good; Azure uses 1). MNAME not in
+  the NS set → `ZONE_SOA_MNAME_HIDDEN` (good).
+- **NS count**: 0/1 → warning, 2 → `ZONE_NS_TWO` (good, RFC 2182 §5), ≥ 3 → excellent. `renderZone` adds
+  the AS-diversity line from `lastResults.rpki.nsAsns` reusing `RPKI_NS_SINGLE_ASN` / `RPKI_NS_MULTI_ASN`.
+- **Apex CNAME** (`ZONE_APEX_CNAME`, warning): a type-5 answer owned by the scanned name, only when it is the
+  apex. CNAME flattening / ALIAS is invisible and not flagged.
+- **Apex TXT**: wire-size estimate (12 + question + per record 12 + data + one length byte per 255-byte
+  segment) > 1232 → `ZONE_TXT_LARGE` (warning). Records that are not `v=spf1|DMARC1|DKIM1|STSv1|TLSRPTv1|
+  BIMI1` and match `ZONE_TOKEN_RE` (verif/valid/challenge/site/domain/code/key/auth names, known vendor
+  prefixes, or a bare 24+ char token) are listed as verification tokens — `ZONE_TXT_TOKENS` is `good`;
+  staleness cannot be seen from outside and the text says so.
+- **Wildcards**: a record counts only when its owner is literally `*.<zone>` (Cloudflare answers NODATA
+  for `*.cloudflare.com`, which is not a wildcard). MX → warning; TXT → warning unless every record is SPF
+  (`ZONE_WILDCARD_SPF`, good — hubspot.com's `*` TXT `v=spf1 ~all`); A/AAAA/CNAME → good note.
+- Rating = worst of the non-`info` issues. Test: `tests/run.js` D7; live, `gmail.com` must rate on the
+  NS/TXT findings only (its SOA notes are all `good`), `hubspot.com` shows the wildcard SPF note.
+
+### CAA on certificate-presenting hosts — 2026-October-13-7
+`checkCAATLSHosts(domain)` runs inside `checkCAA` **after** the rating is decided and only when the apex
+(or its climbed parent) has CAA records: every MX hostname plus `mta-sts.<domain>` when it has an A/AAAA.
+`caaForHost` = the host's own CAA RRset (DoH follows a CNAME, which is what RFC 8659 §3 wants for aliases),
+else `caaClimbParents` — the same climb `checkCAA` uses for the apex. `status` restricted | none | error;
+`issue ";"` is restricted with `prohibited: true`. `CAA_HOSTS_COVERED` / `CAA_HOSTS_UNCOVERED` carry
+`info: true` and never touch the rating: cloudflare.com's four MX hosts under cf-emailsecurity.net have no
+CAA at all, and that is the provider's zone, not the scanned domain's. `renderCAA` shows a per-host table
+(host, role, status badge + `from <parent>` pill, authorized CAs) inside the "Records & analysis" details.
+Test: `tests/run.js` D9; live, `gmail.com` → all six hosts restricted via google.com / gmail.com `pki.goog`.
+
 ### Cross-protocol coherence — `checkCoherence`, 2026-October-13-4
 Findings that only exist between checks. Inputs are the settled results of DANE, SPF, DMARC, BIMI,
 TLS-RPT and MTA-STS; an errored or skipped input disables the rules that need it (a *skipped*
@@ -753,9 +802,9 @@ Display-only by construction: `CHECK_WEIGHTS`/`INFO_CHECKS` do not list it, so t
 Overview bars, the Fixes dot and `RECS_ALL_EXCELLENT` are unaffected.
 
 ### Recommendations tab details
-- `renderRecommendations(r)` reads all 14 check results from the `Promise.allSettled` result object.
+- `renderRecommendations(r)` reads all check results from the `Promise.allSettled` result object.
 - Scored checks (with weight): DKIM 20%, SPF 15%, DMARC 15%, MTA-STS 15%, DNSSEC 10%, MX 10%, DANE 10%, TLS-RPT 3%, CAA 2%.
-- Informational checks (weight=0): PTR, BIMI, RPKI, ASPA, IPv6, Security.txt, WHOIS, Autoconfig.
+- Informational checks (weight=0): PTR, BIMI, RPKI, ASPA, IPv6, Zone, Security.txt, WHOIS, Autoconfig.
 - Tab dot color = worst rating across the 9 scored checks only (informational excluded).
 - Layout: "Cross-protocol coherence" section first (display-only, see above) → "What to fix" section (scored non-excellent) → "Informational" section (info non-excellent) → `<details>` "All checks passing" (all excellent checks, collapsed unless everything passes).
 - Each row: check name button (navigates to that tab on click) + weight badge (scored only) + rating badge + issue list from `makeIssueList()`.
@@ -885,6 +934,16 @@ rated warning/fail for mailbox.org, proton.me, posteo.de and every other correct
 four releases. Strip `(` and `)` before splitting. Test: `A6` now includes a parenthesised record;
 `proton.me` live must rate DANE excellent.
 
+### 21. `makeDetails(title)` with no content node
+`makeDetails(summaryText, contentNode)` did `wrap.appendChild(contentNode)` unconditionally. Two
+renderers build the details first and append the table afterwards (renderAutoconfig's ISPDB servers,
+renderZone's token list); a real DOM throws `parameter 1 is not of type 'Node'` on `appendChild(undefined)`,
+which aborted `rerenderAll` and left the Overview spinning for every ISPDB-listed domain (gmail.com,
+posteo.de) in 2026-October-13-6. The stub DOM in `tests/harness.js` accepted it, so `tests/run.js` and
+`tests/live.js` were green. The stub now throws the same TypeError for a non-object child — keep it that
+way, and run the headless-Chromium smoke test (`chromium --headless --dump-dom` against a local
+`http.server`, see memory) before a release whenever a renderer changes.
+
 ### 12. Propagation checks compare sets, not `[0]`
 A DNS RRset is unordered and segment joins can differ in whitespace, so comparing Cloudflare's
 first record to Google's first record verbatim flagged perfectly matching domains as
@@ -926,13 +985,15 @@ Two pseudo-ratings sit outside that list and deliberately have `RATINGS.indexOf(
   or a function); `app.http` maps URLs for non-DoH fetches; `app.txt()`/`app.rr()` are shorthands;
   `app.resetScan()` clears caches and `scanStats`. `live: true` passes `fetch` through to the network.
 - `node tests/run.js` — regression tests, one per fixed bug (A1–A13, B5, B10, B11, B8, B9, C3, C9 in
-  the 2026-10-13 audit) plus D2 (DKIM wildcard control probe) and D1 (DNSSEC depth), D5 (cross-protocol coherence), D3+D4 (MX hygiene, HELO SPF, SPF depth), D6 (autoconfig) and D8 (registrar locks). Add one for every check-logic fix; they run in well under a second.
+  the 2026-10-13 audit) plus D2 (DKIM wildcard control probe) and D1 (DNSSEC depth), D5 (cross-protocol coherence), D3+D4 (MX hygiene, HELO SPF, SPF depth), D6 (autoconfig), D8 (registrar locks), D7 (zone hygiene) and D9 (CAA per certificate-presenting host). Add one for every check-logic fix; they run in well under a second.
 - `node tests/static.js` — the static checks: key parity + `d` arity across languages and
   `translations/*.js` (value drift compared by *output*), referenced-key existence, CSS classes,
   dangerous sinks, tab/panel order, version string across the three files, legacy `text:` issues,
   `fetch` without a signal. Exit code 1 on any problem.
 - `node tests/live.js [domain …]` — runs every check for real and then every renderer in `en` and
-  `no` against the stubbed DOM, so a thrown exception in either surfaces. rdap.org answers Node's
+  `no` against the stubbed DOM, so a thrown exception in either surfaces. The stub's `appendChild` rejects
+  non-objects like a browser (critical bug 21), but it still does not validate everything a real DOM does —
+  a headless-Chromium `--dump-dom` scan of `?domain=gmail.com` is the last check before a release. rdap.org answers Node's
   user agent with 403, so WHOIS is always `warning` here; that is not a bug.
 
 - `gmail.com` — SPF `~all`, DMARC p=none. Note: it publishes **no** discoverable DKIM selector with

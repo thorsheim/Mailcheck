@@ -41,7 +41,7 @@ function makeDocument() {
         add() {}, remove() {}, toggle() {}, contains() { return false; },
       },
       setAttribute() {}, getAttribute() { return null; }, removeAttribute() {},
-      appendChild(c) { e.children.push(c); return c; }, removeChild() {},
+      appendChild(c) { if (!c || typeof c !== 'object') throw new TypeError("Failed to execute 'appendChild' on 'Node': parameter 1 is not of type 'Node'."); e.children.push(c); return c; }, removeChild() {},
       insertBefore(c) { e.children.push(c); return c; },
       addEventListener() {}, focus() {}, querySelector() { return mkEl(); },
       querySelectorAll() { return []; }, closest() { return e; }, contains() { return true; },

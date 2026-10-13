@@ -41,6 +41,45 @@ const LANG_TEMPLATE = {
   // ── s: static strings ──────────────────────────────────────────────────────
   // Plain key → string.  No HTML.  No function syntax.
   s: {
+    PANEL_ZONE:          'DNS zone hygiene',
+    TAB_ZONE:            'Zone',
+    ZONE_SOA_TITLE:      'SOA (zone authority)',
+    ZONE_ROW_MNAME:      'Primary nameserver (MNAME)',
+    ZONE_ROW_RNAME:      'Zone contact (RNAME)',
+    ZONE_ROW_SERIAL:     'Serial',
+    ZONE_ROW_REFRESH:    'Refresh',
+    ZONE_ROW_RETRY:      'Retry',
+    ZONE_ROW_EXPIRE:     'Expire',
+    ZONE_ROW_MINIMUM:    'Negative-cache TTL (minimum)',
+    ZONE_SOA_OK:         'SOA timers are within the ranges RFC 1912 §2.2 recommends',
+    ZONE_SOA_RETRY_GE_REFRESH: 'SOA retry is not smaller than refresh — after a failed refresh, secondaries wait longer than the normal refresh interval before trying again (RFC 1912 §2.2)',
+    ZONE_SOA_EXPIRE_SHORT: 'SOA expire is not larger than refresh + retry — secondaries can drop the zone after a single failed refresh (RFC 1912 §2.2)',
+    ZONE_SOA_RNAME_AT:   'SOA contact contains an @ — the mailbox is written with a dot instead (hostmaster.example.com), RFC 1035 §3.3.13',
+    ZONE_NS_TITLE:       'Nameservers',
+    ZONE_NS_NONE:        'No NS records returned for the zone',
+    ZONE_NS_SINGLE:      'Only one nameserver — RFC 1034 §4.1 requires at least two, in different networks, for redundancy',
+    ZONE_NS_TWO:         'Two nameservers — RFC 2182 §5 recommends at least three',
+    ZONE_APEX_CNAME:     'CNAME at the zone apex — RFC 2181 §10.1 forbids a CNAME next to the SOA, NS and MX records; resolvers disagree on what to return and mail delivery can fail',
+    ZONE_TXT_TITLE:      'Apex TXT records',
+    ZONE_TXT_TOKENS_TITLE: 'Verification tokens',
+    ZONE_WILDCARD_TITLE: 'Wildcard records (*.zone)',
+    ZONE_WILDCARD_NONE:  'No wildcard records in the zone',
+    ZONE_WILDCARD_MX:    'Wildcard MX — mail to any undefined subdomain, including typos, is accepted at this zone; make sure SPF and the DMARC sp= policy cover subdomains',
+    ZONE_WILDCARD_TXT:   'Wildcard TXT — every TXT lookup under an undefined name is answered with it, including _dmarc, _mta-sts and _smtp._tls discovery for subdomains that do not exist',
+    ZONE_WILDCARD_SPF:   'Wildcard TXT is an SPF record — every undefined hostname gets an SPF policy for HELO/EHLO checks, a recommended practice (RFC 7208 §2.3)',
+    ZONE_WILDCARD_ADDR:  'Wildcard address record (A/AAAA/CNAME) — every undefined subdomain resolves, so mistyped hostnames reach this server (informational)',
+    ZONE_PILL_FOUND:     'present',
+    ZONE_PILL_NONE:      'none',
+    CAA_HOSTS_TITLE:     'CAA on the hosts that present certificates',
+    CAA_HOSTS_NOTE:      'CAA at the mail domain says nothing about certificates for the MX hosts (STARTTLS) or the MTA-STS policy host (HTTPS). Shown as a CA evaluates it: the host’s own record, else the nearest parent. Informational — MX hosts usually belong to the mail provider.',
+    CAA_TH_HOST:         'Host',
+    CAA_TH_ROLE:         'Role',
+    CAA_TH_STATUS:       'CAA',
+    CAA_TH_CAS:          'Authorized CAs',
+    CAA_HOST_RESTRICTED: 'Restricted',
+    CAA_HOST_NONE:       'No restriction',
+    CAA_HOST_ERROR:      'Lookup failed',
+    CAA_HOST_PROHIBITED: 'issuance prohibited',
 
     // Page / app chrome
     APP_TITLE:              '',  // Browser tab title, e.g. "DNS Email Security Checker"
@@ -502,6 +541,19 @@ const LANG_TEMPLATE = {
   // Example — English:  MX_HOSTS_FOUND: n => n + ' MX hosts found.',
   // Example — French:   MX_HOSTS_FOUND: n => n + ' hôtes MX trouvés.',
   d: {
+    ZONE_SUMMARY:        zone => 'Zone hygiene for ' + zone,
+    ZONE_APEX_NOTE:      (zone, name) => name + ' is not a zone apex — SOA, nameservers, TXT size and wildcards are reported for its zone ' + zone,
+    ZONE_SOA_RANGE:      (field, value, lo, hi) => 'SOA ' + field + ' is ' + value + ' s — RFC 1912 §2.2 recommends ' + lo + '–' + hi + ' s',
+    ZONE_SOA_SERIAL_ODD: serial => 'SOA serial is ' + serial + ' — harmless, but the usual form is YYYYMMDDnn so a zone-transfer problem is visible',
+    ZONE_SOA_MNAME_HIDDEN: mname => 'SOA primary ' + mname + ' is not in the NS set — a hidden primary (common, informational)',
+    ZONE_NS_OK:          n => n + ' nameservers',
+    ZONE_TXT_SIZE:       (count, bytes) => count + ' TXT record(s), about ' + bytes + ' bytes on the wire',
+    ZONE_TXT_LARGE:      bytes => 'The apex TXT answer is about ' + bytes + ' bytes — over the 1232-byte EDNS buffer of DNS Flag Day 2020, so resolvers retry over TCP or get a truncated answer; remove stale records',
+    ZONE_TXT_TOKENS:     n => n + ' domain-verification token(s) published — whether each is still needed cannot be seen from outside; review them now and then',
+    ZONE_DUR:            n => n + ' s' + (n >= 86400 ? ' (' + Math.round(n / 8640) / 10 + ' d)' : n >= 3600 ? ' (' + Math.round(n / 360) / 10 + ' h)' : n >= 60 ? ' (' + Math.round(n / 6) / 10 + ' min)' : ''),
+    CAA_HOSTS_COVERED:   n => 'All ' + n + ' certificate-presenting host(s) (MX, MTA-STS) are covered by a CAA restriction',
+    CAA_HOSTS_UNCOVERED: (n, total, hosts) => n + ' of ' + total + ' certificate-presenting host(s) have no CAA restriction: ' + hosts + ' (informational — usually the mail provider’s zone)',
+    CAA_HOST_FROM:       parent => 'from ' + parent,
     MX_HOSTS_FOUND:           n => '',   // "3 MX hosts found."
     DKIM_SELECTORS_FOUND:     n => '',   // "2 selectors found"
     DKIM_ACROSS_PROVIDERS:    n => '',   // "across 1 provider"
@@ -667,6 +719,7 @@ const LANG_TEMPLATE = {
   // Allowed tags ONLY: <b>  <a href="…">  <code>  <br>
   // Keep all <a href="…"> links as-is (they point to RFCs).
   x: {
+    ZONE:    '',
     DMARC:   '',
     DMARCBIS: '',
     DNSSEC:  '',
