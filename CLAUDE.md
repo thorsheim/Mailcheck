@@ -8,7 +8,7 @@ Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-October-13-7**
+Current version: **2026-October-13-8**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -937,7 +937,8 @@ four releases. Strip `(` and `)` before splitting. Test: `A6` now includes a par
 ### 21. `makeDetails(title)` with no content node
 `makeDetails(summaryText, contentNode)` did `wrap.appendChild(contentNode)` unconditionally. Two
 renderers build the details first and append the table afterwards (renderAutoconfig's ISPDB servers,
-renderZone's token list); a real DOM throws `parameter 1 is not of type 'Node'` on `appendChild(undefined)`,
+renderZone's token list — both now pass the content as the second argument, since anything appended
+to the returned element lands *outside* the `.details-content` frame and leaves it as an empty box); a real DOM throws `parameter 1 is not of type 'Node'` on `appendChild(undefined)`,
 which aborted `rerenderAll` and left the Overview spinning for every ISPDB-listed domain (gmail.com,
 posteo.de) in 2026-October-13-6. The stub DOM in `tests/harness.js` accepted it, so `tests/run.js` and
 `tests/live.js` were green. The stub now throws the same TypeError for a non-object child — keep it that

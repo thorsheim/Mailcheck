@@ -777,8 +777,14 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-October-13-7 &mdash; click for changelog</summary>
+      <summary>Version 2026-October-13-8 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-October-13-8</span>
+          <ul class="cl-changes">
+            <li><b>Layout.</b> Zone tab: nameservers, verification tokens, the SOA names and wildcard values render as inline code instead of full-width record boxes, and the token list sits inside its collapsible block. Autoconfig tab: the ISPDB server table sits inside its collapsible block instead of leaving an empty frame above it.</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-October-13-7</span>
           <ul class="cl-changes">
@@ -10179,8 +10185,8 @@ function renderZone(result) {
       const sec = el('div', 'panel-section');
       sec.appendChild(el('div', 'panel-section-title', ts('ZONE_SOA_TITLE')));
       const t = el('table', 'kv-table');
-      kvRow(t, ts('ZONE_ROW_MNAME'), el('code', 'mono', d.soa.mname));
-      kvRow(t, ts('ZONE_ROW_RNAME'), el('code', 'mono', d.soa.rnameEmail));
+      kvRow(t, ts('ZONE_ROW_MNAME'), el('code', null, d.soa.mname));
+      kvRow(t, ts('ZONE_ROW_RNAME'), el('code', null, d.soa.rnameEmail));
       kvRow(t, ts('ZONE_ROW_SERIAL'), d.soa.serial === null ? '—' : String(d.soa.serial));
       kvRow(t, ts('ZONE_ROW_REFRESH'), dur(d.soa.refresh));
       kvRow(t, ts('ZONE_ROW_RETRY'), dur(d.soa.retry));
@@ -10197,7 +10203,7 @@ function renderZone(result) {
       for (const h of d.ns) {
         const li = el('li', 'issue-item');
         li.appendChild(el('span', 'issue-dot dot-info', ''));
-        li.appendChild(el('code', 'mono', h));
+        li.appendChild(el('code', null, h));
         ul.appendChild(li);
       }
       nsSec.appendChild(ul);
@@ -10208,16 +10214,15 @@ function renderZone(result) {
     txtSec.appendChild(el('div', 'panel-section-title', ts('ZONE_TXT_TITLE')));
     txtSec.appendChild(el('div', 'card-summary', td('ZONE_TXT_SIZE', d.txt.count, d.txt.bytes)));
     if (d.txt.tokens.length) {
-      const det = makeDetails(ts('ZONE_TXT_TOKENS_TITLE') + ' (' + d.txt.tokens.length + ')');
-      det.open = false;
       const ul = el('ul', 'issue-list');
       for (const tkn of d.txt.tokens) {
         const li = el('li', 'issue-item');
         li.appendChild(el('span', 'issue-dot dot-info', ''));
-        li.appendChild(el('code', 'mono', tkn.length > 90 ? tkn.slice(0, 87) + '…' : tkn));
+        li.appendChild(el('code', null, tkn.length > 90 ? tkn.slice(0, 87) + '…' : tkn));
         ul.appendChild(li);
       }
-      det.appendChild(ul);
+      const det = makeDetails(ts('ZONE_TXT_TOKENS_TITLE') + ' (' + d.txt.tokens.length + ')', ul);
+      det.open = false;
       txtSec.appendChild(det);
     }
     body.appendChild(txtSec);
@@ -10229,10 +10234,10 @@ function renderZone(result) {
     const yn = v => pill(v ? ts('ZONE_PILL_FOUND') : ts('ZONE_PILL_NONE'), v ? 'tag-pill-warn' : '');
     kvRow(wt, 'A', yn(w.a)); kvRow(wt, 'AAAA', yn(w.aaaa)); kvRow(wt, 'CNAME', yn(w.cname));
     const mxCell = el('span'); mxCell.appendChild(yn(w.mx && w.mx.length));
-    if (w.mx && w.mx.length) { mxCell.appendChild(document.createTextNode(' ')); mxCell.appendChild(el('code', 'mono', w.mx.join(', '))); }
+    if (w.mx && w.mx.length) { mxCell.appendChild(document.createTextNode(' ')); mxCell.appendChild(el('code', null, w.mx.join(', '))); }
     kvRow(wt, 'MX', mxCell);
     const txtCell = el('span'); txtCell.appendChild(yn(w.txt && w.txt.length));
-    if (w.txt && w.txt.length) { txtCell.appendChild(document.createTextNode(' ')); txtCell.appendChild(el('code', 'mono', w.txt.map(t => t.length > 60 ? t.slice(0, 57) + '…' : t).join(' | '))); }
+    if (w.txt && w.txt.length) { txtCell.appendChild(document.createTextNode(' ')); txtCell.appendChild(el('code', null, w.txt.map(t => t.length > 60 ? t.slice(0, 57) + '…' : t).join(' | '))); }
     kvRow(wt, 'TXT', txtCell);
     wSec.appendChild(wt);
     body.appendChild(wSec);
@@ -10515,9 +10520,7 @@ function renderAutoconfig(result) {
           tr.appendChild(el('td', null, sv.socketType || '?'));
           st.appendChild(tr);
         }
-        const det = makeDetails(ts('AUTOCONF_ISPDB_TITLE'));
-        det.appendChild(st);
-        sec.appendChild(det);
+        sec.appendChild(makeDetails(ts('AUTOCONF_ISPDB_TITLE'), st));
       }
       body.appendChild(sec);
     }
