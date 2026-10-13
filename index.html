@@ -777,8 +777,14 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-October-13-9 &mdash; click for changelog</summary>
+      <summary>Version 2026-October-13-10 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-October-13-10</span>
+          <ul class="cl-changes">
+            <li><b>Layout.</b> Autoconfig tab: SRV targets and the Thunderbird ISPDB host names render as inline code instead of full-width record boxes.</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-October-13-9</span>
           <ul class="cl-changes">
@@ -10473,7 +10479,7 @@ function renderAutoconfig(result) {
         tr.appendChild(el('td', null, '_' + s.svc + '._tcp'));
         const tcell = document.createElement('td');
         if (r) {
-          tcell.appendChild(el('code', 'mono', r.target));
+          tcell.appendChild(el('code', null, r.target));
           const ti = d.targets[r.target] || {};
           if (ti.cname) { tcell.appendChild(document.createTextNode(' ')); tcell.appendChild(pill('CNAME', 'tag-pill-warn')); }
           if (ti.ipLiteral) { tcell.appendChild(document.createTextNode(' ')); tcell.appendChild(pill(ts('MX_PILL_LITERAL'), 'tag-pill-fail')); }
@@ -10521,7 +10527,7 @@ function renderAutoconfig(result) {
         for (const sv of i.servers) {
           const tr = document.createElement('tr');
           tr.appendChild(el('td', null, sv.type + (sv.direction === 'out' ? ' \u2191' : ' \u2193')));
-          const hc = document.createElement('td'); hc.appendChild(el('code', 'mono', sv.hostname || '?')); tr.appendChild(hc);
+          const hc = document.createElement('td'); hc.appendChild(el('code', null, sv.hostname || '?')); tr.appendChild(hc);
           tr.appendChild(el('td', null, sv.port || '?'));
           tr.appendChild(el('td', null, sv.socketType || '?'));
           st.appendChild(tr);

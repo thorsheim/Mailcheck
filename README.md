@@ -123,6 +123,7 @@ node tests/live.js     # every check + every renderer against real DNS for a set
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-October-13-10 | 2026-10-13 | Layout: SRV targets and ISPDB host names in the Autoconfig tab as inline code (were full-width record boxes) |
 | 2026-October-13-9 | 2026-10-13 | Layout: host names in the CAA per-host table as inline code (were full-width record boxes) |
 | 2026-October-13-8 | 2026-10-13 | Layout: Zone tab lists and SOA names as inline code, token list inside its collapsible block; Autoconfig ISPDB table inside its collapsible block (was an empty frame above it) |
 | 2026-October-13-7 | 2026-10-13 | New informational Zone tab: SOA timers against RFC 1912 (findings are notes, since large anycast providers set them deliberately), nameserver count with AS diversity from the RPKI data, CNAME at the apex, apex TXT answer size against the 1232-byte EDNS buffer with the verification tokens listed, wildcard A/AAAA/CNAME/MX/TXT records (a wildcard TXT answers `_dmarc`/`_mta-sts`/`_smtp._tls` discovery for every non-existent subdomain). CAA tab: CAA evaluated per MX host and for `mta-sts.<domain>` (own record, else nearest parent) with the authorized CAs per host; informational, CAA rating unchanged. Fix: the Autoconfig tab threw while rendering ISPDB-listed domains (gmail.com, posteo.de), leaving the Overview without a grade |
