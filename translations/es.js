@@ -230,6 +230,10 @@ const LANG_ES = {
     RPKI_ASPA_PROVIDERS: 'Proveedores:',
 
     ASPA_NO_DATA:        'No hay datos ASPA disponibles',
+    ASPA_PILL_PUBLISHED: 'PUBLICADO',
+    ASPA_PILL_NONE: 'SIN ASPA',
+    ASPA_PILL_ERROR: 'NO DISPONIBLE',
+    ASPA_NO_PROVIDERS: 'No declara proveedores (AS0) \u2014 el AS indica que no tiene ning\u00fan proveedor de tr\u00e1nsito',
 
     STXT_FOUND:          '\u2713 security.txt encontrado',
     STXT_RAW:            'security.txt sin procesar',
@@ -810,7 +814,7 @@ const LANG_ES = {
       'Los registros ASPA publicados permiten detectar filtraciones de rutas: si el tráfico llega a través de un proveedor no autorizado, los routers compatibles con ASPA pueden rechazarlo.<br><br>' +
       '<b>Publicado</b> \u2014 existe un registro ASPA con proveedores declarados. ' +
       '<b>Sin ASPA</b> \u2014 no hay registro publicado; las filtraciones de rutas que involucren a este AS no pueden ser detectadas por routers compatibles con ASPA.<br><br>' +
-      'Esta comprobación lee los datos ASPA obtenidos durante la comprobación RPKI, mostrando los registros de autorización de proveedor para todos los ASN asociados a los hosts NS y MX del dominio.<br><br>' +
+      'Esta comprobaci\u00f3n consulta la instancia p\u00fablica de Routinator operada por NLnet Labs (<a href="https://routinator.nlnetlabs.nl/">routinator.nlnetlabs.nl</a>) para obtener los objetos ASPA validados de cada ASN detr\u00e1s de los hosts NS y MX del dominio; solo se env\u00edan los n\u00fameros de AS a ese servicio. <b>AS0 como \u00fanico proveedor</b> significa que el AS declara no tener ning\u00fan proveedor de tr\u00e1nsito.<br><br>' +
       '<b>Nota:</b> RFC 9582 es aún un estándar propuesto y el despliegue real es actualmente muy limitado. ' +
       'Por ello, la ausencia de registros ASPA no afecta tu puntuación \u2014 esta comprobación es puramente informativa por ahora. ' +
       'No obstante, vale la pena preguntar a tu proveedor de hosting o ISP si están siguiendo el desarrollo de ASPA y considerando su implementación.',

@@ -203,6 +203,10 @@ const LANG_NO = {
     RPKI_ASPA_PROVIDERS: 'Leverand\u00f8rer:',
     // ASPA
     ASPA_NO_DATA:        'Ingen ASPA-data tilgjengelig',
+    ASPA_PILL_PUBLISHED: 'PUBLISERT',
+    ASPA_PILL_NONE: 'INGEN ASPA',
+    ASPA_PILL_ERROR: 'UTILGJENGELIG',
+    ASPA_NO_PROVIDERS: 'Erkl\u00e6rer ingen leverand\u00f8rer (AS0) \u2014 AS-et oppgir at det ikke har noen transittleverand\u00f8rer i det hele tatt',
     // IPv6
     IPV6_HOST_DETAILS:      'Adressedetaljer per vert',
     IPV6_NO_MX:             'Ingen MX-verter funnet',
@@ -838,7 +842,7 @@ const LANG_NO = {
       'Publiserte ASPA-poster muliggj\u00f8r deteksjon av rutelekk: hvis trafikk ankommer gjennom en uautorisert leverand\u00f8r, kan ASPA-bevisste rutere avvise den.<br><br>' +
       '<b>Publisert</b> \u2014 ASPA-post finnes med erkl\u00e6rte leverand\u00f8rer. ' +
       '<b>Ingen ASPA</b> \u2014 ingen post publisert; rutelekker for dette AS-et kan ikke oppdages av ASPA-bevisste rutere.<br><br>' +
-      'Denne sjekken leser ASPA-data hentet under RPKI-sjekken og viser leverand\u00f8rautorisasjonsposter for alle ASN-er tilknyttet domenets NS- og MX-verter.<br><br>' +
+      'Denne sjekken sp\u00f8r den offentlige Routinator-instansen som NLnet Labs drifter (<a href="https://routinator.nlnetlabs.nl/">routinator.nlnetlabs.nl</a>) om de validerte ASPA-objektene for hvert ASN bak domenets NS- og MX-verter; bare AS-numrene sendes til den tjenesten. <b>AS0 som eneste leverand\u00f8r</b> betyr at AS-et erkl\u00e6rer at det ikke har noen transittleverand\u00f8rer i det hele tatt.<br><br>' +
       '<b>Merk:</b> RFC 9582 er fortsatt en foreslått standard og faktisk distribusjon er forel\u00f8pig svært begrenset. ' +
       'Derfor p\u00e5virker manglende ASPA-poster ikke poengsummen din \u2014 denne sjekken er rent informativ for n\u00e5. ' +
       'Likevel er det verdt \u00e5 kontakte din hostingleverand\u00f8r eller internettleverand\u00f8r(er) og sp\u00f8rre om de f\u00f8lger utviklingen av ASPA og vurderer distribusjon.',

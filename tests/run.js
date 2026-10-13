@@ -256,9 +256,31 @@ test('B8 RIPE caches share in-flight lookups and dedupe IPs; failures not cached
   app.rr('example.com', 'NS', 2, ['ns1.example.com.']);
   app.rr('example.com', 'MX', 15, ['10 ns1.example.com.']);
   app.rr('ns1.example.com', 'A', 1, ['192.0.2.1']);
-  app.http.set('https://stat.ripe.net/data/aspa/data.json?resource=AS64500&sourceapp=email-security-checker', { status: 200, body: JSON.stringify({ data: { provider_asns: [] } }) });
+  app.http.set('https://routinator.nlnetlabs.nl/json?select-asn=64500&exclude=routeOrigins&exclude=routerKeys', { status: 200, body: JSON.stringify({ metadata: {}, aspas: [] }) });
   const r = await app.checkRPKI('example.com');
   eq(r.rating, 'excellent'); eq(r.hosts.length, 1); eq(r.hosts[0].isNS && r.hosts[0].isMX, true);
+});
+
+test('D10 ASPA comes from Routinator: customer filter, AFI merge, AS0, absent, error', async () => {
+  const app = load();
+  const url = asn => 'https://routinator.nlnetlabs.nl/json?select-asn=' + asn + '&exclude=routeOrigins&exclude=routerKeys';
+  app.http.set(url('3303'), { status: 200, body: JSON.stringify({ metadata: {}, aspas: [
+    { customer: 'AS3303', afi: 'ipv4', providers: ['AS174', 'AS2914'], ta: 'ripe' },
+    { customer: 'AS3303', afi: 'ipv6', providers: ['AS2914', 'AS6939'], ta: 'ripe' },
+    { customer: 'AS9999', providers: ['AS1'], ta: 'ripe' } ] }) });
+  let r = await app.aspaLookupASN('3303');
+  eq(r.published, true); eq(r.providers, ['174', '2914', '6939'], 'merged across AFIs, foreign customer ignored'); eq(r.noProviders, false);
+  app.http.set(url('6830'), { status: 200, body: JSON.stringify({ metadata: {}, aspas: [ { customer: 'AS6830', providers: ['AS0'], ta: 'ripe' } ] }) });
+  r = await app.aspaLookupASN('6830');
+  eq(r.published, true); eq(r.providers, []); eq(r.noProviders, true, 'AS0 = declares no providers');
+  app.http.set(url('13335'), { status: 200, body: JSON.stringify({ metadata: {}, aspas: [] }) });
+  r = await app.aspaLookupASN('13335');
+  eq(r.published, false); eq(r.providers, []);
+  app.http.set(url('64500'), { status: 404, body: 'resource not found' });
+  let threw = false;
+  try { await app.aspaLookupASN('64500'); } catch (e) { threw = true; }
+  eq(threw, true, 'HTTP failure rejects so checkRPKI marks the ASN unavailable');
+  eq(app.aspaAsnCache.has('64500'), false, 'rejected lookup is evicted');
 });
 
 test('B8 RPKI: multi-origin prefix is rated on the worst origin; errors cap at good', async () => {

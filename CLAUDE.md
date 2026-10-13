@@ -3,12 +3,12 @@
 ## Deliverable
 Single self-contained file: `index.html` (no build tools, no dependencies, no server).
 Uses Cloudflare DNS-over-HTTPS API for all lookups.
-Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
+Uses RIPE Stat API for RPKI/ASN data and the public Routinator at routinator.nlnetlabs.nl for ASPA. Uses rdap.org for WHOIS/RDAP.
 
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-October-13-10**
+Current version: **2026-October-13-11**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -110,7 +110,7 @@ Every fan-out is bounded by `parallelLimit()`: `DKIM_CONCURRENCY` 10, `RIPE_CONC
 | TLS-RPT | `_smtp._tls.<domain>` TXT | RFC 8460; DNSSEC checked for rua= endpoint domains |
 | MTA-STS | `_mta-sts.<domain>` TXT + HTTPS policy fetch | RFC 8461; collects all `mx:` lines as array; cross-checks against actual MX hosts |
 | CAA | `<domain>` CAA (type 257), climbing to parents when empty; then CAA (with the same climb) for every MX host and `mta-sts.<domain>` | Hex format parsed by `parseCAAData()`; RFC 8659 §3 parent inheritance (`climbedTo`); excellent = issue restriction **and** iodef, iodef alone = warning; `issuemail` reported separately (S/MIME, RFC 9495); DNSSEC checked for each CA domain; values linkified; `tlsHosts` per-host coverage is informational (`info: true`, never rated) |
-| RPKI | RIPE Stat `network-info` + `rpki-validation` + `as-overview` + `aspa` | Checks NS+MX host IPs; includes ASPA section |
+| RPKI | RIPE Stat `network-info` + `rpki-validation` + `as-overview`; Routinator `json?select-asn=<asn>&exclude=routeOrigins&exclude=routerKeys` for ASPA | Checks NS+MX host IPs; includes ASPA section |
 | Coherence | no DNS of its own except MX / A+AAAA for each `mailto:` report host | `checkCoherence()` — between-check findings (TLS-RPT without MTA-STS/DANE, MTA-STS testing without TLS-RPT, BIMI vs DMARC, DMARC enforcing without SPF, undeliverable rua/ruf hosts, DANE + MTA-STS enforce); section at the top of the Fixes tab; never scored |
 | ISP BGP safety | isbgpsafeyet.com `cdn-cgi/trace` + valid/invalid RPKI beacons | Tests the **visitor's** connection, not the domain; renders in the Connection tab; cached per page session; never scored |
 | Connection | `sigok`/`sigfail.ippacket.stream` (no-cors probes) + `ipv4`/`ipv6.icanhazip.com` + RIPE Stat per visitor IP | Tests the **visitor's** connection: resolver DNSSEC validation, public IPv4/IPv6 egress addresses with ASN/prefix/ROA; cached per page session; never scored |
@@ -243,7 +243,8 @@ checkPTR()          resolves A+AAAA per MX host; queries PTR per IP; relaxed FCr
 reverseIPv6(ip)     expands IPv6 to 32 hex nibbles, reverses, appends .ip6.arpa
 resolveHostIPs()    DoH A+AAAA resolution helper
 rpkiLookupIP()      RIPE Stat network-info + rpki-validation; 2 sequential API calls per IP
-aspaLookupASN()     RIPE Stat aspa endpoint; normalises provider list
+aspaLookupASN()     Routinator (ASPA_BASE) validated ASPA payload filtered by customer ASN; merges
+                      per-AFI records, strips "AS", AS0 → noProviders; counted in scanStats.httpRequests
 checkRPKI()         NS+MX hosts → IPs → ROA + ASPA; also fetches asnInfo and provider holder names
 getASPARating()     derives ASPA-specific rating from a checkRPKI() result (excellent/warning)
 renderASPA()        dedicated ASPA tab renderer; reuses r.rpki result
@@ -380,7 +381,7 @@ const resolvedText = iss.textKey
 **Current languages**: `en` (English, default), `es` (Spanish), `fr` (French), `no` (Norwegian Bokmål).
 All four are **complete** — no language relies on the English fallback. When adding a key, add it to every language, and mirror it into `translations/<lang>.js` **and `translations/TEMPLATE.js`** so the contributor files stay in sync. TEMPLATE.js is easy to forget because nothing in the app reads it — it had silently drifted 37 keys behind (the entire IPv6 block, plus `SELECTOR_HELP`, the SPF recursive-lookup counts and the RPKI nameserver-diversity keys) before being backfilled on 2026-08-13. A contributor starting from a stale template simply never sees those strings.
 
-To check for drift, run `node tests/static.js` — it parses the `STRINGS` block out of `index.html`, diffs the key sets across the four languages and the four `translations/*.js` files, and compares `d`-function *outputs* (not source text, which differs in whitespace between files). The three namespaces currently total **613 keys** (s=432, d=159, x=22). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
+To check for drift, run `node tests/static.js` — it parses the `STRINGS` block out of `index.html`, diffs the key sets across the four languages and the four `translations/*.js` files, and compares `d`-function *outputs* (not source text, which differs in whitespace between files). The three namespaces currently total **617 keys** (s=436, d=159, x=22). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
 
 There are now four contributor files — `es.js`, `fr.js`, `no.js` and `TEMPLATE.js` — and all four
 carry the full key set with no value drift from `index.html`.
@@ -580,6 +581,16 @@ folded). `renderMX` adds `MX_SINGLE_ASN` at render time from `lastResults.rpki` 
   fetched in **one** `parallelLimit` stage (`asnInfo`, `aspaData`); only provider-ASN holders wait
   on the ASPA answers. An `error` IP result caps the rating at `good`.
 - Finally fetches `as-overview` for any provider ASNs from ASPA records not already in `asnInfo`.
+- **ASPA source (2026-October-13-11).** RIPE Stat has **no** ASPA data call — `stat.ripe.net/data/aspa/` answers
+  404 `data_call_status: unsupported` for every ASN and never appeared in its endpoint list, so the tab showed
+  "Unavailable" everywhere from April to October 2026 (critical bug 22). `aspaLookupASN` now queries NLnet Labs'
+  public Routinator (`ASPA_BASE`, CORS `*`, ~200 bytes / ~100 ms per ASN); `select-asn` matches the **customer**
+  ASN only (verified: a provider-only ASN returns nothing). Response shape `{ metadata, aspas: [{ customer: "AS3303",
+  providers: ["AS174", …], ta, afi? }] }` — ASNs carry an `AS` prefix, older versions split records per AFI (merged).
+  Provider `AS0` = RFC 9582 "no providers" → `published: true, providers: [], noProviders: true` (`ASPA_NO_PROVIDERS`
+  note). Nothing else was found: no per-ASN ASPA API with CORS exists (Cloudflare Radar needs a token, ipctl.io has
+  no CORS and 250 req/day, rpki.cloudflare.com/rpki.json is 106 MB without CORS, console.rpki-client.org likewise).
+  Test ASNs: 3303 (Swisscom, 7 providers — `swisscom.ch`), 6830 (AS0), 13335 (none), 12732/44716 via `posteo.de`.
 - RPKI status values: `valid` (excellent), `invalid` (fail), `unknown`/`not_routed` (warning).
 - ASPA status: `published` (excellent badge), absent (warning badge "NO ASPA"), error (warning badge "UNAVAILABLE").
 - `renderRPKI`: host details section only (NS/MX type tags, IPs, prefix, ASN+holder, ROA badge). ASPA section moved to `renderASPA`.
@@ -948,6 +959,12 @@ posteo.de) in 2026-October-13-6. The stub DOM in `tests/harness.js` accepted it,
 `tests/live.js` were green. The stub now throws the same TypeError for a non-object child — keep it that
 way, and run the headless-Chromium smoke test (`chromium --headless --dump-dom` against a local
 `http.server`, see memory) before a release whenever a renderer changes.
+
+### 22. ASPA is not on RIPE Stat
+`aspaLookupASN` requested `stat.ripe.net/data/aspa/data.json`, a data call RIPE Stat never had; every ASN rated
+"Unavailable" and nobody noticed because the result is informational and the Node harness stubbed the URL. The
+lookup now goes to Routinator (see RPKI/ASPA details). When an external endpoint is added, curl it once from the
+shell before writing the parser, and put the real URL in a `tests/run.js` stub so a renamed endpoint fails a test.
 
 ### 12. Propagation checks compare sets, not `[0]`
 A DNS RRset is unordered and segment joins can differ in whitespace, so comparing Cloudflare's

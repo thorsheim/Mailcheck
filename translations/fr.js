@@ -231,6 +231,10 @@ const LANG_FR = {
     RPKI_ASPA_PROVIDERS: 'Fournisseurs\u00a0:',
 
     ASPA_NO_DATA:        'Aucune donnée ASPA disponible',
+    ASPA_PILL_PUBLISHED: 'PUBLI\u00c9',
+    ASPA_PILL_NONE: 'SANS ASPA',
+    ASPA_PILL_ERROR: 'INDISPONIBLE',
+    ASPA_NO_PROVIDERS: 'Ne d\u00e9clare aucun fournisseur (AS0) \u2014 l\'AS indique n\'avoir aucun fournisseur de transit',
 
     STXT_FOUND:          '\u2713 security.txt trouvé',
     STXT_RAW:            'security.txt brut',
@@ -836,7 +840,7 @@ const LANG_FR = {
       'Les enregistrements ASPA publiés permettent de détecter les fuites de routes\u00a0: si le trafic arrive via un fournisseur non autorisé, les routeurs compatibles ASPA peuvent le rejeter.<br><br>' +
       '<b>Publié</b> \u2014 un enregistrement ASPA avec des fournisseurs déclarés existe. ' +
       '<b>Sans ASPA</b> \u2014 aucun enregistrement publié\u00a0; les fuites de routes impliquant cet AS ne peuvent pas être détectées par les routeurs compatibles ASPA.<br><br>' +
-      'Cette vérification lit les données ASPA obtenues lors de la vérification RPKI, affichant les enregistrements d\'autorisation de fournisseur pour tous les ASN associés aux hôtes NS et MX du domaine.<br><br>' +
+      'Cette v\u00e9rification interroge l\'instance publique de Routinator exploit\u00e9e par NLnet Labs (<a href="https://routinator.nlnetlabs.nl/">routinator.nlnetlabs.nl</a>) pour obtenir les objets ASPA valid\u00e9s de chaque ASN derri\u00e8re les h\u00f4tes NS et MX du domaine\u00a0; seuls les num\u00e9ros d\'AS sont envoy\u00e9s \u00e0 ce service. <b>AS0 comme seul fournisseur</b> signifie que l\'AS d\u00e9clare n\'avoir aucun fournisseur de transit.<br><br>' +
       '<b>Note\u00a0:</b> RFC 9582 est encore une norme proposée et le déploiement réel est actuellement très limité. ' +
       'C\'est pourquoi l\'absence d\'enregistrements ASPA n\'affecte pas votre score \u2014 cette vérification est purement informative pour l\'instant. ' +
       'Cependant, il vaut la peine de demander à votre hébergeur ou FAI s\'il suit le développement d\'ASPA et envisage son implémentation.',

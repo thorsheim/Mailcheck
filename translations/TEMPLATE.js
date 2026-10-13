@@ -288,6 +288,10 @@ const LANG_TEMPLATE = {
 
     // ASPA
     ASPA_NO_DATA:           '',  // "No ASPA data available"
+    ASPA_PILL_PUBLISHED: 'PUBLISHED',
+    ASPA_PILL_NONE: 'NO ASPA',
+    ASPA_PILL_ERROR: 'UNAVAILABLE',
+    ASPA_NO_PROVIDERS: 'Declares no providers (AS0) \u2014 the AS states that it has no transit providers at all',
 
     // ── IPv6 tab ──────────────────────────────────────────────────────────
     IPV6_HOST_DETAILS:      '',  // "Host address details"

@@ -777,8 +777,14 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-October-13-10 &mdash; click for changelog</summary>
+      <summary>Version 2026-October-13-11 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-October-13-11</span>
+          <ul class="cl-changes">
+            <li><b>ASPA works again.</b> The ASPA tab had shown &ldquo;Unavailable&rdquo; for every network: RIPE Stat has no ASPA data call (its <code>aspa</code> endpoint answers 404 &ldquo;data call does not exist&rdquo;). ASPA objects are now read from the public <a href="https://routinator.nlnetlabs.nl/">Routinator</a> instance run by NLnet Labs, filtered to the customer AS; only the AS numbers are sent there. An AS whose only listed provider is AS0 is shown as &ldquo;declares no providers&rdquo;. The tab&rsquo;s badges are now translated.</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-October-13-10</span>
           <ul class="cl-changes">
@@ -1424,6 +1430,10 @@ const STRINGS = {
       RPKI_ASPA_PROVIDERS: 'Providers:',
       // ASPA
       ASPA_NO_DATA:        'No ASPA data available',
+      ASPA_PILL_PUBLISHED: 'PUBLISHED',
+      ASPA_PILL_NONE: 'NO ASPA',
+      ASPA_PILL_ERROR: 'UNAVAILABLE',
+      ASPA_NO_PROVIDERS: 'Declares no providers (AS0) \u2014 the AS states that it has no transit providers at all',
       // IPv6
       PANEL_IPV6:             'IPv6',
       IPV6_HOST_DETAILS:      'Per-host address details',
@@ -2076,7 +2086,7 @@ const STRINGS = {
         'Published ASPA records enable route leak detection: if traffic arrives through an unauthorized provider, ASPA-aware routers can reject it.<br><br>' +
         '<b>Published</b> \u2014 ASPA record exists with declared providers. ' +
         '<b>No ASPA</b> \u2014 no record published; route leaks involving this AS cannot be detected by ASPA-aware routers.<br><br>' +
-        'This check reads the ASPA data fetched during the RPKI check, showing provider authorization records for all ASNs associated with the domain\'s NS and MX hosts.<br><br>' +
+        'This check asks the public Routinator instance run by NLnet Labs (<a href="https://routinator.nlnetlabs.nl/">routinator.nlnetlabs.nl</a>) for the validated ASPA objects of every ASN behind the domain\'s NS and MX hosts; only the AS numbers are sent to that service. <b>AS0 as the only provider</b> means the AS declares that it has no transit providers at all.<br><br>' +
         '<b>Note:</b> RFC 9582 is still a proposed standard and real-world deployment is currently very limited. ' +
         'Because of this, the absence of ASPA records does not affect your score \u2014 this check is purely informational for now. ' +
         'That said, it is worth reaching out to your hosting provider or ISP(s) to ask whether they are tracking the development of ASPA and considering deployment.',
@@ -2364,6 +2374,10 @@ const STRINGS = {
       RPKI_ASPA_PROVIDERS: 'Leverand\u00f8rer:',
       // ASPA
       ASPA_NO_DATA:        'Ingen ASPA-data tilgjengelig',
+      ASPA_PILL_PUBLISHED: 'PUBLISERT',
+      ASPA_PILL_NONE: 'INGEN ASPA',
+      ASPA_PILL_ERROR: 'UTILGJENGELIG',
+      ASPA_NO_PROVIDERS: 'Erkl\u00e6rer ingen leverand\u00f8rer (AS0) \u2014 AS-et oppgir at det ikke har noen transittleverand\u00f8rer i det hele tatt',
       // IPv6
       IPV6_HOST_DETAILS:      'Adressedetaljer per vert',
       IPV6_NO_MX:             'Ingen MX-verter funnet',
@@ -2999,7 +3013,7 @@ const STRINGS = {
         'Publiserte ASPA-poster muliggj\u00f8r deteksjon av rutelekk: hvis trafikk ankommer gjennom en uautorisert leverand\u00f8r, kan ASPA-bevisste rutere avvise den.<br><br>' +
         '<b>Publisert</b> \u2014 ASPA-post finnes med erkl\u00e6rte leverand\u00f8rer. ' +
         '<b>Ingen ASPA</b> \u2014 ingen post publisert; rutelekker for dette AS-et kan ikke oppdages av ASPA-bevisste rutere.<br><br>' +
-        'Denne sjekken leser ASPA-data hentet under RPKI-sjekken og viser leverand\u00f8rautorisasjonsposter for alle ASN-er tilknyttet domenets NS- og MX-verter.<br><br>' +
+        'Denne sjekken sp\u00f8r den offentlige Routinator-instansen som NLnet Labs drifter (<a href="https://routinator.nlnetlabs.nl/">routinator.nlnetlabs.nl</a>) om de validerte ASPA-objektene for hvert ASN bak domenets NS- og MX-verter; bare AS-numrene sendes til den tjenesten. <b>AS0 som eneste leverand\u00f8r</b> betyr at AS-et erkl\u00e6rer at det ikke har noen transittleverand\u00f8rer i det hele tatt.<br><br>' +
         '<b>Merk:</b> RFC 9582 er fortsatt en foreslått standard og faktisk distribusjon er forel\u00f8pig svært begrenset. ' +
         'Derfor p\u00e5virker manglende ASPA-poster ikke poengsummen din \u2014 denne sjekken er rent informativ for n\u00e5. ' +
         'Likevel er det verdt \u00e5 kontakte din hostingleverand\u00f8r eller internettleverand\u00f8r(er) og sp\u00f8rre om de f\u00f8lger utviklingen av ASPA og vurderer distribusjon.',
@@ -3301,6 +3315,10 @@ const STRINGS = {
       RPKI_NO_IPS:         'No se resolvieron IPs',
       RPKI_ASPA_PROVIDERS: 'Proveedores:',
       ASPA_NO_DATA:        'No hay datos ASPA disponibles',
+      ASPA_PILL_PUBLISHED: 'PUBLICADO',
+      ASPA_PILL_NONE: 'SIN ASPA',
+      ASPA_PILL_ERROR: 'NO DISPONIBLE',
+      ASPA_NO_PROVIDERS: 'No declara proveedores (AS0) \u2014 el AS indica que no tiene ning\u00fan proveedor de tr\u00e1nsito',
       STXT_FOUND:          '\u2713 security.txt encontrado',
       STXT_RAW:            'security.txt sin procesar',
       STXT_NOT_FOUND:      'No encontrado.',
@@ -3895,7 +3913,7 @@ const STRINGS = {
         'Los registros ASPA publicados permiten detectar filtraciones de rutas: si el tr\u00e1fico llega a trav\u00e9s de un proveedor no autorizado, los routers compatibles con ASPA pueden rechazarlo.<br><br>' +
         '<b>Publicado</b> \u2014 existe un registro ASPA con proveedores declarados. ' +
         '<b>Sin ASPA</b> \u2014 no hay registro publicado; las filtraciones de rutas que involucren a este AS no pueden ser detectadas por routers compatibles con ASPA.<br><br>' +
-        'Esta comprobaci\u00f3n lee los datos ASPA obtenidos durante la comprobaci\u00f3n RPKI, mostrando los registros de autorizaci\u00f3n de proveedor para todos los ASN asociados a los hosts NS y MX del dominio.<br><br>' +
+        'Esta comprobaci\u00f3n consulta la instancia p\u00fablica de Routinator operada por NLnet Labs (<a href="https://routinator.nlnetlabs.nl/">routinator.nlnetlabs.nl</a>) para obtener los objetos ASPA validados de cada ASN detr\u00e1s de los hosts NS y MX del dominio; solo se env\u00edan los n\u00fameros de AS a ese servicio. <b>AS0 como \u00fanico proveedor</b> significa que el AS declara no tener ning\u00fan proveedor de tr\u00e1nsito.<br><br>' +
         '<b>Nota:</b> RFC 9582 es a\u00fan un est\u00e1ndar propuesto y el despliegue real es actualmente muy limitado. ' +
         'Por ello, la ausencia de registros ASPA no afecta tu puntuaci\u00f3n \u2014 esta comprobaci\u00f3n es puramente informativa por ahora. ' +
         'No obstante, vale la pena preguntar a tu proveedor de hosting o ISP si est\u00e1n siguiendo el desarrollo de ASPA y considerando su implementaci\u00f3n.',
@@ -4215,6 +4233,10 @@ const STRINGS = {
       RPKI_ASPA_PROVIDERS: 'Fournisseurs\u00a0:',
 
       ASPA_NO_DATA:        'Aucune donn\u00e9e ASPA disponible',
+      ASPA_PILL_PUBLISHED: 'PUBLI\u00c9',
+      ASPA_PILL_NONE: 'SANS ASPA',
+      ASPA_PILL_ERROR: 'INDISPONIBLE',
+      ASPA_NO_PROVIDERS: 'Ne d\u00e9clare aucun fournisseur (AS0) \u2014 l\'AS indique n\'avoir aucun fournisseur de transit',
 
       STXT_FOUND:          '\u2713 security.txt trouv\u00e9',
       STXT_RAW:            'security.txt brut',
@@ -4820,7 +4842,7 @@ const STRINGS = {
         'Les enregistrements ASPA publi\u00e9s permettent de d\u00e9tecter les fuites de routes\u00a0: si le trafic arrive via un fournisseur non autoris\u00e9, les routeurs compatibles ASPA peuvent le rejeter.<br><br>' +
         '<b>Publi\u00e9</b> \u2014 un enregistrement ASPA avec des fournisseurs d\u00e9clar\u00e9s existe. ' +
         '<b>Sans ASPA</b> \u2014 aucun enregistrement publi\u00e9\u00a0; les fuites de routes impliquant cet AS ne peuvent pas \u00eatre d\u00e9tect\u00e9es par les routeurs compatibles ASPA.<br><br>' +
-        'Cette v\u00e9rification lit les donn\u00e9es ASPA obtenues lors de la v\u00e9rification RPKI, affichant les enregistrements d\'autorisation de fournisseur pour tous les ASN associ\u00e9s aux h\u00f4tes NS et MX du domaine.<br><br>' +
+        'Cette v\u00e9rification interroge l\'instance publique de Routinator exploit\u00e9e par NLnet Labs (<a href="https://routinator.nlnetlabs.nl/">routinator.nlnetlabs.nl</a>) pour obtenir les objets ASPA valid\u00e9s de chaque ASN derri\u00e8re les h\u00f4tes NS et MX du domaine\u00a0; seuls les num\u00e9ros d\'AS sont envoy\u00e9s \u00e0 ce service. <b>AS0 comme seul fournisseur</b> signifie que l\'AS d\u00e9clare n\'avoir aucun fournisseur de transit.<br><br>' +
         '<b>Note\u00a0:</b> RFC 9582 est encore une norme propos\u00e9e et le d\u00e9ploiement r\u00e9el est actuellement tr\u00e8s limit\u00e9. ' +
         'C\'est pourquoi l\'absence d\'enregistrements ASPA n\'affecte pas votre score \u2014 cette v\u00e9rification est purement informative pour l\'instant. ' +
         'Cependant, il vaut la peine de demander \u00e0 votre h\u00e9bergeur ou FAI s\'il suit le d\u00e9veloppement d\'ASPA et envisage son impl\u00e9mentation.',
@@ -8031,6 +8053,7 @@ function cachedRipe(cache, key, producer) {
 
 const RIPE_BASE = 'https://stat.ripe.net/data/';
 const RIPE_QS   = '&sourceapp=email-security-checker';
+const ASPA_BASE = 'https://routinator.nlnetlabs.nl/json';   // validated ASPA payload, CORS *
 // Worst-of ordering for a prefix announced by more than one origin AS.
 const RPKI_STATUS_ORDER = ['valid', 'unknown', 'not_routed', 'invalid'];
 
@@ -8065,21 +8088,28 @@ function rpkiLookupIP(ip) {
 
 function aspaLookupASN(asn) {
   return cachedRipe(aspaAsnCache, asn, async () => {
-    if (scanStats) scanStats.ripeStatRequests++;
+    if (scanStats) scanStats.httpRequests++;
+    // RIPE Stat has no ASPA data call (its `aspa` endpoint answers 404
+    // "data call does not exist"); the public Routinator instance run by
+    // NLnet Labs serves the validated ASPA payload with CORS, and
+    // select-asn filters it to the customer ASN. Only the AS number is sent.
     const json = await fetchJSON(
-      RIPE_BASE + 'aspa/data.json?resource=AS' + encodeURIComponent(asn) + RIPE_QS,
+      ASPA_BASE + '?select-asn=' + encodeURIComponent(asn) + '&exclude=routeOrigins&exclude=routerKeys',
       { headers: { Accept: 'application/json' } });
-    const d = json.data;
-    if (!d) return { asn, published: false, providers: [] };
-
-    // Normalize provider list — RIPE Stat may return objects or plain numbers
+    const want = String(asn).replace(/^AS/i, '');
     const providers = [];
-    const raw = d.provider_asns || d.providers || [];
-    for (const p of raw) {
-      const num = typeof p === 'object' ? (p.provider_asn ?? p.asn) : p;
-      if (num != null) providers.push(String(num));
+    let found = false;
+    for (const rec of Array.isArray(json.aspas) ? json.aspas : []) {
+      if (String(rec.customer).replace(/^AS/i, '') !== want) continue;   // guard: filter semantics may widen
+      found = true;
+      for (const p of rec.providers || []) {   // one record per AFI in older Routinator output — merge
+        const num = String(p).replace(/^AS/i, '');
+        if (num && !providers.includes(num)) providers.push(num);
+      }
     }
-    return { asn, published: providers.length > 0, providers };
+    // Provider AS0 is the RFC 9582 way of saying "no providers at all".
+    const noProviders = found && providers.length > 0 && providers.every(p => p === '0');
+    return { asn, published: found, providers: providers.filter(p => p !== '0'), noProviders };
   });
 }
 
@@ -10002,14 +10032,14 @@ function renderASPA(result) {
           }
 
           if (a.error) {
-            headerLine.appendChild(el('span', 'badge badge-warning', 'UNAVAILABLE'));
-            const errEl = el('span', null, a.errorMsg || 'query failed');
+            headerLine.appendChild(el('span', 'badge badge-warning', ts('ASPA_PILL_ERROR')));
+            const errEl = el('span', null, a.errorMsg || ts('ERR_CHECK_FAILED'));
             errEl.style.color = 'var(--text-muted)';
             headerLine.appendChild(errEl);
           } else if (a.published) {
-            headerLine.appendChild(el('span', 'badge badge-excellent', 'PUBLISHED'));
+            headerLine.appendChild(el('span', 'badge badge-excellent', ts('ASPA_PILL_PUBLISHED')));
           } else {
-            headerLine.appendChild(el('span', 'badge badge-warning', 'NO ASPA'));
+            headerLine.appendChild(el('span', 'badge badge-warning', ts('ASPA_PILL_NONE')));
           }
           row.appendChild(headerLine);
 
@@ -10029,6 +10059,10 @@ function renderASPA(result) {
               }
             }
             row.appendChild(provSec);
+          } else if (a.published && a.noProviders) {
+            const note = el('div', null, ts('ASPA_NO_PROVIDERS'));
+            note.style.cssText = 'padding:0.3rem 0.4rem 0 0.4rem;font-size:0.75rem;color:var(--text-muted)';
+            row.appendChild(note);
           }
 
           list.appendChild(row);

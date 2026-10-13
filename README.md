@@ -25,7 +25,7 @@ Created by [Per Thorsheim](https://thorsheim.net) · [PasswordsCon](https://pass
 | MTA-STS | RFC 8461 | DNS record, HTTPS policy fetch, MX pattern matching |
 | CAA | RFC 8659 | issue/issuewild/issuemail/iodef tags, parent inheritance, DNSSEC per CA domain; CAA as a CA evaluates it for each MX host and the MTA-STS policy host |
 | RPKI | — | ROA validation per NS/MX host IP via RIPE Stat |
-| ASPA | RFC 9582 | AS Provider Authorization records per ASN via RIPE Stat |
+| ASPA | RFC 9582 | AS Provider Authorization objects per NS/MX ASN, from the public Routinator instance at routinator.nlnetlabs.nl (NLnet Labs) |
 | IPv6 | — | AAAA presence for the domain, NS and MX hosts; government mandate table |
 | Zone | RFC 1912, RFC 2181 | DNS zone hygiene: SOA timers, nameserver count and AS diversity, CNAME at the apex, apex TXT size and verification tokens, wildcard records |
 | Security.txt | RFC 9116 | Required/optional fields, expiry |
@@ -57,7 +57,7 @@ PTR, BIMI, RPKI, ASPA, IPv6, Zone, Security.txt, WHOIS and Autoconfig are inform
 - **No dependencies** — single `index.html`, works offline after first load
 - **DMARCbis conformance** — checks the DMARC record against RFC 9989 / 9990 / 9991 (May 2026): DNS tree walk policy discovery, tag registry status, external reporting authorization, and a generated conformant record. Informational only — the grade is unaffected
 - **DNS over HTTPS** via Cloudflare (`cloudflare-dns.com/dns-query`), falling back to `dns.google` when Cloudflare is unreachable; one lookup per name and type per scan, bounded fan-out, every request with a deadline
-- **RPKI/ASPA** via RIPE Stat API
+- **RPKI** via RIPE Stat API; **ASPA** via the public Routinator validator at routinator.nlnetlabs.nl (RIPE Stat has no ASPA data call)
 - **WHOIS/RDAP** via rdap.org
 - **4 UI languages** — English, Norwegian (Bokmål), Spanish, French — picked from an inline button row, persisted in `localStorage`
 - **Settings menu** (⚙, top-right) — dark/light theme toggle + scoring system explanation
@@ -81,7 +81,7 @@ Custom selectors can be entered in the "Extra DKIM Selectors" field on the start
 - All DNS/external data rendered via `textContent` or `createTextNode` — never `innerHTML`
 - Explanation sections use `safeMarkup()` — a whitelist parser allowing only `<b>`, `<code>`, `<br>`, and `<a href="https://...">` tags
 - Links validated to `https?:` or `mailto:` schemes before use as `href`
-- The scanned domain is sent to Cloudflare DoH (or `dns.google` as fallback), RIPE Stat, rdap.org and the Thunderbird ISPDB (`autoconfig.thunderbird.net`), and its own web server is fetched for the MTA-STS policy and security.txt. The Connection tab additionally contacts `isbgpsafeyet.com`, `icanhazip.com` and `ippacket.stream`, and sends the visitor's public IP address to RIPE Stat — all disclosed in the tab's explanation
+- The scanned domain is sent to Cloudflare DoH (or `dns.google` as fallback), RIPE Stat, rdap.org and the Thunderbird ISPDB (`autoconfig.thunderbird.net`), and the AS numbers behind its NS/MX hosts to `routinator.nlnetlabs.nl` for ASPA, and its own web server is fetched for the MTA-STS policy and security.txt. The Connection tab additionally contacts `isbgpsafeyet.com`, `icanhazip.com` and `ippacket.stream`, and sends the visitor's public IP address to RIPE Stat — all disclosed in the tab's explanation
 
 ## Contributing a translation
 
@@ -123,6 +123,7 @@ node tests/live.js     # every check + every renderer against real DNS for a set
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-October-13-11 | 2026-10-13 | ASPA tab works again: RIPE Stat has no ASPA data call (404 for every ASN since the tab was added), so validated ASPA objects now come from NLnet Labs' public Routinator instance, filtered per customer AS; AS0 shown as "declares no providers"; badges translated |
 | 2026-October-13-10 | 2026-10-13 | Layout: SRV targets and ISPDB host names in the Autoconfig tab as inline code (were full-width record boxes) |
 | 2026-October-13-9 | 2026-10-13 | Layout: host names in the CAA per-host table as inline code (were full-width record boxes) |
 | 2026-October-13-8 | 2026-10-13 | Layout: Zone tab lists and SOA names as inline code, token list inside its collapsible block; Autoconfig ISPDB table inside its collapsible block (was an empty frame above it) |
