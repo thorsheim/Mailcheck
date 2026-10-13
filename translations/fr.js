@@ -362,6 +362,8 @@ const LANG_FR = {
     CONN_ROA_INVALID:    'invalide',
     CONN_ROA_NONE:       'aucune ROA',
     CONN_ROA_NOT_ROUTED: 'non rout\u00e9',
+    DKIM_WILDCARD_PILL:  'joker',
+    DKIM_WILDCARD_SECTION: 'Enregistrement joker (r\u00e9pond \u00e0 tout s\u00e9lecteur)',
   },
 
   // ── d: chaînes dynamiques (fonctions fléchées) ────────────────────────────
@@ -469,6 +471,9 @@ const LANG_FR = {
     WHOIS_HOLD:            s => 'Statut du domaine\u00a0: ' + s + ' \u2014 le domaine est suspendu ou en cours de suppression',
     WHOIS_LOCKED:          n => 'Verrou registrar/registre actif (' + n + ' indicateur(s) prohibited) \u2014 prot\u00e9g\u00e9 contre tout transfert, suppression ou modification non autoris\u00e9s',
     SCAN_DONE:             (d, g) => 'Analyse de ' + d + ' termin\u00e9e. Note globale ' + g + '.',
+    DKIM_WILDCARD:         n => 'Un enregistrement joker sur *._domainkey r\u00e9pond \u00e0 tout nom de s\u00e9lecteur \u2014 ' + n + ' des s\u00e9lecteurs test\u00e9s l\u2019ont renvoy\u00e9. Les s\u00e9lecteurs r\u00e9ellement utilis\u00e9s ne peuvent pas \u00eatre d\u00e9couverts, et une cl\u00e9 partag\u00e9e par tous les s\u00e9lecteurs ne peut pas \u00eatre renouvel\u00e9e par s\u00e9lecteur\u00a0; publiez les cl\u00e9s sous des s\u00e9lecteurs explicites.',
+    DKIM_TESTING_FLAG:     s => 't=y (mode test) sur ' + s + ' \u2014 le domaine d\u00e9clare que son d\u00e9ploiement DKIM n\u2019est pas encore en production\u00a0; retirez l\u2019indicateur une fois la signature v\u00e9rifi\u00e9e',
+    DKIM_LEGACY_POLICY:    n => 'Enregistrement de politique obsol\u00e8te sur ' + n + ' (DomainKeys / ADSP, historique depuis 2013) \u2014 ignor\u00e9 par les destinataires\u00a0; il peut \u00eatre supprim\u00e9',
   },
 
   // ── x: textes d'explication (HTML) ───────────────────────────────────────

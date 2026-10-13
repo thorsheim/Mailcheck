@@ -8,7 +8,7 @@ Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-October-13-1**
+Current version: **2026-October-13-2**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -103,7 +103,7 @@ Every fan-out is bounded by `parallelLimit()`: `DKIM_CONCURRENCY` 10, `RIPE_CONC
 | PTR | A+AAAA per MX host → PTR per IP | FCrDNS: checks if PTR value matches MX hostname; does not affect grade |
 | DANE | `_25._tcp.<mx-hostname>` TLSA | Per MX host via `getMXHosts()`; null MX → good/`DANE_NULL_MX`; PKIX usages 0/1 → warning (RFC 7672 §3.1.3); `tlsaInvalidReason()` flags bad fields / digest length; excellent also needs the MX RRset AD flag |
 | SPF | `<domain>` TXT | Follows `redirect=` to target domain; returns `allQualifier` |
-| DKIM | `<selector>._domainkey.<domain>` TXT | ~92 auto selectors + custom; capped at 10 parallel |
+| DKIM | `<selector>._domainkey.<domain>` TXT | ~92 auto selectors + custom + one random control selector (wildcard detection); capped at 10 parallel; `_domainkey` / `_adsp._domainkey` legacy policy records reported |
 | DMARC | `_dmarc.<domain>` TXT | RFC 7489 + RFC 9989 (DMARCbis); parses p=, sp=, pct=, rua=, ruf=, adkim=, aspf= with `parseDMARCTagList` (whitespace around `=` allowed); a subdomain with no record is **graded on the inherited organizational policy** found by the tree walk (`inheritedFrom`, `appliedTag`); DNSSEC checked for rua/ruf endpoint domains; DMARCbis sub-analysis attached as `dmarcbis` |
 | BIMI | `default._bimi.<domain>` TXT | Parses l= (logo URL) and a= (authority/VMC); does not affect grade |
 | TLS-RPT | `_smtp._tls.<domain>` TXT | RFC 8460; DNSSEC checked for rua= endpoint domains |
@@ -159,7 +159,9 @@ SELECTOR_PROVIDER   selector → provider name map; DS_SELECTORS are added to it
 getRSAKeyBits()     DER/SPKI parser — see critical note below
 parseDKIMRecord()
 probeDKIMSelector() returns { selector, ...analysis, ad }
-checkDKIM()         returns {rating, found[], testedCount, message}
+dkimControlSelector() random `zz…` selector no zone publishes on purpose — the wildcard control probe
+DKIM_LEGACY_POLICY_NAMES  `_domainkey.` / `_adsp._domainkey.` — obsolete policy records, reported only
+checkDKIM()         returns {rating, found[], testedCount, message, issues[], wildcard, wildcardHits}
 checkDMARC()        _dmarc.<domain> TXT; no own record → grades the inherited policy from the
                       tree walk (analyzeDMARCRecord with inheritedFrom/appliedTag); otherwise
                       analyzeDMARCRecord on the own record with dmarcbis computed in parallel
@@ -326,7 +328,7 @@ const resolvedText = iss.textKey
 **Current languages**: `en` (English, default), `es` (Spanish), `fr` (French), `no` (Norwegian Bokmål).
 All four are **complete** — no language relies on the English fallback. When adding a key, add it to every language, and mirror it into `translations/<lang>.js` **and `translations/TEMPLATE.js`** so the contributor files stay in sync. TEMPLATE.js is easy to forget because nothing in the app reads it — it had silently drifted 37 keys behind (the entire IPv6 block, plus `SELECTOR_HELP`, the SPF recursive-lookup counts and the RPKI nameserver-diversity keys) before being backfilled on 2026-08-13. A contributor starting from a stale template simply never sees those strings.
 
-To check for drift, run `node tests/static.js` — it parses the `STRINGS` block out of `index.html`, diffs the key sets across the four languages and the four `translations/*.js` files, and compares `d`-function *outputs* (not source text, which differs in whitespace between files). The three namespaces currently total **444 keys** (s=329, d=95, x=20). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
+To check for drift, run `node tests/static.js` — it parses the `STRINGS` block out of `index.html`, diffs the key sets across the four languages and the four `translations/*.js` files, and compares `d`-function *outputs* (not source text, which differs in whitespace between files). The three namespaces currently total **449 keys** (s=331, d=98, x=20). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
 
 There are now four contributor files — `es.js`, `fr.js`, `no.js` and `TEMPLATE.js` — and all four
 carry the full key set with no value drift from `index.html`.
@@ -397,6 +399,19 @@ rollover.
 - `probeDKIMSelector(selector, domain)` returns `{ selector, ...analysis, ad }` — the `ad` field
   captures the AD flag from the DoH response for per-selector DNSSEC validation status.
 - `checkDKIM` adds `provider: SELECTOR_PROVIDER[selector] || null` to each found selector object.
+- **Wildcard control probe (2026-October-13-2).** One random selector from `dkimControlSelector()` is
+  probed in the same `parallelLimit` batch. If it answers with a DKIM-shaped record the result carries
+  `wildcard` (the control's analysis with `selector: '*'`) and a `DKIM_WILDCARD` issue. DNS returns an
+  explicit record in preference to the wildcard, so a probed selector whose `rawRecord` *differs* from
+  the control's is genuine and stays in `found`; one returning the identical record is indistinguishable
+  from the wildcard, is dropped, and is counted in `wildcardHits`. A wildcard caps the rating at
+  `warning` (worse if the wildcard key itself is weak). `renderDKIM` shows it as its own row under
+  `*._domainkey.<domain>` with a `DKIM_WILDCARD_PILL`, before the discovered selectors. Test zone:
+  `brevo.com` (revoked wildcard `v=DKIM1; p=` — used to list ~90 "revoked" selectors).
+- `t=y` on a live key pushes `DKIM_TESTING_FLAG` and caps at `good`; an Ed25519 `p=` that is not exactly
+  32 bytes rates `fail` (RFC 8463 §3). `_domainkey.<domain>` / `_adsp._domainkey.<domain>` TXT records
+  push `DKIM_LEGACY_POLICY` (good — informational, never rated). All three live in `result.issues`,
+  rendered with `makeIssueList` after the summary.
 - **Selector list provenance (audited 2026-08-13):** every entry was checked against live DNS across
   274 domains plus provider documentation. When adding a selector, verify it the same way — a
   plausible-looking name is not evidence. Two traps found during that audit:
@@ -760,7 +775,7 @@ Two pseudo-ratings sit outside that list and deliberately have `RATINGS.indexOf(
   or a function); `app.http` maps URLs for non-DoH fetches; `app.txt()`/`app.rr()` are shorthands;
   `app.resetScan()` clears caches and `scanStats`. `live: true` passes `fetch` through to the network.
 - `node tests/run.js` — regression tests, one per fixed bug (A1–A13, B5, B10, B11, B8, B9, C3, C9 in
-  the 2026-10-13 audit). Add one for every check-logic fix; they run in well under a second.
+  the 2026-10-13 audit) plus D2 (DKIM wildcard control probe). Add one for every check-logic fix; they run in well under a second.
 - `node tests/static.js` — the static checks: key parity + `d` arity across languages and
   `translations/*.js` (value drift compared by *output*), referenced-key existence, CSS classes,
   dangerous sinks, tab/panel order, version string across the three files, legacy `text:` issues,
@@ -784,6 +799,8 @@ Two pseudo-ratings sit outside that list and deliberately have `RATINGS.indexOf(
   its rollover, re-find one with `DNSKEY` sets spanning two rating tiers rather than deleting
   the test
 - `dmarcadvisor.com` — SPF redirect= only (no mechanisms, no all); tests redirect following
+- `brevo.com` — revoked wildcard under `_domainkey`: DKIM must show one `*` wildcard row, zero
+  discovered selectors and rate `warning` with `DKIM_WILDCARD` — never a list of ~90 revoked selectors
 - `mail.cloudflare.com` — no `_dmarc` record of its own; must grade DMARC on cloudflare.com's
   inherited policy (`DMARC_INHERITED`), and CAA on cloudflare.com's records (`CAA_INHERITED`);
   WHOIS must query `cloudflare.com` (`WHOIS_QUERIED_PARENT`)

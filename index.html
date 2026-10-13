@@ -759,8 +759,15 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-October-13-1 &mdash; click for changelog</summary>
+      <summary>Version 2026-October-13-2 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-October-13-2</span>
+          <ul class="cl-changes">
+            <li><b>DKIM wildcard control probe.</b> A random, nonsense selector is probed alongside the known ones. If it answers with a DKIM record, the zone has a wildcard under <code>_domainkey</code> and every probe would otherwise &ldquo;find&rdquo; a key: the wildcard is now shown as its own entry, selectors returning the identical record are no longer counted as discoveries (an explicit record that differs is still genuine), and the check is capped at warning. brevo.com, which publishes a revoked wildcard, used to list ~90 &ldquo;revoked&rdquo; selectors.</li>
+            <li><b>DKIM:</b> a key flagged <code>t=y</code> (testing) caps the rating at good; an Ed25519 key whose <code>p=</code> is not exactly 32 bytes rates fail (RFC 8463); obsolete DomainKeys (<code>_domainkey</code>) and ADSP (<code>_adsp._domainkey</code>, RFC 5617) policy records are reported as removable &mdash; informational only.</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-October-13-1</span>
           <ul class="cl-changes">
@@ -1516,6 +1523,8 @@ const STRINGS = {
       CONN_ROA_INVALID:    'invalid',
       CONN_ROA_NONE:       'no ROA',
       CONN_ROA_NOT_ROUTED: 'not routed',
+      DKIM_WILDCARD_PILL:  'wildcard',
+      DKIM_WILDCARD_SECTION: 'Wildcard record (answers every selector)',
     },
     // ── d: dynamic strings (arrow functions) ─────────────────────────────────
     // Each value is an arrow function.  Write the translated sentence as the
@@ -1626,6 +1635,9 @@ const STRINGS = {
       WHOIS_HOLD:            s => 'Domain status: ' + s + ' \u2014 the domain is on hold or being deleted',
       WHOIS_LOCKED:          n => 'Registrar/registry lock active (' + n + ' prohibited-status flag(s)) \u2014 protected against unauthorised transfer, deletion or update',
       SCAN_DONE:             (d, g) => 'Scan of ' + d + ' complete. Overall grade ' + g + '.',
+      DKIM_WILDCARD:         n => 'A wildcard record at *._domainkey answers every selector name \u2014 ' + n + ' of the probed selectors returned it. The selectors actually in use cannot be discovered, and one key shared by all selectors cannot be rotated per selector; publish keys under explicit selectors instead.',
+      DKIM_TESTING_FLAG:     s => 't=y (testing mode) on ' + s + ' \u2014 the domain declares its DKIM deployment as not yet in production; remove the flag once signing is verified',
+      DKIM_LEGACY_POLICY:    n => 'Obsolete policy record at ' + n + ' (DomainKeys / ADSP, historic since 2013) \u2014 ignored by receivers; it can be removed',
     },
     // ── x: explanation strings (HTML) ────────────────────────────────────────
     // Each value is an HTML string rendered in the expandable "What is this?"
@@ -2267,6 +2279,8 @@ const STRINGS = {
       CONN_ROA_INVALID:    'ugyldig',
       CONN_ROA_NONE:       'ingen ROA',
       CONN_ROA_NOT_ROUTED: 'ikke rutet',
+      DKIM_WILDCARD_PILL:  'jokertegn',
+      DKIM_WILDCARD_SECTION: 'Jokertegn-post (svarer p\u00e5 alle selektorer)',
     },
     // ── d: dynamic strings (arrow functions) ─────────────────────────────────
     d: {
@@ -2373,6 +2387,9 @@ const STRINGS = {
       WHOIS_HOLD:            s => 'Domenestatus: ' + s + ' \u2014 domenet er sperret eller i ferd med \u00e5 bli slettet',
       WHOIS_LOCKED:          n => 'Registrar-/registerl\u00e5s aktiv (' + n + ' prohibited-statusflagg) \u2014 beskyttet mot uautorisert overf\u00f8ring, sletting eller endring',
       SCAN_DONE:             (d, g) => 'Skanning av ' + d + ' fullf\u00f8rt. Samlet karakter ' + g + '.',
+      DKIM_WILDCARD:         n => 'En jokertegn-post p\u00e5 *._domainkey svarer p\u00e5 alle selektornavn \u2014 ' + n + ' av de testede selektorene returnerte den. Selektorene som faktisk er i bruk kan ikke oppdages, og \u00e9n n\u00f8kkel delt av alle selektorer kan ikke roteres per selektor; publiser n\u00f8kler under eksplisitte selektorer i stedet.',
+      DKIM_TESTING_FLAG:     s => 't=y (testmodus) p\u00e5 ' + s + ' \u2014 domenet erkl\u00e6rer at DKIM-oppsettet enn\u00e5 ikke er i produksjon; fjern flagget n\u00e5r signeringen er verifisert',
+      DKIM_LEGACY_POLICY:    n => 'Utdatert policypost p\u00e5 ' + n + ' (DomainKeys / ADSP, historisk siden 2013) \u2014 ignoreres av mottakere; den kan fjernes',
     },
     // ── x: explanation strings (HTML) ────────────────────────────────────────
     x: {
@@ -2981,6 +2998,8 @@ const STRINGS = {
       CONN_ROA_INVALID:    'inv\u00e1lida',
       CONN_ROA_NONE:       'sin ROA',
       CONN_ROA_NOT_ROUTED: 'no enrutado',
+      DKIM_WILDCARD_PILL:  'comod\u00edn',
+      DKIM_WILDCARD_SECTION: 'Registro comod\u00edn (responde a cualquier selector)',
     },
     d: {
       MX_HOSTS_FOUND:        n => n + ' servidor' + (n !== 1 ? 'es' : '') + ' MX encontrado' + (n !== 1 ? 's' : '') + '.',
@@ -3086,6 +3105,9 @@ const STRINGS = {
       WHOIS_HOLD:            s => 'Estado del dominio: ' + s + ' \u2014 el dominio est\u00e1 retenido o en proceso de eliminaci\u00f3n',
       WHOIS_LOCKED:          n => 'Bloqueo de registrador/registro activo (' + n + ' indicador(es) prohibited) \u2014 protegido contra transferencias, eliminaciones o cambios no autorizados',
       SCAN_DONE:             (d, g) => 'An\u00e1lisis de ' + d + ' completado. Calificaci\u00f3n general ' + g + '.',
+      DKIM_WILDCARD:         n => 'Un registro comod\u00edn en *._domainkey responde a cualquier nombre de selector \u2014 ' + n + ' de los selectores probados lo devolvieron. No es posible descubrir los selectores realmente en uso, y una clave compartida por todos los selectores no puede rotarse por selector; publica las claves bajo selectores expl\u00edcitos.',
+      DKIM_TESTING_FLAG:     s => 't=y (modo de prueba) en ' + s + ' \u2014 el dominio declara que su despliegue DKIM a\u00fan no est\u00e1 en producci\u00f3n; elimina el indicador cuando la firma est\u00e9 verificada',
+      DKIM_LEGACY_POLICY:    n => 'Registro de pol\u00edtica obsoleto en ' + n + ' (DomainKeys / ADSP, hist\u00f3rico desde 2013) \u2014 los receptores lo ignoran; puede eliminarse',
     },
     x: {
       DMARC:
@@ -3717,6 +3739,8 @@ const STRINGS = {
       CONN_ROA_INVALID:    'invalide',
       CONN_ROA_NONE:       'aucune ROA',
       CONN_ROA_NOT_ROUTED: 'non rout\u00e9',
+      DKIM_WILDCARD_PILL:  'joker',
+      DKIM_WILDCARD_SECTION: 'Enregistrement joker (r\u00e9pond \u00e0 tout s\u00e9lecteur)',
     },
 
     // ── d: chaînes dynamiques (fonctions fléchées) ────────────────────────────
@@ -3824,6 +3848,9 @@ const STRINGS = {
       WHOIS_HOLD:            s => 'Statut du domaine\u00a0: ' + s + ' \u2014 le domaine est suspendu ou en cours de suppression',
       WHOIS_LOCKED:          n => 'Verrou registrar/registre actif (' + n + ' indicateur(s) prohibited) \u2014 prot\u00e9g\u00e9 contre tout transfert, suppression ou modification non autoris\u00e9s',
       SCAN_DONE:             (d, g) => 'Analyse de ' + d + ' termin\u00e9e. Note globale ' + g + '.',
+      DKIM_WILDCARD:         n => 'Un enregistrement joker sur *._domainkey r\u00e9pond \u00e0 tout nom de s\u00e9lecteur \u2014 ' + n + ' des s\u00e9lecteurs test\u00e9s l\u2019ont renvoy\u00e9. Les s\u00e9lecteurs r\u00e9ellement utilis\u00e9s ne peuvent pas \u00eatre d\u00e9couverts, et une cl\u00e9 partag\u00e9e par tous les s\u00e9lecteurs ne peut pas \u00eatre renouvel\u00e9e par s\u00e9lecteur\u00a0; publiez les cl\u00e9s sous des s\u00e9lecteurs explicites.',
+      DKIM_TESTING_FLAG:     s => 't=y (mode test) sur ' + s + ' \u2014 le domaine d\u00e9clare que son d\u00e9ploiement DKIM n\u2019est pas encore en production\u00a0; retirez l\u2019indicateur une fois la signature v\u00e9rifi\u00e9e',
+      DKIM_LEGACY_POLICY:    n => 'Enregistrement de politique obsol\u00e8te sur ' + n + ' (DomainKeys / ADSP, historique depuis 2013) \u2014 ignor\u00e9 par les destinataires\u00a0; il peut \u00eatre supprim\u00e9',
     },
 
     // ── x: textes d'explication (HTML) ────────────────────────────────────────
@@ -5155,7 +5182,10 @@ function parseDKIMRecord(txt) {
 
   let rating, keyBits = null, ratingNote;
   if (keyType === 'ed25519') {
-    rating = 'excellent'; keyBits = 256; ratingNote = 'Ed25519 (256-bit equivalent)';
+    // RFC 8463 §3: p= is the raw 32-byte public key, not a SubjectPublicKeyInfo.
+    const bytes = Math.floor(pubKey.replace(/=+$/, '').length * 3 / 4);
+    if (bytes === 32) { rating = 'excellent'; keyBits = 256; ratingNote = 'Ed25519 (256-bit equivalent)'; }
+    else              { rating = 'fail'; keyBits = null; ratingNote = 'Ed25519 key is ' + bytes + ' bytes, expected 32 (RFC 8463)'; }
   } else {
     keyBits = getRSAKeyBits(pubKey);
     if (keyBits === null)     { rating = 'warning'; ratingNote = 'Could not determine key size'; }
@@ -5232,15 +5262,73 @@ async function probeDKIMSelector(selector, domain) {
   } catch (e) { return { selector, error: true, message: describeFetchError(e) }; }
 }
 
+// A selector name no zone would publish on purpose. If it answers with a
+// DKIM-shaped record, the zone has a wildcard under _domainkey and every
+// probe is going to "find" a key — the control makes that visible.
+function dkimControlSelector() {
+  return 'zz' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+}
+
+// Pre-standard DomainKeys (`_domainkey.<domain>` with o=) and ADSP
+// (`_adsp._domainkey`, RFC 5617, historic since 2013) policy records. Both are
+// ignored by every receiver; their presence is reported, never rated.
+const DKIM_LEGACY_POLICY_NAMES = ['_domainkey.', '_adsp._domainkey.'];
+
 async function checkDKIM(domain, customSelectors) {
   try {
     const allSelectors = [...new Set([...AUTO_SELECTORS, ...customSelectors])];
-    const results = await parallelLimit(allSelectors.map(sel => () => probeDKIMSelector(sel, domain)), DKIM_CONCURRENCY);
+    const control = dkimControlSelector();
+    // The control probe and the two legacy-policy lookups ride in the same
+    // bounded batch as the selector probes.
+    const tasks = [
+      ...allSelectors.map(sel => () => probeDKIMSelector(sel, domain)),
+      () => probeDKIMSelector(control, domain),
+      ...DKIM_LEGACY_POLICY_NAMES.map(prefix => () => dohQuery(prefix + domain, 'TXT').catch(() => null)),
+    ];
+    const settled = await parallelLimit(tasks, DKIM_CONCURRENCY);
+    const results = settled.slice(0, allSelectors.length);
+    const controlRes = settled[allSelectors.length];
+    const legacyRes  = settled.slice(allSelectors.length + 1);
+
+    const issues = [];
+    DKIM_LEGACY_POLICY_NAMES.forEach((prefix, i) => {
+      const resp = legacyRes[i].status === 'fulfilled' ? legacyRes[i].value : null;
+      // Only a policy-shaped record counts: ADSP is `dkim=…`, DomainKeys is
+      // `o=…`. Anything else at these names is usually the zone's wildcard.
+      const txts = resp && resp.Status === 0 ? (resp.Answer || []).filter(r => r.type === 16).map(r => parseTxtData(r.data)) : [];
+      if (txts.some(x => /(^|;)\s*(dkim|o)\s*=/i.test(x))) {
+        issues.push({ rating: 'good', textKey: 'DKIM_LEGACY_POLICY', textArgs: [prefix + domain] });
+      }
+    });
+
+    // Wildcard: the control answered with a key. An explicit record at a real
+    // selector still takes precedence over the wildcard in DNS, so a probed
+    // selector whose record *differs* from the control's is genuine; one that
+    // returns the identical record is indistinguishable from the wildcard and
+    // is not counted as a discovered selector.
+    const ctrl = controlRes.status === 'fulfilled' ? controlRes.value : null;
+    const wildcard = ctrl && !ctrl.error ? { ...ctrl, selector: '*', provider: null } : null;
+
     const values  = results.filter(r => r.status === 'fulfilled' && r.value !== null).map(r => r.value);
     const errored = values.filter(v => v.error);
-    const found   = values.filter(v => !v.error)
+    let found = values.filter(v => !v.error)
       .map(v => ({ ...v, provider: SELECTOR_PROVIDER[v.selector] || null }));
+    let wildcardHits = 0;
+    if (wildcard) {
+      const genuine = found.filter(s => s.rawRecord !== wildcard.rawRecord);
+      wildcardHits = found.length - genuine.length;
+      found = genuine;
+      issues.push({ rating: 'warning', textKey: 'DKIM_WILDCARD', textArgs: [wildcardHits] });
+    }
     const errorCount = errored.length + results.filter(r => r.status === 'rejected').length;
+    const extra = { issues, wildcard, wildcardHits };
+
+    if (wildcard && found.length === 0) {
+      // The wildcard key is the only thing there is to rate; a wildcard can
+      // never be better than warning (no selector hygiene, no per-selector
+      // rotation, and nothing about the real setup can be verified).
+      return { rating: worstRating(wildcard.revoked ? 'warning' : wildcard.rating, 'warning'), found: [], testedCount: allSelectors.length, errorCount, ...extra };
+    }
     if (found.length === 0) {
       // Every single probe failed at the network/resolver level: that is an
       // outage, not a domain without DKIM.
@@ -5250,7 +5338,7 @@ async function checkDKIM(domain, customSelectors) {
           messageKey: first.dnsStatus ? 'DNS_SERVFAIL' : undefined, messageArgs: first.dnsStatus ? [first.dnsStatus] : undefined,
           message: first.dnsStatus ? undefined : (first.message || ts('ERR_NETWORK')) };
       }
-      return { rating: 'fail', found: [], testedCount: allSelectors.length, errorCount, messageKey: 'DKIM_NO_RECORDS_MSG' };
+      return { rating: 'fail', found: [], testedCount: allSelectors.length, errorCount, messageKey: 'DKIM_NO_RECORDS_MSG', ...extra };
     }
     // A revoked key (empty p=, RFC 6376 §3.6.1) is the *recommended* way to
     // retire a selector. It is listed, but it does not rate — only live keys
@@ -5259,11 +5347,20 @@ async function checkDKIM(domain, customSelectors) {
     // fail a revoked key used to produce.
     const live = found.filter(s => !s.revoked);
     if (live.length === 0) {
-      return { rating: 'warning', found, testedCount: allSelectors.length, errorCount, rotationNote: true, messageKey: 'DKIM_ONLY_REVOKED' };
+      return { rating: 'warning', found, testedCount: allSelectors.length, errorCount, rotationNote: true, messageKey: 'DKIM_ONLY_REVOKED', ...extra };
     }
     let rating = 'excellent';
     for (const r of live) rating = worstRating(rating, r.rating);
-    return { rating, found, testedCount: allSelectors.length, errorCount, rotationNote: true, message: null };
+    // t=y (RFC 6376 §3.6.1): the domain says it is still testing DKIM. Verifiers
+    // treat the signature normally, but the flag means the deployment is not
+    // considered production by its own owner — cap at good.
+    const testing = live.filter(s => s.testing).map(s => s.selector);
+    if (testing.length > 0) {
+      issues.push({ rating: 'good', textKey: 'DKIM_TESTING_FLAG', textArgs: [testing.join(', ')] });
+      rating = worstRating(rating, 'good');
+    }
+    if (wildcard) rating = worstRating(rating, worstRating(wildcard.revoked ? 'warning' : wildcard.rating, 'warning'));
+    return { rating, found, testedCount: allSelectors.length, errorCount, rotationNote: true, message: null, ...extra };
   } catch (e) {
     return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
@@ -7514,13 +7611,83 @@ function renderDKIM(result) {
     } else {
       const testedCount = d.testedCount || AUTO_SELECTORS.length;
 
+      // One selector row, shared by the discovered selectors and the wildcard
+      // entry (selector '*', shown under its *._domainkey name).
+      function selectorRow(s) {
+        const row = el('div', 'dkim-selector-row');
+
+        const headerRow = el('div', null);
+        headerRow.style.cssText = 'display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.3rem';
+        headerRow.appendChild(el('span', 'dkim-selector-name', s.selector));
+        if (s.selector === '*') headerRow.appendChild(el('span', 'tag-pill tag-pill-fail', ts('DKIM_WILDCARD_PILL')));
+        if (s.provider) headerRow.appendChild(el('span', 'tag-pill', s.provider));
+        const badge = makeBadge(s.rating);
+        badge.style.fontSize = '0.68rem';
+        headerRow.appendChild(badge);
+        if (s.testing) headerRow.appendChild(el('span', 'tag-pill', 'testing'));
+        if (s.strictSubdomain) headerRow.appendChild(el('span', 'tag-pill', 'strict subdomain'));
+        if (s.revoked) headerRow.appendChild(el('span', 'tag-pill tag-pill-fail', 'revoked'));
+        row.appendChild(headerRow);
+
+        // Key details expandable
+        const detFrag = document.createDocumentFragment();
+        const dnsNameEl = el('code', 'mono', s.selector + '._domainkey.' + currentDomain);
+        dnsNameEl.style.marginTop = '0';
+        detFrag.appendChild(dnsNameEl);
+
+        if (s.rawRecord) {
+          const rawEl = el('code', 'mono');
+          rawEl.style.cssText = 'display:block;margin-top:0.4rem;word-break:break-all;white-space:pre-wrap';
+          rawEl.textContent = s.rawRecord;
+          detFrag.appendChild(rawEl);
+        }
+
+        const infoItems = s.revoked
+          ? [[ts('DKIM_KEY_RATING'), ts('DKIM_REVOKED')]]
+          : [
+              [ts('DKIM_KEY_TYPE'), s.keyType === 'ed25519' ? 'Ed25519' : 'RSA'],
+              s.keyBits ? [ts('DKIM_KEY_SIZE'), s.keyBits + ' ' + ts('DKIM_BITS') + (s.keyType === 'ed25519' ? ts('DKIM_BITS_EQ') : '')] : null,
+              [ts('DKIM_KEY_RATING'), s.ratingNote || s.rating],
+              s.hashNote    ? [ts('DKIM_HASH_ALGS'),    s.hashNote]    : null,
+              s.serviceNote ? [ts('DKIM_SERVICE_TYPE'), s.serviceNote] : null,
+              s.notesField  ? [ts('DKIM_NOTES_FIELD'),  s.notesField]  : null,
+            ].filter(Boolean);
+        if (s.ad !== undefined) infoItems.push([ts('DKIM_DNSSEC'), s.ad ? ts('DKIM_DNSSEC_OK') : ts('DKIM_DNSSEC_FAIL')]);
+
+        for (const [k, v] of infoItems) {
+          const p = el('div', null);
+          p.style.cssText = 'font-size:0.8rem;margin-top:0.25rem';
+          const kspan = el('span', null, k + ': ');
+          kspan.style.color = 'var(--text-muted)';
+          p.appendChild(kspan);
+          p.appendChild(el('span', null, v));
+          detFrag.appendChild(p);
+        }
+
+        row.appendChild(makeDetails(ts('DKIM_DNS_KEY_DETAILS'), detFrag));
+        return row;
+      }
+
+      // Wildcard control probe result (the zone answers every selector name).
+      if (d.wildcard) {
+        const wsec = el('div', 'panel-section');
+        wsec.appendChild(el('div', 'panel-section-title', ts('DKIM_WILDCARD_SECTION')));
+        const wlist = el('div', 'dkim-selector-list');
+        wlist.appendChild(selectorRow(d.wildcard));
+        wsec.appendChild(wlist);
+        body.appendChild(wsec);
+      }
+      if (d.issues && d.issues.length) body.appendChild(makeIssueList(d.issues));
+
       if (d.found.length === 0) {
         body.appendChild(el('div', 'card-summary', td('DKIM_NONE_FOUND', testedCount)));
-        const note = el('p', 'card-summary');
-        const strong = document.createElement('strong');
-        strong.textContent = ts('DKIM_NONE_FOUND_NOTE');
-        note.appendChild(strong);
-        body.appendChild(note);
+        if (!d.wildcard) {
+          const note = el('p', 'card-summary');
+          const strong = document.createElement('strong');
+          strong.textContent = ts('DKIM_NONE_FOUND_NOTE');
+          note.appendChild(strong);
+          body.appendChild(note);
+        }
       } else {
         const providers = new Set(d.found.map(s => s.provider).filter(Boolean));
         const sumParts = [
@@ -7542,59 +7709,7 @@ function renderDKIM(result) {
         foundSection.appendChild(el('div', 'panel-section-title', ts('DKIM_FOUND_SECTION')));
         const listEl = el('div', 'dkim-selector-list');
 
-        for (const s of d.found) {
-          const row = el('div', 'dkim-selector-row');
-
-          const headerRow = el('div', null);
-          headerRow.style.cssText = 'display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.3rem';
-          headerRow.appendChild(el('span', 'dkim-selector-name', s.selector));
-          if (s.provider) headerRow.appendChild(el('span', 'tag-pill', s.provider));
-          const badge = makeBadge(s.rating);
-          badge.style.fontSize = '0.68rem';
-          headerRow.appendChild(badge);
-          if (s.testing) headerRow.appendChild(el('span', 'tag-pill', 'testing'));
-          if (s.strictSubdomain) headerRow.appendChild(el('span', 'tag-pill', 'strict subdomain'));
-          if (s.revoked) headerRow.appendChild(el('span', 'tag-pill tag-pill-fail', 'revoked'));
-          row.appendChild(headerRow);
-
-          // Key details expandable
-          const detFrag = document.createDocumentFragment();
-          const dnsNameEl = el('code', 'mono', s.selector + '._domainkey.' + currentDomain);
-          dnsNameEl.style.marginTop = '0';
-          detFrag.appendChild(dnsNameEl);
-
-          if (s.rawRecord) {
-            const rawEl = el('code', 'mono');
-            rawEl.style.cssText = 'display:block;margin-top:0.4rem;word-break:break-all;white-space:pre-wrap';
-            rawEl.textContent = s.rawRecord;
-            detFrag.appendChild(rawEl);
-          }
-
-          const infoItems = s.revoked
-            ? [[ts('DKIM_KEY_RATING'), ts('DKIM_REVOKED')]]
-            : [
-                [ts('DKIM_KEY_TYPE'), s.keyType === 'ed25519' ? 'Ed25519' : 'RSA'],
-                s.keyBits ? [ts('DKIM_KEY_SIZE'), s.keyBits + ' ' + ts('DKIM_BITS') + (s.keyType === 'ed25519' ? ts('DKIM_BITS_EQ') : '')] : null,
-                [ts('DKIM_KEY_RATING'), s.ratingNote || s.rating],
-                s.hashNote    ? [ts('DKIM_HASH_ALGS'),    s.hashNote]    : null,
-                s.serviceNote ? [ts('DKIM_SERVICE_TYPE'), s.serviceNote] : null,
-                s.notesField  ? [ts('DKIM_NOTES_FIELD'),  s.notesField]  : null,
-              ].filter(Boolean);
-          if (s.ad !== undefined) infoItems.push([ts('DKIM_DNSSEC'), s.ad ? ts('DKIM_DNSSEC_OK') : ts('DKIM_DNSSEC_FAIL')]);
-
-          for (const [k, v] of infoItems) {
-            const p = el('div', null);
-            p.style.cssText = 'font-size:0.8rem;margin-top:0.25rem';
-            const kspan = el('span', null, k + ': ');
-            kspan.style.color = 'var(--text-muted)';
-            p.appendChild(kspan);
-            p.appendChild(el('span', null, v));
-            detFrag.appendChild(p);
-          }
-
-          row.appendChild(makeDetails(ts('DKIM_DNS_KEY_DETAILS'), detFrag));
-          listEl.appendChild(row);
-        }
+        for (const s of d.found) listEl.appendChild(selectorRow(s));
         foundSection.appendChild(listEl);
         body.appendChild(foundSection);
 

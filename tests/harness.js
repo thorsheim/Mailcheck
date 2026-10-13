@@ -98,6 +98,8 @@ function load(opts = {}) {
       const type = (u.searchParams.get('type') || '').toUpperCase();
       const key = name + '|' + type;
       let body = dns.get(key);
+      // Wildcard entries: a key '*.<suffix>|TYPE' answers any name ending in '.<suffix>'.
+      if (body === undefined) for (const [k, v] of dns) if (k.startsWith('*.') && k.endsWith('|' + type) && name.endsWith(k.slice(1, -(type.length + 1)))) { body = v; break; }
       if (body instanceof Error) throw body;
       if (typeof body === 'function') body = body(name, type, u.hostname);
       if (body === undefined) body = { Status: state.defaultStatus, Answer: [] };

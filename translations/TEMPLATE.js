@@ -429,6 +429,8 @@ const LANG_TEMPLATE = {
     CONN_ROA_INVALID:       '',  // invalid
     CONN_ROA_NONE:          '',  // no ROA
     CONN_ROA_NOT_ROUTED:    '',  // not routed
+    DKIM_WILDCARD_PILL:  'wildcard',
+    DKIM_WILDCARD_SECTION: 'Wildcard record (answers every selector)',
   },
 
   // ── d: dynamic strings (arrow functions) ───────────────────────────────────
@@ -544,6 +546,9 @@ const LANG_TEMPLATE = {
     WHOIS_HOLD:           s => '', // 'Domain status: ' + s + ' \u2014 the domain is on hold or being deleted'
     WHOIS_LOCKED:         n => '', // 'Registrar/registry lock active (' + n + ' prohibited-status flag(s)) \u2014 protected against unauthorised transfer, deletion or update'
     SCAN_DONE:            (d, g) => '', // "Scan of <domain> complete. Overall grade <grade>."
+    DKIM_WILDCARD:         n => 'A wildcard record at *._domainkey answers every selector name \u2014 ' + n + ' of the probed selectors returned it. The selectors actually in use cannot be discovered, and one key shared by all selectors cannot be rotated per selector; publish keys under explicit selectors instead.',
+    DKIM_TESTING_FLAG:     s => 't=y (testing mode) on ' + s + ' \u2014 the domain declares its DKIM deployment as not yet in production; remove the flag once signing is verified',
+    DKIM_LEGACY_POLICY:    n => 'Obsolete policy record at ' + n + ' (DomainKeys / ADSP, historic since 2013) \u2014 ignored by receivers; it can be removed',
   },
 
   // ── x: explanation strings (HTML) ──────────────────────────────────────────

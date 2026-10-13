@@ -369,6 +369,8 @@ const LANG_NO = {
     CONN_ROA_INVALID:    'ugyldig',
     CONN_ROA_NONE:       'ingen ROA',
     CONN_ROA_NOT_ROUTED: 'ikke rutet',
+    DKIM_WILDCARD_PILL:  'jokertegn',
+    DKIM_WILDCARD_SECTION: 'Jokertegn-post (svarer p\u00e5 alle selektorer)',
   },
   // ── d: dynamic strings (arrow functions) ─────────────────────────────────
   d: {
@@ -475,6 +477,9 @@ const LANG_NO = {
     WHOIS_HOLD:            s => 'Domenestatus: ' + s + ' \u2014 domenet er sperret eller i ferd med \u00e5 bli slettet',
     WHOIS_LOCKED:          n => 'Registrar-/registerl\u00e5s aktiv (' + n + ' prohibited-statusflagg) \u2014 beskyttet mot uautorisert overf\u00f8ring, sletting eller endring',
     SCAN_DONE:             (d, g) => 'Skanning av ' + d + ' fullf\u00f8rt. Samlet karakter ' + g + '.',
+    DKIM_WILDCARD:         n => 'En jokertegn-post p\u00e5 *._domainkey svarer p\u00e5 alle selektornavn \u2014 ' + n + ' av de testede selektorene returnerte den. Selektorene som faktisk er i bruk kan ikke oppdages, og \u00e9n n\u00f8kkel delt av alle selektorer kan ikke roteres per selektor; publiser n\u00f8kler under eksplisitte selektorer i stedet.',
+    DKIM_TESTING_FLAG:     s => 't=y (testmodus) p\u00e5 ' + s + ' \u2014 domenet erkl\u00e6rer at DKIM-oppsettet enn\u00e5 ikke er i produksjon; fjern flagget n\u00e5r signeringen er verifisert',
+    DKIM_LEGACY_POLICY:    n => 'Utdatert policypost p\u00e5 ' + n + ' (DomainKeys / ADSP, historisk siden 2013) \u2014 ignoreres av mottakere; den kan fjernes',
   },
   // ── x: explanation strings (HTML) ────────────────────────────────────────
   x: {

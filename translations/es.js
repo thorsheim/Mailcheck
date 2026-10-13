@@ -360,6 +360,8 @@ const LANG_ES = {
     CONN_ROA_INVALID:    'inv\u00e1lida',
     CONN_ROA_NONE:       'sin ROA',
     CONN_ROA_NOT_ROUTED: 'no enrutado',
+    DKIM_WILDCARD_PILL:  'comod\u00edn',
+    DKIM_WILDCARD_SECTION: 'Registro comod\u00edn (responde a cualquier selector)',
   },
 
   // ── d: cadenas dinámicas (funciones flecha) ───────────────────────────────
@@ -466,6 +468,9 @@ const LANG_ES = {
     WHOIS_HOLD:            s => 'Estado del dominio: ' + s + ' \u2014 el dominio est\u00e1 retenido o en proceso de eliminaci\u00f3n',
     WHOIS_LOCKED:          n => 'Bloqueo de registrador/registro activo (' + n + ' indicador(es) prohibited) \u2014 protegido contra transferencias, eliminaciones o cambios no autorizados',
     SCAN_DONE:             (d, g) => 'An\u00e1lisis de ' + d + ' completado. Calificaci\u00f3n general ' + g + '.',
+    DKIM_WILDCARD:         n => 'Un registro comod\u00edn en *._domainkey responde a cualquier nombre de selector \u2014 ' + n + ' de los selectores probados lo devolvieron. No es posible descubrir los selectores realmente en uso, y una clave compartida por todos los selectores no puede rotarse por selector; publica las claves bajo selectores expl\u00edcitos.',
+    DKIM_TESTING_FLAG:     s => 't=y (modo de prueba) en ' + s + ' \u2014 el dominio declara que su despliegue DKIM a\u00fan no est\u00e1 en producci\u00f3n; elimina el indicador cuando la firma est\u00e9 verificada',
+    DKIM_LEGACY_POLICY:    n => 'Registro de pol\u00edtica obsoleto en ' + n + ' (DomainKeys / ADSP, hist\u00f3rico desde 2013) \u2014 los receptores lo ignoran; puede eliminarse',
   },
 
   // ── x: textos de explicación (HTML) ──────────────────────────────────────

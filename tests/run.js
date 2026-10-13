@@ -305,6 +305,40 @@ test('B4 a stored bogus language name falls back to en', async () => {
   eq(app.currentLang, 'en');
 });
 
+test('D2 DKIM wildcard control probe: identical answers are not discoveries, cap at warning', async () => {
+  const app = load();
+  // Wildcard key under _domainkey: every selector, including the random control, answers with it.
+  app.txt('*._domainkey.wild.example', DKIM_OK);
+  const r = await app.checkDKIM('wild.example', []);
+  eq(!!r.wildcard, true, 'wildcard detected');
+  eq(r.wildcard.selector, '*');
+  eq(r.found.length, 0, 'no selector is a genuine discovery');
+  eq(r.wildcardHits > 50, true, 'all probed selectors hit the wildcard');
+  eq(r.rating, 'warning');
+  has(r.issues, 'DKIM_WILDCARD');
+  // An explicit selector whose record differs from the wildcard is genuine.
+  app.resetScan();
+  app.txt('real._domainkey.wild.example', 'v=DKIM1; k=rsa; t=y; p=' + DKIM_OK.slice(DKIM_OK.indexOf('p=') + 2));
+  const r2 = await app.checkDKIM('wild.example', ['real']);
+  eq(r2.found.map(s => s.selector), ['real']);
+  eq(r2.rating, 'warning', 'wildcard still caps the rating');
+  has(r2.issues, 'DKIM_TESTING_FLAG');
+  // No wildcard: the control probe is NXDOMAIN and changes nothing; t=y alone caps at good.
+  app.resetScan();
+  app.txt('s1._domainkey.plain.example', 'v=DKIM1; k=rsa; t=y; p=' + DKIM_OK.slice(DKIM_OK.indexOf('p=') + 2));
+  const r3 = await app.checkDKIM('plain.example', []);
+  eq(r3.wildcard, null); eq(r3.rating, 'good'); has(r3.issues, 'DKIM_TESTING_FLAG');
+  // Legacy policy records are reported, never rated.
+  app.resetScan();
+  app.txt('s1._domainkey.legacy.example', DKIM_OK);
+  app.txt('_adsp._domainkey.legacy.example', 'dkim=all');
+  const r4 = await app.checkDKIM('legacy.example', []);
+  eq(r4.rating, 'good'); has(r4.issues, 'DKIM_LEGACY_POLICY');
+  // Ed25519: p= must be exactly 32 bytes.
+  eq(app.parseDKIMRecord('v=DKIM1; k=ed25519; p=11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo=').rating, 'excellent');
+  eq(app.parseDKIMRecord('v=DKIM1; k=ed25519; p=11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcH').rating, 'fail');
+});
+
 (async () => {
   for (const t of tests) {
     try { await t.fn(); pass++; console.log('PASS', t.name); }
