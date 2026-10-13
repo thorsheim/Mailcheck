@@ -8,7 +8,7 @@ Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-October-13-2**
+Current version: **2026-October-13-3**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -68,8 +68,9 @@ Every fan-out is bounded by `parallelLimit()`: `DKIM_CONCURRENCY` 10, `RIPE_CONC
 `SPF_CONCURRENCY` 6, `DNS_CONCURRENCY` 12 (host A/AAAA resolution, 2 queries per host).
 
 ### DNS layer
-- `dohQuery(name, type)` — fetches `https://cloudflare-dns.com/dns-query?name=…&type=…`
-  with `Accept: application/dns-json`. Returns raw JSON. **Resolver fallback:** a `network` or
+- `dohQuery(name, type, opts)` — fetches `https://cloudflare-dns.com/dns-query?name=…&type=…`
+  with `Accept: application/dns-json`. Returns raw JSON. `opts.dnssec` sets the DO bit (`do=true`,
+  `do=1` on Google) so RRSIGs come back in the Answer section; the cache key gets a `|do` suffix. **Resolver fallback:** a `network` or
   `http` failure (`err.kind`, set by `fetchJSON`) is retried once through `dohQueryGoogle`, which
   returns the same JSON shape with the same AD semantics (names carry a trailing dot — strip it
   where a name is compared). Timeouts are not retried. Counted in `scanStats.dohFallbacks`.
@@ -98,7 +99,7 @@ Every fan-out is bounded by `parallelLimit()`: `DKIM_CONCURRENCY` 10, `RIPE_CONC
 
 | Check | DNS name / endpoint queried | Key detail |
 |-------|----------------------------|------------|
-| DNSSEC | `<domain>` DNSKEY + SOA | Falls back to zone apex via SOA Authority section for non-apex hostnames; rated on the **weakest** algorithm published (see below) |
+| DNSSEC | `<domain>` DNSKEY + SOA; then for the zone apex: DS, DNSKEY+SOA with `do=true` (RRSIGs), NSEC3PARAM, RDAP `secureDNS` | Falls back to zone apex via SOA Authority section for non-apex hostnames; rated on the **weakest** algorithm published (see below); `checkDNSSECFull` adds the chain-of-trust depth analysis for the scanned domain only |
 | MX | `<domain>` MX via `getMXHosts()`, then DNSSEC per host | Detects null MX (RFC 7505); `nullMX: true` flag |
 | PTR | A+AAAA per MX host → PTR per IP | FCrDNS: checks if PTR value matches MX hostname; does not affect grade |
 | DANE | `_25._tcp.<mx-hostname>` TLSA | Per MX host via `getMXHosts()`; null MX → good/`DANE_NULL_MX`; PKIX usages 0/1 → warning (RFC 7672 §3.1.3); `tlsaInvalidReason()` flags bad fields / digest length; excellent also needs the MX RRset AD flag |
@@ -137,7 +138,17 @@ ALG_NAME_TO_NUM     Cloudflare returns algorithm as TEXT (e.g. "ED25519", "ECDSA
 resolveAlgNum()       never numeric — must map through this table
 checkDNSSEC()       memoising wrapper over checkDNSSECUncached (per-scan dnssecCache)
 checkDNSSECUncached() DNSKEY + SOA; zone-apex fallback for non-apex hostnames; returns
-                      weakestAlg — the algorithm that set the rating
+                      weakestAlg — the algorithm that set the rating — plus zone (the apex the
+                      keys belong to) and keyTag / keyBits per key
+checkDNSSECFull()   the scanned domain's DNSSEC check: checkDNSSEC + checkDNSSECDepth, rating =
+                      worst of both. Used only by runChecks; never cached
+checkDNSSECDepth()  chain of trust for the zone apex: DS vs DNSKEY (key tag + algorithm), RDAP
+                      secureDNS cross-check, RRSIG lifetimes (do=true), NSEC3PARAM, RSA key sizes;
+                      returns { zone, issues (info:true = not rated), rating, ds, rdap, rrsig, nsec3 }
+dnskeyKeyTag()      RFC 4034 Appendix B key tag; dnskeyRSABits() RFC 3110 modulus size
+parseDS() / parseRRSIG()  presentation-format parsers (RRSIG times: epoch seconds or YYYYMMDDHHmmSS)
+rdapLookup(name)    per-scan promise cache for rdap.org documents (rdapCache, cleared by
+                      clearDNSCaches); shared by checkDNSSECDepth and checkWHOIS
 checkMX()           via getMXHosts; null MX → nullMX:true, rating good
 parseTLSAData()     RFC 3597 hex or presentation format
 rateTLSA()
@@ -328,7 +339,7 @@ const resolvedText = iss.textKey
 **Current languages**: `en` (English, default), `es` (Spanish), `fr` (French), `no` (Norwegian Bokmål).
 All four are **complete** — no language relies on the English fallback. When adding a key, add it to every language, and mirror it into `translations/<lang>.js` **and `translations/TEMPLATE.js`** so the contributor files stay in sync. TEMPLATE.js is easy to forget because nothing in the app reads it — it had silently drifted 37 keys behind (the entire IPv6 block, plus `SELECTOR_HELP`, the SPF recursive-lookup counts and the RPKI nameserver-diversity keys) before being backfilled on 2026-08-13. A contributor starting from a stale template simply never sees those strings.
 
-To check for drift, run `node tests/static.js` — it parses the `STRINGS` block out of `index.html`, diffs the key sets across the four languages and the four `translations/*.js` files, and compares `d`-function *outputs* (not source text, which differs in whitespace between files). The three namespaces currently total **449 keys** (s=331, d=98, x=20). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
+To check for drift, run `node tests/static.js` — it parses the `STRINGS` block out of `index.html`, diffs the key sets across the four languages and the four `translations/*.js` files, and compares `d`-function *outputs* (not source text, which differs in whitespace between files). The three namespaces currently total **477 keys** (s=344, d=113, x=20). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
 
 There are now four contributor files — `es.js`, `fr.js`, `no.js` and `TEMPLATE.js` — and all four
 carry the full key set with no value drift from `index.html`.
@@ -365,6 +376,42 @@ carry the full key set with no value drift from `index.html`.
     IPv6 was wrong — NIS2 contains no IPv6 requirement. The row now points at the ISA² *IPv6
     Framework for European Governments*, which is guidance. Do not re-add the NIS2 claim.
 - Test: `cloudflare.com` and `gmail.com` → excellent; a domain with IPv6-capable MX but no `ip6:` in SPF → SPF tab shows warning note.
+
+### DNSSEC depth (chain of trust) — `checkDNSSECDepth`, 2026-October-13-3
+Runs once per scan, for the scanned domain's **zone apex** (`base.zone`, found by the SOA fallback
+for hostnames), never for MX hosts / CAs / endpoints — those keep the shallow memoised check.
+Five lookups in one `Promise.allSettled`: DS, DNSKEY and SOA with `do=true`, NSEC3PARAM, RDAP.
+- **DS vs DNSKEY.** Each DS is matched on (key tag, algorithm) — the key tag is computed from the
+  DNSKEY RDATA (`dnskeyKeyTag`). No DS at all → `DNSSEC_NO_DS` (warning: island of security). DS
+  present but none matching → `DNSSEC_DS_NONE_MATCH` (fail). A non-matching DS beside matching ones
+  → `DNSSEC_DS_STALE` (warning). Digest type 1 → `DNSSEC_DS_SHA1` (warning); 3 or unknown →
+  `DNSSEC_DS_BAD_DIGEST`. A KSK algorithm with no DS (debian.org's ECDSA, mid-rollover) →
+  `DNSSEC_ALG_NO_DS`, **informational** (`info: true`, not folded into the rating).
+- **Registry cross-check.** `secureDNS.dsData` from RDAP, normalised to `tag/alg/digestType/digest`
+  and compared as sets with the DNS DS set → `DNSSEC_RDAP_MATCH` / `DNSSEC_RDAP_MISMATCH` (warning).
+  RDAP unavailable (rdap.org 403s Node, CORS, 404) → silently skipped, `depth.rdap === null`.
+- **RRSIG lifetimes.** The RRSIG closest to expiry among those over DNSKEY and SOA decides. "Near"
+  is **relative to the signature's own validity window** (`percentLeft < 20`), not an absolute number
+  of days: Cloudflare signs SOA with a ~2-day window and re-signs daily, so an absolute 7-day
+  threshold would flag every Cloudflare zone. Expired → fail; inception > now + 1 h →
+  `DNSSEC_RRSIG_FUTURE`. Times in the DoH JSON are epoch seconds (both resolvers); the RFC 4034
+  `YYYYMMDDHHmmSS` form is accepted too. Google lower-cases the type-covered field.
+- **NSEC3PARAM** (RFC 9276): iterations > 100 → warning (validators treat the zone as insecure);
+  1–100 or a salt → `DNSSEC_NSEC3_PARAMS`, informational; opt-out flag → informational.
+- **RSA key size** (`dnskeyRSABits`, RFC 3110 layout — not DER, so `getRSAKeyBits` does not apply):
+  < 2048 → warning, < 1024 → fail. Only for algorithms 5/7/8/10.
+- `renderDNSSEC` shows key tag, key size and ZSK/KSK per algorithm, then a "Chain of trust" section
+  (issue list + collapsible DS table with matched/unmatched badges).
+- **Which name is "the zone".** `base.zone` is the scanned name unless the shallow check had to fall
+  back to the SOA apex (NODATA for DNSKEY, e.g. `mx.domeneshop.no` → `domeneshop.no`). Two things
+  looked like bugs here and are not: Cloudflare's authoritative servers synthesise a complete zone
+  cut (SOA, NS, DNSKEY **and a DS with that owner name**) for every in-zone name, so
+  `mail.cloudflare.com` legitimately checks DS at `mail.cloudflare.com` and matches; and
+  `www.debian.org` really is a delegated zone with its own KSK. Both resolvers' JSON also puts the
+  RRSIG signer at the queried name in those cases, so the signer field cannot be used to find the
+  apex either. Rating the name as its own zone is exactly what a validator does. The RDAP lookup
+  404s for such names and is skipped — never query RDAP for the registrable domain instead, its DS
+  digest is computed over a different owner name and would be reported as a mismatch.
 
 ### DNSSEC rating policy
 `checkDNSSEC` rates a zone on the **weakest** algorithm in its DNSKEY RRset, not the strongest.
@@ -775,7 +822,7 @@ Two pseudo-ratings sit outside that list and deliberately have `RATINGS.indexOf(
   or a function); `app.http` maps URLs for non-DoH fetches; `app.txt()`/`app.rr()` are shorthands;
   `app.resetScan()` clears caches and `scanStats`. `live: true` passes `fetch` through to the network.
 - `node tests/run.js` — regression tests, one per fixed bug (A1–A13, B5, B10, B11, B8, B9, C3, C9 in
-  the 2026-10-13 audit) plus D2 (DKIM wildcard control probe). Add one for every check-logic fix; they run in well under a second.
+  the 2026-10-13 audit) plus D2 (DKIM wildcard control probe) and D1 (DNSSEC depth). Add one for every check-logic fix; they run in well under a second.
 - `node tests/static.js` — the static checks: key parity + `d` arity across languages and
   `translations/*.js` (value drift compared by *output*), referenced-key existence, CSS classes,
   dangerous sinks, tab/panel order, version string across the three files, legacy `text:` issues,
@@ -792,12 +839,15 @@ Two pseudo-ratings sit outside that list and deliberately have `RATINGS.indexOf(
   change**: its DNSSEC and MX bars must not move. Also good CAA + RPKI coverage; DMARC p=reject.
   Also the best DKIM test domain: finds `k1`, `mandrill`, `s1`, `smtpapi`, `m1`, `m2`, `krs`
   across five providers, exercising the provider-attribution path
+- `debian.org` — also the **DS-less algorithm case**: DS only for RSA/SHA-256 (tag 40756) while an
+  ECDSA KSK is published — must show `DNSSEC_ALG_NO_DS` as informational, rating unchanged
 - `debian.org` — the **mixed-algorithm DNSSEC case**, verified live on 2026-08-17: publishes both
   RSA/SHA-256 (good) and ECDSA P-256 (excellent) mid-rollover. Rating the best algorithm gave
   DNSSEC=excellent, MX=excellent, score 56; rating the weakest gives DNSSEC=good, MX=good,
   score 51. Note MX moves too — it inherits each MX host's DNSSEC result. If this domain finishes
   its rollover, re-find one with `DNSKEY` sets spanning two rating tiers rather than deleting
-  the test
+  the test. **Since 2026-October-13-3** the DNSSEC tab (not MX) rates `warning` here: the RSA ZSK
+  (tag 29026) is 1536 bits → `DNSSEC_KEY_SMALL`. MX keeps the shallow per-host result (`good`)
 - `dmarcadvisor.com` — SPF redirect= only (no mechanisms, no all); tests redirect following
 - `brevo.com` — revoked wildcard under `_domainkey`: DKIM must show one `*` wildcard row, zero
   discovered selectors and rate `warning` with `DKIM_WILDCARD` — never a list of ~90 revoked selectors

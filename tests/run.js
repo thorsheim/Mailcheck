@@ -339,6 +339,75 @@ test('D2 DKIM wildcard control probe: identical answers are not discoveries, cap
   eq(app.parseDKIMRecord('v=DKIM1; k=ed25519; p=11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcH').rating, 'fail');
 });
 
+test('D1 DNSSEC depth: DS match, RRSIG lifetime, NSEC3, RSA size, registry cross-check', async () => {
+  const KSK = 'mdsswUyr3DPW132mOi8V9xESWE8jTo0dxCjjnopKl+GqJxpVXckHAeF+KkxLbxILfDLUT0rAK9iUzy1L53eKGQ==';
+  const ZSK = 'oJMRESz5E4gYzS/q6XDrvU1qMPYIjCWzJaOau8XNEZeqCYKD5ar0IRd8KqXXFJkqmVfRvMGPmM1x8fGAa2XhSA==';
+  const DS  = '2371 13 2 32996839a6d808afe3eb4a795a0e6a7a39a76fc52ff228b22b76f6d63826f2b9';
+  const now = Math.floor(Date.now() / 1000);
+  const rrsig = (type, exp, inc) => type + ' 13 2 3600 ' + exp + ' ' + inc + ' 2371 example.com. c2ln';
+  const setup = (app, { ds = [DS], exp = now + 30 * 86400, inc = now - 5 * 86400, n3 = '1 0 0 -', keys = ['257 3 ECDSAP256SHA256 ' + KSK, '256 3 ECDSAP256SHA256 ' + ZSK], rdap } = {}) => {
+    app.rr('example.com', 'DNSKEY', 48, keys, { AD: true });
+    app.dns.set('example.com|DNSKEY', { Status: 0, AD: true, Answer: [
+      ...keys.map(d => ({ name: 'example.com', type: 48, data: d })),
+      { name: 'example.com', type: 46, data: rrsig('DNSKEY', exp, inc) }] });
+    app.dns.set('example.com|SOA', { Status: 0, AD: true, Answer: [
+      { name: 'example.com', type: 6, data: 'ns1.example.com. h.example.com. 1 2 3 4 5' },
+      { name: 'example.com', type: 46, data: rrsig('soa', exp + 86400, inc) }] });
+    app.rr('example.com', 'DS', 43, ds, { AD: true });
+    if (n3) app.rr('example.com', 'NSEC3PARAM', 51, [n3], { AD: true });
+    if (rdap) app.http.set('https://rdap.org/domain/example.com', { status: 200, body: JSON.stringify({ secureDNS: rdap }) });
+  };
+  let app = load();
+  eq(app.dnskeyKeyTag(257, 3, 13, KSK), 2371, 'RFC 4034 key tag');
+  setup(app, { rdap: { delegationSigned: true, dsData: [{ keyTag: 2371, algorithm: 13, digestType: 2, digest: '32996839A6D808AFE3EB4A795A0E6A7A39A76FC52FF228B22B76F6D63826F2B9' }] } });
+  let r = await app.checkDNSSECFull('example.com');
+  eq(r.rating, 'excellent'); eq(r.depth.zone, 'example.com');
+  for (const k of ['DNSSEC_DS_OK', 'DNSSEC_RDAP_MATCH', 'DNSSEC_RRSIG_OK', 'DNSSEC_NSEC3_GOOD']) has(r.depth.issues, k);
+  const resolves = iss => { for (const i of iss) { const s = i.textArgs ? app.td(i.textKey, ...i.textArgs) : app.ts(i.textKey); if (s === i.textKey) throw new Error('issue does not resolve: ' + i.textKey); } };
+  resolves(r.depth.issues);
+  eq(r.depth.ds[0].matched, true); eq(r.depth.rrsig.typeCovered, 'DNSKEY'); eq(r.depth.nsec3.iterations, 0);
+  // island of security + expired signature + registry mismatch
+  app = load();
+  setup(app, { ds: [], exp: now - 3600, inc: now - 10 * 86400, rdap: { delegationSigned: true, dsData: [{ keyTag: 1111, algorithm: 13, digestType: 2, digest: 'ab' }] } });
+  app.dns.set('example.com|DS', { Status: 0, AD: true, Answer: [] });
+  r = await app.checkDNSSECFull('example.com');
+  eq(r.rating, 'fail'); has(r.depth.issues, 'DNSSEC_NO_DS'); has(r.depth.issues, 'DNSSEC_RRSIG_EXPIRED'); has(r.depth.issues, 'DNSSEC_RDAP_MISMATCH');
+  // stale DS + SHA-1 DS + NSEC3 iterations > 100 + near-expiry signature → warning
+  app = load();
+  setup(app, { ds: [DS, '9999 13 2 ' + 'ab'.repeat(32), '2371 13 1 ' + 'ab'.repeat(20)], exp: now + 3600, inc: now - 10 * 86400, n3: '1 1 150 AABB' });
+  r = await app.checkDNSSECFull('example.com');
+  eq(r.rating, 'warning');
+  for (const k of ['DNSSEC_DS_STALE', 'DNSSEC_DS_SHA1', 'DNSSEC_NSEC3_HIGH', 'DNSSEC_NSEC3_OPTOUT', 'DNSSEC_RRSIG_NEAR']) has(r.depth.issues, k);
+  resolves(r.depth.issues);
+  // no DS matches any key → fail
+  app = load();
+  setup(app, { ds: ['9999 13 2 ' + 'ab'.repeat(32)] });
+  r = await app.checkDNSSECFull('example.com');
+  eq(r.rating, 'fail'); has(r.depth.issues, 'DNSSEC_DS_NONE_MATCH');
+  // RSA 1024-bit key (RFC 3110: exponent length, exponent, modulus) → warning; KSK alg without DS → informational
+  const rsa1024 = Buffer.concat([Buffer.from([3, 1, 0, 1]), Buffer.alloc(128, 0x80)]).toString('base64');
+  eq(app.dnskeyRSABits(rsa1024), 1024);
+  app = load();
+  setup(app, { keys: ['257 3 ECDSAP256SHA256 ' + KSK, '256 3 RSASHA256 ' + rsa1024, '257 3 RSASHA256 ' + rsa1024] });
+  r = await app.checkDNSSECFull('example.com');
+  has(r.depth.issues, 'DNSSEC_KEY_SMALL'); has(r.depth.issues, 'DNSSEC_ALG_NO_DS');
+  eq(r.depth.issues.find(i => i.textKey === 'DNSSEC_ALG_NO_DS').info, true, 'informational');
+  eq(r.rating, 'warning');
+  // a hostname inside the zone: depth runs on the apex
+  app = load();
+  setup(app);
+  app.dns.set('mail.example.com|DNSKEY', { Status: 0, AD: true, Answer: [] });
+  app.dns.set('mail.example.com|SOA', { Status: 0, AD: true, Answer: [], Authority: [{ name: 'example.com', type: 6, data: 'ns1.example.com. h.example.com. 1 2 3 4 5' }] });
+  r = await app.checkDNSSECFull('mail.example.com');
+  eq(r.zone, 'example.com'); eq(r.depth.zone, 'example.com'); has(r.depth.issues, 'DNSSEC_DS_OK');
+  // unsigned zone: no depth section
+  app = load();
+  app.rr('plain.example', 'SOA', 6, ['ns1.plain.example. h.plain.example. 1 2 3 4 5']);
+  app.dns.set('plain.example|DNSKEY', { Status: 0, Answer: [] });
+  r = await app.checkDNSSECFull('plain.example');
+  eq(r.rating, 'fail'); eq(r.depth, undefined);
+});
+
 (async () => {
   for (const t of tests) {
     try { await t.fn(); pass++; console.log('PASS', t.name); }

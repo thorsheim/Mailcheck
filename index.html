@@ -759,8 +759,15 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-October-13-2 &mdash; click for changelog</summary>
+      <summary>Version 2026-October-13-3 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-October-13-3</span>
+          <ul class="cl-changes">
+            <li><b>DNSSEC depth.</b> The DNSSEC tab now verifies the chain of trust for the scanned domain&rsquo;s zone, not just the DNSKEY set: the <b>DS records at the parent</b> are fetched and matched against the published keys by key tag and algorithm (no DS = an &ldquo;island of security&rdquo; validators ignore, warning; no DS matching any key = broken chain, fail; a DS left from a previous key = warning; a SHA-1 digest = warning); the <b>registry&rsquo;s DS data</b> from RDAP is compared with DNS (a difference means a stalled or half-done rollover); the <b>signature lifetimes</b> of the DNSKEY and SOA RRSIGs are read (expired = fail, less than 20% of the validity window left = warning &mdash; relative, since re-signing cadences range from two days to months); <b>NSEC3 parameters</b> are checked against RFC 9276 (more than 100 iterations = warning, any iterations or salt = note, opt-out = note); and <b>RSA key sizes</b> below 2048 bits are flagged (RFC 8624). Key tags and sizes are shown next to each algorithm. Grades can move for zones with a broken or stale delegation.</li>
+            <li>The RDAP document is fetched once per scan and shared between the DNSSEC and WHOIS checks.</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-October-13-2</span>
           <ul class="cl-changes">
@@ -1525,6 +1532,19 @@ const STRINGS = {
       CONN_ROA_NOT_ROUTED: 'not routed',
       DKIM_WILDCARD_PILL:  'wildcard',
       DKIM_WILDCARD_SECTION: 'Wildcard record (answers every selector)',
+      DNSSEC_CHAIN_TITLE:  'Chain of trust',
+      DNSSEC_DS_RECORDS:   'DS records at the parent',
+      DNSSEC_DS_MATCHED:   'matches a DNSKEY',
+      DNSSEC_DS_UNMATCHED: 'no matching DNSKEY',
+      DNSSEC_KEY_TAG:      'key tag',
+      DNSSEC_KEY_REVOKED:  'revoked',
+      DNSSEC_DS_UNAVAILABLE: 'The DS record set could not be retrieved — chain of trust not verified',
+      DNSSEC_NO_DS:        'No DS record at the parent — the zone is signed but nothing links it to the parent (an "island of security"); validators treat it as unsigned',
+      DNSSEC_DS_NONE_MATCH: 'No DS record at the parent matches a published DNSKEY — the chain of trust is broken',
+      DNSSEC_RDAP_UNSIGNED: 'The registry (RDAP) reports the delegation as unsigned although DS records exist in DNS',
+      DNSSEC_RRSIG_NONE:   'No RRSIG returned for the DNSKEY/SOA records — signature lifetimes could not be checked',
+      DNSSEC_NSEC3_GOOD:   'NSEC3 with 0 iterations and no salt — as recommended by RFC 9276',
+      DNSSEC_NSEC3_OPTOUT: 'NSEC3 opt-out flag set — unsigned delegations are not proven absent (intended for large delegation-centric zones)',
     },
     // ── d: dynamic strings (arrow functions) ─────────────────────────────────
     // Each value is an arrow function.  Write the translated sentence as the
@@ -1638,6 +1658,20 @@ const STRINGS = {
       DKIM_WILDCARD:         n => 'A wildcard record at *._domainkey answers every selector name \u2014 ' + n + ' of the probed selectors returned it. The selectors actually in use cannot be discovered, and one key shared by all selectors cannot be rotated per selector; publish keys under explicit selectors instead.',
       DKIM_TESTING_FLAG:     s => 't=y (testing mode) on ' + s + ' \u2014 the domain declares its DKIM deployment as not yet in production; remove the flag once signing is verified',
       DKIM_LEGACY_POLICY:    n => 'Obsolete policy record at ' + n + ' (DomainKeys / ADSP, historic since 2013) \u2014 ignored by receivers; it can be removed',
+      DNSSEC_DS_OK:          n => n + ' DS record' + (n !== 1 ? 's' : '') + ' at the parent, each matching a published key',
+      DNSSEC_DS_STALE:       (tag, alg) => 'DS with key tag ' + tag + ' (algorithm ' + alg + ') matches no published DNSKEY — a stale DS left from a previous key',
+      DNSSEC_DS_SHA1:        tag => 'DS with key tag ' + tag + ' uses digest type 1 (SHA-1) — deprecated (RFC 8624); publish a SHA-256 DS',
+      DNSSEC_DS_BAD_DIGEST:  (tag, type) => 'DS with key tag ' + tag + ' uses digest type ' + type + ' — not supported by validators',
+      DNSSEC_ALG_NO_DS:      alg => 'Algorithm ' + alg + ' is published in DNSKEY but has no DS at the parent — validators cannot use it yet (algorithm rollover in progress?)',
+      DNSSEC_RDAP_MATCH:     (reg, dns) => 'Registry (RDAP) DS data matches DNS (' + reg + ' record' + (reg !== 1 ? 's' : '') + ')',
+      DNSSEC_RDAP_MISMATCH:  (reg, dns) => 'The DS set at the registry (RDAP, ' + reg + ') differs from the DS set in DNS (' + dns + ') — a stalled or half-finished key rollover',
+      DNSSEC_RRSIG_EXPIRED:  (type, date) => 'The RRSIG over ' + type + ' expired on ' + date + ' — validators now fail this zone',
+      DNSSEC_RRSIG_NEAR:     (type, hours, pct) => 'The RRSIG over ' + type + ' expires in ' + hours + ' h (' + pct + '% of its validity window left) — re-signing may have stalled',
+      DNSSEC_RRSIG_OK:       (type, days, window) => 'Signatures valid — the RRSIG over ' + type + ' expires in ' + days + ' days (validity window ' + window + ' days)',
+      DNSSEC_RRSIG_FUTURE:   type => 'An RRSIG over ' + type + ' is not yet valid (inception in the future) — check the signer\'s clock',
+      DNSSEC_NSEC3_HIGH:     n => 'NSEC3 iterations ' + n + ' exceed 100 — validators following RFC 9276 treat the zone as insecure (unsigned)',
+      DNSSEC_NSEC3_PARAMS:   (n, salt) => 'NSEC3 with ' + n + ' iteration' + (n !== 1 ? 's' : '') + ' and salt ' + salt + ' — RFC 9276 recommends 0 iterations and no salt',
+      DNSSEC_KEY_SMALL:      (tag, bits) => 'RSA key tag ' + tag + ' is only ' + bits + ' bits — use 2048 bits or more (RFC 8624)',
     },
     // ── x: explanation strings (HTML) ────────────────────────────────────────
     // Each value is an HTML string rendered in the expandable "What is this?"
@@ -2281,6 +2315,19 @@ const STRINGS = {
       CONN_ROA_NOT_ROUTED: 'ikke rutet',
       DKIM_WILDCARD_PILL:  'jokertegn',
       DKIM_WILDCARD_SECTION: 'Jokertegn-post (svarer p\u00e5 alle selektorer)',
+      DNSSEC_CHAIN_TITLE:  'Tillitskjede',
+      DNSSEC_DS_RECORDS:   'DS-poster hos foreldresonen',
+      DNSSEC_DS_MATCHED:   'samsvarer med en DNSKEY',
+      DNSSEC_DS_UNMATCHED: 'ingen samsvarende DNSKEY',
+      DNSSEC_KEY_TAG:      'nøkkel-tag',
+      DNSSEC_KEY_REVOKED:  'tilbakekalt',
+      DNSSEC_DS_UNAVAILABLE: 'DS-postene kunne ikke hentes — tillitskjeden er ikke verifisert',
+      DNSSEC_NO_DS:        'Ingen DS-post hos foreldresonen — sonen er signert, men ingenting knytter den til foreldresonen (en «øy av sikkerhet»); validatorer behandler den som usignert',
+      DNSSEC_DS_NONE_MATCH: 'Ingen DS-post hos foreldresonen samsvarer med en publisert DNSKEY — tillitskjeden er brutt',
+      DNSSEC_RDAP_UNSIGNED: 'Registeret (RDAP) rapporterer delegeringen som usignert selv om det finnes DS-poster i DNS',
+      DNSSEC_RRSIG_NONE:   'Ingen RRSIG returnert for DNSKEY/SOA-postene — signaturenes levetid kunne ikke sjekkes',
+      DNSSEC_NSEC3_GOOD:   'NSEC3 med 0 iterasjoner og uten salt — som anbefalt i RFC 9276',
+      DNSSEC_NSEC3_OPTOUT: 'NSEC3 opt-out-flagget er satt — usignerte delegeringer bevises ikke fraværende (ment for store delegeringssoner)',
     },
     // ── d: dynamic strings (arrow functions) ─────────────────────────────────
     d: {
@@ -2390,6 +2437,20 @@ const STRINGS = {
       DKIM_WILDCARD:         n => 'En jokertegn-post p\u00e5 *._domainkey svarer p\u00e5 alle selektornavn \u2014 ' + n + ' av de testede selektorene returnerte den. Selektorene som faktisk er i bruk kan ikke oppdages, og \u00e9n n\u00f8kkel delt av alle selektorer kan ikke roteres per selektor; publiser n\u00f8kler under eksplisitte selektorer i stedet.',
       DKIM_TESTING_FLAG:     s => 't=y (testmodus) p\u00e5 ' + s + ' \u2014 domenet erkl\u00e6rer at DKIM-oppsettet enn\u00e5 ikke er i produksjon; fjern flagget n\u00e5r signeringen er verifisert',
       DKIM_LEGACY_POLICY:    n => 'Utdatert policypost p\u00e5 ' + n + ' (DomainKeys / ADSP, historisk siden 2013) \u2014 ignoreres av mottakere; den kan fjernes',
+      DNSSEC_DS_OK:          n => n + ' DS-post' + (n !== 1 ? 'er' : '') + ' hos foreldresonen, hver samsvarer med en publisert nøkkel',
+      DNSSEC_DS_STALE:       (tag, alg) => 'DS med nøkkel-tag ' + tag + ' (algoritme ' + alg + ') samsvarer ikke med noen publisert DNSKEY — en foreldet DS fra en tidligere nøkkel',
+      DNSSEC_DS_SHA1:        tag => 'DS med nøkkel-tag ' + tag + ' bruker sjekksumtype 1 (SHA-1) — utdatert (RFC 8624); publiser en SHA-256-DS',
+      DNSSEC_DS_BAD_DIGEST:  (tag, type) => 'DS med nøkkel-tag ' + tag + ' bruker sjekksumtype ' + type + ' — støttes ikke av validatorer',
+      DNSSEC_ALG_NO_DS:      alg => 'Algoritme ' + alg + ' er publisert i DNSKEY, men har ingen DS hos foreldresonen — validatorer kan ikke bruke den ennå (pågående algoritmebytte?)',
+      DNSSEC_RDAP_MATCH:     (reg, dns) => 'DS-dataene i registeret (RDAP) samsvarer med DNS (' + reg + ' post' + (reg !== 1 ? 'er' : '') + ')',
+      DNSSEC_RDAP_MISMATCH:  (reg, dns) => 'DS-settet i registeret (RDAP, ' + reg + ') avviker fra DS-settet i DNS (' + dns + ') — et stoppet eller halvveis nøkkelbytte',
+      DNSSEC_RRSIG_EXPIRED:  (type, date) => 'RRSIG over ' + type + ' utløp ' + date + ' — validatorer avviser nå denne sonen',
+      DNSSEC_RRSIG_NEAR:     (type, hours, pct) => 'RRSIG over ' + type + ' utløper om ' + hours + ' t (' + pct + ' % av gyldighetsvinduet igjen) — re-signeringen kan ha stoppet',
+      DNSSEC_RRSIG_OK:       (type, days, window) => 'Signaturene er gyldige — RRSIG over ' + type + ' utløper om ' + days + ' dager (gyldighetsvindu ' + window + ' dager)',
+      DNSSEC_RRSIG_FUTURE:   type => 'En RRSIG over ' + type + ' er ikke gyldig ennå (startdato i fremtiden) — sjekk klokken på signeringssystemet',
+      DNSSEC_NSEC3_HIGH:     n => 'NSEC3-iterasjoner ' + n + ' overstiger 100 — validatorer som følger RFC 9276 behandler sonen som usikker (usignert)',
+      DNSSEC_NSEC3_PARAMS:   (n, salt) => 'NSEC3 med ' + n + ' iterasjon' + (n !== 1 ? 'er' : '') + ' og salt ' + salt + ' — RFC 9276 anbefaler 0 iterasjoner og ingen salt',
+      DNSSEC_KEY_SMALL:      (tag, bits) => 'RSA-nøkkel-tag ' + tag + ' er bare ' + bits + ' bit — bruk 2048 bit eller mer (RFC 8624)',
     },
     // ── x: explanation strings (HTML) ────────────────────────────────────────
     x: {
@@ -3000,6 +3061,19 @@ const STRINGS = {
       CONN_ROA_NOT_ROUTED: 'no enrutado',
       DKIM_WILDCARD_PILL:  'comod\u00edn',
       DKIM_WILDCARD_SECTION: 'Registro comod\u00edn (responde a cualquier selector)',
+      DNSSEC_CHAIN_TITLE:  'Cadena de confianza',
+      DNSSEC_DS_RECORDS:   'Registros DS en la zona padre',
+      DNSSEC_DS_MATCHED:   'coincide con una DNSKEY',
+      DNSSEC_DS_UNMATCHED: 'sin DNSKEY coincidente',
+      DNSSEC_KEY_TAG:      'etiqueta de clave',
+      DNSSEC_KEY_REVOKED:  'revocada',
+      DNSSEC_DS_UNAVAILABLE: 'No se pudo obtener el conjunto de registros DS — cadena de confianza no verificada',
+      DNSSEC_NO_DS:        'Sin registro DS en la zona padre — la zona está firmada pero nada la enlaza con su padre (una "isla de seguridad"); los validadores la tratan como no firmada',
+      DNSSEC_DS_NONE_MATCH: 'Ningún registro DS de la zona padre coincide con una DNSKEY publicada — la cadena de confianza está rota',
+      DNSSEC_RDAP_UNSIGNED: 'El registro (RDAP) indica que la delegación no está firmada aunque existen registros DS en DNS',
+      DNSSEC_RRSIG_NONE:   'No se devolvió ningún RRSIG para los registros DNSKEY/SOA — no se pudo comprobar la vigencia de las firmas',
+      DNSSEC_NSEC3_GOOD:   'NSEC3 con 0 iteraciones y sin sal — como recomienda RFC 9276',
+      DNSSEC_NSEC3_OPTOUT: 'Indicador opt-out de NSEC3 activo — no se demuestra la ausencia de delegaciones sin firmar (pensado para grandes zonas de delegación)',
     },
     d: {
       MX_HOSTS_FOUND:        n => n + ' servidor' + (n !== 1 ? 'es' : '') + ' MX encontrado' + (n !== 1 ? 's' : '') + '.',
@@ -3108,6 +3182,20 @@ const STRINGS = {
       DKIM_WILDCARD:         n => 'Un registro comod\u00edn en *._domainkey responde a cualquier nombre de selector \u2014 ' + n + ' de los selectores probados lo devolvieron. No es posible descubrir los selectores realmente en uso, y una clave compartida por todos los selectores no puede rotarse por selector; publica las claves bajo selectores expl\u00edcitos.',
       DKIM_TESTING_FLAG:     s => 't=y (modo de prueba) en ' + s + ' \u2014 el dominio declara que su despliegue DKIM a\u00fan no est\u00e1 en producci\u00f3n; elimina el indicador cuando la firma est\u00e9 verificada',
       DKIM_LEGACY_POLICY:    n => 'Registro de pol\u00edtica obsoleto en ' + n + ' (DomainKeys / ADSP, hist\u00f3rico desde 2013) \u2014 los receptores lo ignoran; puede eliminarse',
+      DNSSEC_DS_OK:          n => n + ' registro' + (n !== 1 ? 's' : '') + ' DS en la zona padre, cada uno coincidente con una clave publicada',
+      DNSSEC_DS_STALE:       (tag, alg) => 'El DS con etiqueta de clave ' + tag + ' (algoritmo ' + alg + ') no coincide con ninguna DNSKEY publicada — un DS obsoleto de una clave anterior',
+      DNSSEC_DS_SHA1:        tag => 'El DS con etiqueta de clave ' + tag + ' usa el tipo de resumen 1 (SHA-1) — obsoleto (RFC 8624); publica un DS SHA-256',
+      DNSSEC_DS_BAD_DIGEST:  (tag, type) => 'El DS con etiqueta de clave ' + tag + ' usa el tipo de resumen ' + type + ' — no admitido por los validadores',
+      DNSSEC_ALG_NO_DS:      alg => 'El algoritmo ' + alg + ' está publicado en DNSKEY pero no tiene DS en la zona padre — los validadores aún no pueden usarlo (¿cambio de algoritmo en curso?)',
+      DNSSEC_RDAP_MATCH:     (reg, dns) => 'Los datos DS del registro (RDAP) coinciden con DNS (' + reg + ' registro' + (reg !== 1 ? 's' : '') + ')',
+      DNSSEC_RDAP_MISMATCH:  (reg, dns) => 'El conjunto DS del registro (RDAP, ' + reg + ') difiere del conjunto DS en DNS (' + dns + ') — una rotación de claves detenida o a medias',
+      DNSSEC_RRSIG_EXPIRED:  (type, date) => 'El RRSIG sobre ' + type + ' caducó el ' + date + ' — los validadores ahora rechazan esta zona',
+      DNSSEC_RRSIG_NEAR:     (type, hours, pct) => 'El RRSIG sobre ' + type + ' caduca en ' + hours + ' h (queda el ' + pct + '% de su ventana de validez) — la refirma puede haberse detenido',
+      DNSSEC_RRSIG_OK:       (type, days, window) => 'Firmas válidas — el RRSIG sobre ' + type + ' caduca en ' + days + ' días (ventana de validez ' + window + ' días)',
+      DNSSEC_RRSIG_FUTURE:   type => 'Un RRSIG sobre ' + type + ' aún no es válido (inicio en el futuro) — revisa el reloj del firmante',
+      DNSSEC_NSEC3_HIGH:     n => 'Las iteraciones NSEC3 (' + n + ') superan 100 — los validadores que siguen RFC 9276 tratan la zona como insegura (no firmada)',
+      DNSSEC_NSEC3_PARAMS:   (n, salt) => 'NSEC3 con ' + n + ' iteraci' + (n !== 1 ? 'ones' : 'ón') + ' y sal ' + salt + ' — RFC 9276 recomienda 0 iteraciones y sin sal',
+      DNSSEC_KEY_SMALL:      (tag, bits) => 'La clave RSA con etiqueta ' + tag + ' tiene solo ' + bits + ' bits — usa 2048 bits o más (RFC 8624)',
     },
     x: {
       DMARC:
@@ -3741,6 +3829,19 @@ const STRINGS = {
       CONN_ROA_NOT_ROUTED: 'non rout\u00e9',
       DKIM_WILDCARD_PILL:  'joker',
       DKIM_WILDCARD_SECTION: 'Enregistrement joker (r\u00e9pond \u00e0 tout s\u00e9lecteur)',
+      DNSSEC_CHAIN_TITLE:  'Chaîne de confiance',
+      DNSSEC_DS_RECORDS:   'Enregistrements DS dans la zone parente',
+      DNSSEC_DS_MATCHED:   'correspond à une DNSKEY',
+      DNSSEC_DS_UNMATCHED: 'aucune DNSKEY correspondante',
+      DNSSEC_KEY_TAG:      'étiquette de clé',
+      DNSSEC_KEY_REVOKED:  'révoquée',
+      DNSSEC_DS_UNAVAILABLE: 'Les enregistrements DS n’ont pas pu être récupérés — chaîne de confiance non vérifiée',
+      DNSSEC_NO_DS:        'Aucun enregistrement DS dans la zone parente — la zone est signée mais rien ne la relie à son parent (un « îlot de sécurité ») ; les validateurs la traitent comme non signée',
+      DNSSEC_DS_NONE_MATCH: 'Aucun enregistrement DS de la zone parente ne correspond à une DNSKEY publiée — la chaîne de confiance est rompue',
+      DNSSEC_RDAP_UNSIGNED: 'Le registre (RDAP) indique une délégation non signée alors que des enregistrements DS existent dans le DNS',
+      DNSSEC_RRSIG_NONE:   'Aucun RRSIG renvoyé pour les enregistrements DNSKEY/SOA — la durée de validité des signatures n’a pas pu être vérifiée',
+      DNSSEC_NSEC3_GOOD:   'NSEC3 avec 0 itération et sans sel — comme le recommande la RFC 9276',
+      DNSSEC_NSEC3_OPTOUT: 'Indicateur opt-out NSEC3 activé — l’absence des délégations non signées n’est pas prouvée (prévu pour les grandes zones de délégation)',
     },
 
     // ── d: chaînes dynamiques (fonctions fléchées) ────────────────────────────
@@ -3851,6 +3952,20 @@ const STRINGS = {
       DKIM_WILDCARD:         n => 'Un enregistrement joker sur *._domainkey r\u00e9pond \u00e0 tout nom de s\u00e9lecteur \u2014 ' + n + ' des s\u00e9lecteurs test\u00e9s l\u2019ont renvoy\u00e9. Les s\u00e9lecteurs r\u00e9ellement utilis\u00e9s ne peuvent pas \u00eatre d\u00e9couverts, et une cl\u00e9 partag\u00e9e par tous les s\u00e9lecteurs ne peut pas \u00eatre renouvel\u00e9e par s\u00e9lecteur\u00a0; publiez les cl\u00e9s sous des s\u00e9lecteurs explicites.',
       DKIM_TESTING_FLAG:     s => 't=y (mode test) sur ' + s + ' \u2014 le domaine d\u00e9clare que son d\u00e9ploiement DKIM n\u2019est pas encore en production\u00a0; retirez l\u2019indicateur une fois la signature v\u00e9rifi\u00e9e',
       DKIM_LEGACY_POLICY:    n => 'Enregistrement de politique obsol\u00e8te sur ' + n + ' (DomainKeys / ADSP, historique depuis 2013) \u2014 ignor\u00e9 par les destinataires\u00a0; il peut \u00eatre supprim\u00e9',
+      DNSSEC_DS_OK:          n => n + ' enregistrement' + (n !== 1 ? 's' : '') + ' DS dans la zone parente, chacun correspondant à une clé publiée',
+      DNSSEC_DS_STALE:       (tag, alg) => 'Le DS d’étiquette ' + tag + ' (algorithme ' + alg + ') ne correspond à aucune DNSKEY publiée — un DS obsolète issu d’une clé précédente',
+      DNSSEC_DS_SHA1:        tag => 'Le DS d’étiquette ' + tag + ' utilise le type d’empreinte 1 (SHA-1) — obsolète (RFC 8624) ; publiez un DS SHA-256',
+      DNSSEC_DS_BAD_DIGEST:  (tag, type) => 'Le DS d’étiquette ' + tag + ' utilise le type d’empreinte ' + type + ' — non pris en charge par les validateurs',
+      DNSSEC_ALG_NO_DS:      alg => 'L’algorithme ' + alg + ' est publié dans DNSKEY mais n’a pas de DS dans la zone parente — les validateurs ne peuvent pas encore l’utiliser (changement d’algorithme en cours ?)',
+      DNSSEC_RDAP_MATCH:     (reg, dns) => 'Les données DS du registre (RDAP) correspondent au DNS (' + reg + ' enregistrement' + (reg !== 1 ? 's' : '') + ')',
+      DNSSEC_RDAP_MISMATCH:  (reg, dns) => 'L’ensemble DS du registre (RDAP, ' + reg + ') diffère de l’ensemble DS du DNS (' + dns + ') — un renouvellement de clé bloqué ou inachevé',
+      DNSSEC_RRSIG_EXPIRED:  (type, date) => 'Le RRSIG sur ' + type + ' a expiré le ' + date + ' — les validateurs rejettent désormais cette zone',
+      DNSSEC_RRSIG_NEAR:     (type, hours, pct) => 'Le RRSIG sur ' + type + ' expire dans ' + hours + ' h (' + pct + ' % de sa fenêtre de validité restante) — la re-signature s’est peut-être arrêtée',
+      DNSSEC_RRSIG_OK:       (type, days, window) => 'Signatures valides — le RRSIG sur ' + type + ' expire dans ' + days + ' jours (fenêtre de validité ' + window + ' jours)',
+      DNSSEC_RRSIG_FUTURE:   type => 'Un RRSIG sur ' + type + ' n’est pas encore valide (début dans le futur) — vérifiez l’horloge du signataire',
+      DNSSEC_NSEC3_HIGH:     n => 'Les itérations NSEC3 (' + n + ') dépassent 100 — les validateurs conformes à la RFC 9276 traitent la zone comme non sécurisée (non signée)',
+      DNSSEC_NSEC3_PARAMS:   (n, salt) => 'NSEC3 avec ' + n + ' itération' + (n !== 1 ? 's' : '') + ' et le sel ' + salt + ' — la RFC 9276 recommande 0 itération et aucun sel',
+      DNSSEC_KEY_SMALL:      (tag, bits) => 'La clé RSA d’étiquette ' + tag + ' ne fait que ' + bits + ' bits — utilisez 2048 bits ou plus (RFC 8624)',
     },
 
     // ── x: textes d'explication (HTML) ────────────────────────────────────────
@@ -4289,15 +4404,19 @@ const dohCache = new Map();
 function clearDNSCaches() {
   dohCache.clear();
   dnssecCache.clear();
+  rdapCache.clear();
 }
 
-function dohQuery(name, type) {
-  const key = String(name).toLowerCase() + '|' + type;
+// opts.dnssec sets the DO bit (`do=true` / `do=1`): the answer then carries
+// the RRSIG records alongside the RRset, which is the only way to read
+// signature lifetimes through DoH (a direct `type=RRSIG` query is refused).
+function dohQuery(name, type, opts = {}) {
+  const key = String(name).toLowerCase() + '|' + type + (opts.dnssec ? '|do' : '');
   const hit = dohCache.get(key);
   if (hit) { if (scanStats) scanStats.dohCacheHits++; return hit; }
 
   if (scanStats) scanStats.dohRequests++;
-  const url = 'https://cloudflare-dns.com/dns-query?name=' + encodeURIComponent(name) + '&type=' + encodeURIComponent(type);
+  const url = 'https://cloudflare-dns.com/dns-query?name=' + encodeURIComponent(name) + '&type=' + encodeURIComponent(type) + (opts.dnssec ? '&do=true' : '');
   // Cloudflare's resolver is blocked on some corporate and national networks
   // (a network error, or an HTTP block page). One retry against Google's
   // equivalent endpoint — same JSON shape, same AD semantics — keeps the scan
@@ -4306,7 +4425,7 @@ function dohQuery(name, type) {
     .catch(e => {
       if (e.kind !== 'network' && e.kind !== 'http') throw e;
       if (scanStats) scanStats.dohFallbacks++;
-      return dohQueryGoogle(name, type);
+      return dohQueryGoogle(name, type, opts);
     });
   // A rejected lookup must not be cached — the next caller should retry. Only
   // evict our own entry: after clearDNSCaches() a new scan may already have put
@@ -4331,9 +4450,9 @@ async function domainExists(domain) {
   }
 }
 
-function dohQueryGoogle(name, type) {
+function dohQueryGoogle(name, type, opts = {}) {
   if (scanStats) scanStats.dohRequests++;
-  const url = 'https://dns.google/resolve?name=' + encodeURIComponent(name) + '&type=' + encodeURIComponent(type);
+  const url = 'https://dns.google/resolve?name=' + encodeURIComponent(name) + '&type=' + encodeURIComponent(type) + (opts.dnssec ? '&do=1' : '');
   return fetchJSON(url, { headers: { Accept: 'application/dns-json' }, timeout: TIMEOUT_DOH, label: 'Google DoH HTTP' });
 }
 
@@ -4414,6 +4533,7 @@ async function checkDNSSECUncached(domain) {
 
     let ad = dnskeyResp.AD === true || soaResp.AD === true;
     let dnskeyRecords = (dnskeyResp.Answer || []).filter(r => r.type === 48);
+    let zone = String(domain).toLowerCase();   // the apex the DNSKEY set belongs to
 
     // DNSKEY records only exist at zone apexes, not at hostnames within a zone.
     // If no DNSKEY at this name (e.g. mx.domeneshop.no), find the zone apex via the
@@ -4431,6 +4551,7 @@ async function checkDNSSECUncached(domain) {
             const zoneKeyResp = await dohQuery(zoneName, 'DNSKEY');
             dnskeyRecords = (zoneKeyResp.Answer || []).filter(r => r.type === 48);
             if (zoneKeyResp.AD === true) ad = true;
+            if (dnskeyRecords.length > 0) zone = zoneName.toLowerCase();
           } catch (_) {}
         }
       }
@@ -4452,7 +4573,10 @@ async function checkDNSSECUncached(domain) {
       const flags  = parseInt(parts[0], 10) || 0;
       const algNum = resolveAlgNum(parts[2]);   // Cloudflare uses text mnemonics
       const info   = (algNum !== null && ALG_INFO[algNum]) || { name: parts[2] || 'Unknown', rating: 'warning' };
-      return { algNum, ...info, isKSK: (flags & 1) !== 0, revoked: (flags & 0x80) !== 0 };
+      const keyB64 = parts.slice(3).join('');
+      return { algNum, ...info, isKSK: (flags & 1) !== 0, revoked: (flags & 0x80) !== 0,
+               keyTag: dnskeyKeyTag(flags, parseInt(parts[1], 10) || 3, algNum, keyB64),
+               keyBits: DNSSEC_RSA_ALGS.has(algNum) ? dnskeyRSABits(keyB64) : null };
     }).filter(Boolean);
     const liveAlgorithms = algorithms.filter(a => !a.revoked);
 
@@ -4484,9 +4608,201 @@ async function checkDNSSECUncached(domain) {
     else if (hasDNSKEY)                   rating = 'warning';
     else                                  rating = 'fail';
 
-    return { rating, ad, hasDNSKEY, algorithms, weakestAlg, message: null };
+    return { rating, ad, hasDNSKEY, algorithms, weakestAlg, zone, message: null };
   } catch (e) {
     return { error: true, rating: 'fail', message: describeFetchError(e) };
+  }
+}
+
+// ── DNSSEC depth: chain of trust, signature lifetimes, NSEC3, key sizes ───────
+// Run once per scan for the scanned domain's zone apex (checkDNSSECFull); the
+// memoised checkDNSSEC used for MX hosts, CAs and endpoints stays shallow.
+
+const DNSSEC_RSA_ALGS = new Set([5, 7, 8, 10]);
+
+// RFC 4034 Appendix B key tag over the DNSKEY RDATA (flags, protocol,
+// algorithm, public key). null when the key material is not valid base64.
+function dnskeyKeyTag(flags, protocol, alg, keyB64) {
+  try {
+    const key = base64ToBytes(keyB64);
+    const rdata = [flags >> 8 & 0xff, flags & 0xff, protocol & 0xff, (alg || 0) & 0xff, ...key];
+    let ac = 0;
+    for (let i = 0; i < rdata.length; i++) ac += (i & 1) ? rdata[i] : rdata[i] << 8;
+    ac += (ac >> 16) & 0xffff;
+    return ac & 0xffff;
+  } catch (_) { return null; }
+}
+
+// RFC 3110 §2 RSA public key: exponent length (1 byte, or 0 + 2 bytes),
+// exponent, modulus. Returns the modulus size in bits, or null.
+function dnskeyRSABits(keyB64) {
+  try {
+    const b = base64ToBytes(keyB64);
+    if (b.length < 3) return null;
+    let eLen = b[0], pos = 1;
+    if (eLen === 0) { eLen = (b[1] << 8) | b[2]; pos = 3; }
+    const mod = b.subarray(pos + eLen);
+    if (mod.length === 0) return null;
+    let lead = 0;
+    for (let bit = 7; bit >= 0 && !(mod[0] >> bit & 1); bit--) lead++;
+    return mod.length * 8 - lead;
+  } catch (_) { return null; }
+}
+
+// "2371 13 2 <hex>" → { keyTag, alg, digestType, digest }
+function parseDS(data) {
+  const p = data.trim().split(/\s+/);
+  if (p.length < 4) return null;
+  return { keyTag: parseInt(p[0], 10), alg: resolveAlgNum(p[1]), digestType: parseInt(p[2], 10), digest: p.slice(3).join('').toLowerCase() };
+}
+
+// RRSIG presentation format: type-covered alg labels orig-ttl expiration
+// inception key-tag signer signature. Cloudflare's JSON gives the two times as
+// epoch seconds, Google's as well; the RFC 4034 YYYYMMDDHHmmSS form is
+// accepted too. Type-covered is lower-cased by one resolver and not the other.
+function parseRRSIG(data) {
+  const p = data.trim().split(/\s+/);
+  if (p.length < 9) return null;
+  const when = s => /^\d{14}$/.test(s)
+    ? Date.UTC(+s.slice(0, 4), +s.slice(4, 6) - 1, +s.slice(6, 8), +s.slice(8, 10), +s.slice(10, 12), +s.slice(12, 14)) / 1000
+    : parseInt(s, 10);
+  return { typeCovered: p[0].toUpperCase(), alg: resolveAlgNum(p[1]), expiration: when(p[4]), inception: when(p[5]), keyTag: parseInt(p[6], 10), signer: p[7] };
+}
+
+// Per-scan RDAP cache (promise, like dohCache): the DNSSEC depth check and
+// checkWHOIS both want the same document. Cleared by clearDNSCaches.
+const rdapCache = new Map();
+function rdapLookup(name) {
+  const key = String(name).toLowerCase();
+  if (rdapCache.has(key)) return rdapCache.get(key);
+  if (scanStats) scanStats.httpRequests++;
+  const p = fetchJSON('https://rdap.org/domain/' + encodeURIComponent(key), {
+    headers: { Accept: 'application/rdap+json, application/json' },
+    label: 'RDAP HTTP',
+  });
+  rdapCache.set(key, p);
+  p.catch(() => { if (rdapCache.get(key) === p) rdapCache.delete(key); });
+  return p;
+}
+
+const DS_DIGEST_NAMES = { 1: 'SHA-1', 2: 'SHA-256', 3: 'GOST', 4: 'SHA-384' };
+
+async function checkDNSSECDepth(base) {
+  const zone = base.zone;
+  const issues = [];
+  // textArgs only when there are some: an empty array is truthy and would send an
+  // `s` key through td(), which renders the key name.
+  const push = (rating, textKey, textArgs, info) => issues.push({ rating, textKey, textArgs: textArgs && textArgs.length ? textArgs : undefined, info: !!info });
+  const [dsRes, dnskeyRes, soaRes, n3Res, rdapRes] = await Promise.allSettled([
+    dohQuery(zone, 'DS'),
+    dohQuery(zone, 'DNSKEY', { dnssec: true }),
+    dohQuery(zone, 'SOA', { dnssec: true }),
+    dohQuery(zone, 'NSEC3PARAM'),
+    rdapLookup(zone),
+  ]);
+  const answer = (res, type) => res.status === 'fulfilled' && res.value && res.value.Status === 0
+    ? (res.value.Answer || []).filter(r => r.type === type) : [];
+
+  // ── DS at the parent vs the DNSKEY set ──
+  const keys = base.algorithms || [];
+  const ds = answer(dsRes, 43).map(r => parseDS(r.data)).filter(Boolean);
+  const dsDetails = ds.map(d => ({ ...d, matched: keys.some(k => k.keyTag === d.keyTag && k.algNum === d.alg) }));
+  if (dsRes.status === 'rejected' || dohStatusProblem(dsRes.value)) {
+    push('warning', 'DNSSEC_DS_UNAVAILABLE', [], true);
+  } else if (ds.length === 0) {
+    push('warning', 'DNSSEC_NO_DS');
+  } else {
+    const matched = dsDetails.filter(d => d.matched);
+    if (matched.length === 0) push('fail', 'DNSSEC_DS_NONE_MATCH');
+    else push('excellent', 'DNSSEC_DS_OK', [matched.length]);
+    for (const d of dsDetails) {
+      if (!d.matched && matched.length > 0) push('warning', 'DNSSEC_DS_STALE', [d.keyTag, d.alg]);
+      if (d.digestType === 1) push('warning', 'DNSSEC_DS_SHA1', [d.keyTag]);
+      else if (!DS_DIGEST_NAMES[d.digestType] || d.digestType === 3) push('warning', 'DNSSEC_DS_BAD_DIGEST', [d.keyTag, d.digestType]);
+    }
+    // An algorithm in DNSKEY with no DS cannot be used by validators (yet) —
+    // normal mid-rollover, so informational only.
+    const dsAlgs = new Set(ds.map(d => d.alg));
+    for (const alg of new Set(keys.filter(k => k.isKSK && !k.revoked).map(k => k.algNum))) {
+      if (alg !== null && !dsAlgs.has(alg)) push('good', 'DNSSEC_ALG_NO_DS', [(ALG_INFO[alg] || {}).name || ('alg ' + alg)], true);
+    }
+  }
+
+  // ── Registry cross-check (RDAP secureDNS) ──
+  let rdap = null;
+  if (rdapRes.status === 'fulfilled' && rdapRes.value && rdapRes.value.secureDNS) {
+    const sd = rdapRes.value.secureDNS;
+    const norm = l => l.map(d => [d.keyTag, d.alg !== undefined ? d.alg : d.algorithm, d.digestType, String(d.digest || '').toLowerCase()].join('/')).sort();
+    const reg = Array.isArray(sd.dsData) ? sd.dsData : [];
+    if (reg.length > 0) {
+      const same = JSON.stringify(norm(reg)) === JSON.stringify(norm(ds));
+      rdap = { status: same ? 'match' : 'mismatch', count: reg.length };
+      push(same ? 'excellent' : 'warning', same ? 'DNSSEC_RDAP_MATCH' : 'DNSSEC_RDAP_MISMATCH', [reg.length, ds.length]);
+    } else if (sd.delegationSigned === false && ds.length > 0) {
+      rdap = { status: 'unsigned', count: 0 };
+      push('warning', 'DNSSEC_RDAP_UNSIGNED', [], true);
+    } else {
+      rdap = { status: 'none', count: 0 };
+    }
+  }
+
+  // ── Signature lifetimes (RRSIG over DNSKEY and SOA at the apex) ──
+  const now = Date.now() / 1000;
+  const sigs = [...answer(dnskeyRes, 46), ...answer(soaRes, 46)].map(r => parseRRSIG(r.data)).filter(Boolean)
+    .filter(s => s.typeCovered === 'DNSKEY' || s.typeCovered === 'SOA');
+  let rrsig = null;
+  if (sigs.length === 0) {
+    push('warning', 'DNSSEC_RRSIG_NONE', [], true);
+  } else {
+    // The signature closest to expiry decides; "near" is relative to its own
+    // validity window, since re-signing cadences range from days to months.
+    const soonest = sigs.reduce((a, b) => (b.expiration < a.expiration ? b : a));
+    const window = Math.max(1, soonest.expiration - soonest.inception);
+    const left = soonest.expiration - now;
+    const pct = Math.round(100 * left / window);
+    rrsig = { typeCovered: soonest.typeCovered, expiration: soonest.expiration, inception: soonest.inception, secondsLeft: left, windowSeconds: window, percentLeft: pct, count: sigs.length };
+    if (sigs.some(s => s.inception > now + 3600)) push('warning', 'DNSSEC_RRSIG_FUTURE', [soonest.typeCovered]);
+    if (left <= 0) push('fail', 'DNSSEC_RRSIG_EXPIRED', [soonest.typeCovered, new Date(soonest.expiration * 1000).toISOString().slice(0, 16).replace('T', ' ') + ' UTC']);
+    else if (pct < 20) push('warning', 'DNSSEC_RRSIG_NEAR', [soonest.typeCovered, Math.round(left / 3600), pct]);
+    else push('excellent', 'DNSSEC_RRSIG_OK', [soonest.typeCovered, Math.round(left / 86400 * 10) / 10, Math.round(window / 86400 * 10) / 10]);
+  }
+
+  // ── NSEC3 parameters (RFC 9276) ──
+  let nsec3 = null;
+  const n3 = answer(n3Res, 51)[0];
+  if (n3) {
+    const p = n3.data.trim().split(/\s+/);
+    nsec3 = { hashAlg: parseInt(p[0], 10), flags: parseInt(p[1], 10) || 0, iterations: parseInt(p[2], 10) || 0, salt: (p[3] && p[3] !== '-') ? p[3] : '' };
+    if (nsec3.iterations > 100) push('warning', 'DNSSEC_NSEC3_HIGH', [nsec3.iterations]);
+    else if (nsec3.iterations > 0 || nsec3.salt) push('good', 'DNSSEC_NSEC3_PARAMS', [nsec3.iterations, nsec3.salt || '-'], true);
+    else push('excellent', 'DNSSEC_NSEC3_GOOD', [], true);
+    if (nsec3.flags & 1) push('good', 'DNSSEC_NSEC3_OPTOUT', [], true);
+  }
+
+  // ── RSA key sizes (RFC 8624: 2048 bits or more) ──
+  for (const k of keys) {
+    if (k.revoked || k.keyBits === null || k.keyBits === undefined) continue;
+    if (k.keyBits < 1024) push('fail', 'DNSSEC_KEY_SMALL', [k.keyTag, k.keyBits]);
+    else if (k.keyBits < 2048) push('warning', 'DNSSEC_KEY_SMALL', [k.keyTag, k.keyBits]);
+  }
+
+  // Only non-informational findings move the rating.
+  let rating = 'excellent';
+  for (const i of issues) if (!i.info) rating = worstRating(rating, i.rating);
+  return { zone, issues, rating, ds: dsDetails, rdap, rrsig, nsec3 };
+}
+
+// The scanned domain's DNSSEC check: the shallow (memoised) result plus the
+// depth analysis of its zone apex, folded into one rating. Never cached, so
+// the per-host checkDNSSEC calls elsewhere are not slowed down by it.
+async function checkDNSSECFull(domain) {
+  const base = await checkDNSSEC(domain);
+  if (base.error || !base.hasDNSKEY || !base.zone) return base;
+  try {
+    const depth = await checkDNSSECDepth(base);
+    return { ...base, depth, rating: worstRating(base.rating, depth.rating) };
+  } catch (e) {
+    return { ...base, depth: { zone: base.zone, issues: [], rating: 'excellent', error: describeFetchError(e) } };
   }
 }
 
@@ -6424,12 +6740,8 @@ async function checkWHOIS(domain) {
     let data = null, queriedDomain = domain;
     for (let i = 0; i < 3 && labels.length - i >= 2; i++) {
       queriedDomain = labels.slice(i).join('.');
-      if (scanStats) scanStats.httpRequests++;
       try {
-        data = await fetchJSON('https://rdap.org/domain/' + encodeURIComponent(queriedDomain), {
-          headers: { Accept: 'application/rdap+json, application/json' },
-          label: 'RDAP HTTP',
-        });
+        data = await rdapLookup(queriedDomain);
         break;
       } catch (e) {
         if (!/^RDAP HTTP 404$/.test(e.message) || labels.length - i - 1 < 2) throw e;
@@ -7305,7 +7617,11 @@ function renderDNSSEC(result) {
         li.appendChild(el('span', 'issue-dot dot-' + a.rating));
         const info = el('span');
         info.appendChild(el('span', 'tag-pill', 'Alg ' + a.algNum));
-        info.appendChild(document.createTextNode(' ' + a.name + (a.isKSK ? ' (KSK)' : '') + ' '));
+        const keyDesc = (a.isKSK ? ' (KSK)' : ' (ZSK)')
+          + (a.keyTag !== null && a.keyTag !== undefined ? ' \u00b7 ' + ts('DNSSEC_KEY_TAG') + ' ' + a.keyTag : '')
+          + (a.keyBits ? ' \u00b7 ' + a.keyBits + ' ' + ts('DKIM_BITS') : '')
+          + (a.revoked ? ' \u00b7 ' + ts('DNSSEC_KEY_REVOKED') : '');
+        info.appendChild(document.createTextNode(' ' + a.name + keyDesc + ' '));
         const badge = makeBadge(a.rating);
         badge.style.fontSize = '0.68rem';
         info.appendChild(badge);
@@ -7324,6 +7640,34 @@ function renderDNSSEC(result) {
         algFrag.appendChild(note);
       }
       body.appendChild(makeDetails(ts('DNSSEC_ALG_DETAILS'), algFrag));
+
+      // Chain of trust: DS at the parent, registry cross-check, signature
+      // lifetimes, NSEC3 parameters, key sizes (checkDNSSECDepth).
+      if (d.depth) {
+        const sec = el('div', 'panel-section');
+        sec.appendChild(el('div', 'panel-section-title', ts('DNSSEC_CHAIN_TITLE') + ' \u2014 ' + d.depth.zone));
+        if (d.depth.error) sec.appendChild(el('div', 'card-summary error-state', ts('ERR_PREFIX') + d.depth.error));
+        if (d.depth.issues && d.depth.issues.length) sec.appendChild(makeIssueList(d.depth.issues));
+        if (d.depth.ds && d.depth.ds.length) {
+          const dsList = el('div', 'mx-host-list');
+          for (const r of d.depth.ds) {
+            const row = el('div', 'mx-host-row');
+            const line = el('div', 'mx-host-line');
+            line.appendChild(el('span', 'tag-pill', ts('DNSSEC_KEY_TAG') + ' ' + r.keyTag));
+            line.appendChild(el('span', 'mx-hostname', ((ALG_INFO[r.alg] || {}).name || ('alg ' + r.alg)) + ' \u00b7 ' + (DS_DIGEST_NAMES[r.digestType] || ('digest ' + r.digestType))));
+            const b = makeBadge(r.matched ? (r.digestType === 1 ? 'warning' : 'excellent') : 'warning');
+            b.textContent = r.matched ? ts('DNSSEC_DS_MATCHED') : ts('DNSSEC_DS_UNMATCHED');
+            line.appendChild(b);
+            row.appendChild(line);
+            const dig = el('code', 'mono', r.digest);
+            dig.style.cssText = 'display:block;margin-top:0.3rem;word-break:break-all;font-size:0.72rem';
+            row.appendChild(dig);
+            dsList.appendChild(row);
+          }
+          sec.appendChild(makeDetails(ts('DNSSEC_DS_RECORDS'), dsList));
+        }
+        body.appendChild(sec);
+      }
     }
 
     addExplanation(body, tx('DNSSEC'));
@@ -9191,7 +9535,7 @@ async function runChecks(domain, customSelectors, opts = {}) {
   tabsToLoad.forEach(setTabLoading);
 
   const [dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois, bgp, conn] = await Promise.allSettled([
-    timed('dnssec',  checkDNSSEC(domain)),
+    timed('dnssec',  checkDNSSECFull(domain)),
     timed('mx',      checkMX(domain)),
     timed('ptr',     checkPTR(domain)),
     timed('dane',    checkDANE(domain)),
