@@ -759,8 +759,15 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-October-13-3 &mdash; click for changelog</summary>
+      <summary>Version 2026-October-13-4 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-October-13-4</span>
+          <ul class="cl-changes">
+            <li><b>DANE fix (grades move up).</b> Since 2026-October-13-1 a TLSA record returned in the multi-line presentation form with parentheses &mdash; which Cloudflare&rsquo;s resolver uses for every SHA-256/SHA-512 digest &mdash; was flagged as malformed, so domains with correct DANE (mailbox.org, proton.me, posteo.de &hellip;) rated warning or fail. The parentheses are now stripped before the digest is checked.</li>
+            <li><b>Cross-protocol coherence.</b> A new section at the top of the Fixes tab reports findings that only exist <i>between</i> checks: TLS-RPT published with neither an MTA-STS policy nor DANE to report on; MTA-STS in testing mode without TLS-RPT (the test is blind); a BIMI record while DMARC is not at <code>p=quarantine</code>/<code>reject</code> with <code>pct=100</code> and <code>sp</code> not <code>none</code> (the logo will never show); DMARC enforcing with no SPF record at all; DMARC/TLS-RPT report destinations (<code>mailto:</code>) whose host has neither MX nor address record, or a null MX, so reports are undeliverable; and a positive note when both DANE and an enforcing MTA-STS policy are in place. Display-only &mdash; it never moves the grade or a tab dot.</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-October-13-3</span>
           <ul class="cl-changes">
@@ -1545,6 +1552,11 @@ const STRINGS = {
       DNSSEC_RRSIG_NONE:   'No RRSIG returned for the DNSKEY/SOA records — signature lifetimes could not be checked',
       DNSSEC_NSEC3_GOOD:   'NSEC3 with 0 iterations and no salt — as recommended by RFC 9276',
       DNSSEC_NSEC3_OPTOUT: 'NSEC3 opt-out flag set — unsigned delegations are not proven absent (intended for large delegation-centric zones)',
+      RECS_COHERENCE:      'Cross-protocol coherence',
+      COH_NONE:            'No conflicts between the published records.',
+      COH_TLSRPT_NO_POLICY: 'TLS-RPT is published but neither an MTA-STS policy nor DANE is in place \u2014 there is nothing for receivers to report on',
+      COH_MTASTS_TESTING_BLIND: 'MTA-STS is in testing mode but no TLS-RPT record exists \u2014 failures in testing mode are reported nowhere, so testing can never tell you anything',
+      COH_BELT_AND_BRACES: 'Both DANE and an enforcing MTA-STS policy protect inbound TLS \u2014 belt and braces',
     },
     // ── d: dynamic strings (arrow functions) ─────────────────────────────────
     // Each value is an arrow function.  Write the translated sentence as the
@@ -1672,6 +1684,10 @@ const STRINGS = {
       DNSSEC_NSEC3_HIGH:     n => 'NSEC3 iterations ' + n + ' exceed 100 — validators following RFC 9276 treat the zone as insecure (unsigned)',
       DNSSEC_NSEC3_PARAMS:   (n, salt) => 'NSEC3 with ' + n + ' iteration' + (n !== 1 ? 's' : '') + ' and salt ' + salt + ' — RFC 9276 recommends 0 iterations and no salt',
       DNSSEC_KEY_SMALL:      (tag, bits) => 'RSA key tag ' + tag + ' is only ' + bits + ' bits — use 2048 bits or more (RFC 8624)',
+      COH_BIMI_DMARC:        why => 'A BIMI record is published but DMARC does not meet the BIMI requirements (' + why + ') \u2014 p=quarantine or p=reject, pct=100 and sp not none are needed, or the logo will never be displayed',
+      COH_DMARC_NO_SPF:      p => 'DMARC enforces p=' + p + ' but the domain has no SPF record \u2014 alignment rests entirely on DKIM; any unsigned mail from this domain is already being ' + (p === 'reject' ? 'rejected' : 'quarantined'),
+      COH_RUA_UNDELIVERABLE: h => 'Report destination ' + h + ' has no MX and no address record \u2014 DMARC/TLS-RPT reports sent there are undeliverable',
+      COH_RUA_DELIVERABLE:   n => n + ' report destination' + (n !== 1 ? 's' : '') + ' (rua/ruf) accept' + (n !== 1 ? '' : 's') + ' mail (MX or address record present)',
     },
     // ── x: explanation strings (HTML) ────────────────────────────────────────
     // Each value is an HTML string rendered in the expandable "What is this?"
@@ -2328,6 +2344,11 @@ const STRINGS = {
       DNSSEC_RRSIG_NONE:   'Ingen RRSIG returnert for DNSKEY/SOA-postene — signaturenes levetid kunne ikke sjekkes',
       DNSSEC_NSEC3_GOOD:   'NSEC3 med 0 iterasjoner og uten salt — som anbefalt i RFC 9276',
       DNSSEC_NSEC3_OPTOUT: 'NSEC3 opt-out-flagget er satt — usignerte delegeringer bevises ikke fraværende (ment for store delegeringssoner)',
+      RECS_COHERENCE:      'Samsvar mellom protokollene',
+      COH_NONE:            'Ingen konflikter mellom de publiserte postene.',
+      COH_TLSRPT_NO_POLICY: 'TLS-RPT er publisert, men verken en MTA-STS-policy eller DANE er p\u00e5 plass \u2014 mottakerne har ingenting \u00e5 rapportere om',
+      COH_MTASTS_TESTING_BLIND: 'MTA-STS er i testmodus, men det finnes ingen TLS-RPT-post \u2014 feil i testmodus rapporteres ingen steder, s\u00e5 testingen kan aldri fortelle deg noe',
+      COH_BELT_AND_BRACES: 'B\u00e5de DANE og en h\u00e5ndhevende MTA-STS-policy beskytter innkommende TLS \u2014 belte og bukseseler',
     },
     // ── d: dynamic strings (arrow functions) ─────────────────────────────────
     d: {
@@ -2451,6 +2472,10 @@ const STRINGS = {
       DNSSEC_NSEC3_HIGH:     n => 'NSEC3-iterasjoner ' + n + ' overstiger 100 — validatorer som følger RFC 9276 behandler sonen som usikker (usignert)',
       DNSSEC_NSEC3_PARAMS:   (n, salt) => 'NSEC3 med ' + n + ' iterasjon' + (n !== 1 ? 'er' : '') + ' og salt ' + salt + ' — RFC 9276 anbefaler 0 iterasjoner og ingen salt',
       DNSSEC_KEY_SMALL:      (tag, bits) => 'RSA-nøkkel-tag ' + tag + ' er bare ' + bits + ' bit — bruk 2048 bit eller mer (RFC 8624)',
+      COH_BIMI_DMARC:        why => 'En BIMI-post er publisert, men DMARC oppfyller ikke BIMI-kravene (' + why + ') \u2014 p=quarantine eller p=reject, pct=100 og sp ulik none kreves, ellers vises logoen aldri',
+      COH_DMARC_NO_SPF:      p => 'DMARC h\u00e5ndhever p=' + p + ', men domenet har ingen SPF-post \u2014 justeringen hviler helt p\u00e5 DKIM; usignert e-post fra dette domenet blir allerede ' + (p === 'reject' ? 'avvist' : 'satt i karantene'),
+      COH_RUA_UNDELIVERABLE: h => 'Rapportmottakeren ' + h + ' har verken MX eller adressepost \u2014 DMARC/TLS-RPT-rapporter dit kan ikke leveres',
+      COH_RUA_DELIVERABLE:   n => n + ' rapportmottaker' + (n !== 1 ? 'e' : '') + ' (rua/ruf) tar imot e-post (MX eller adressepost finnes)',
     },
     // ── x: explanation strings (HTML) ────────────────────────────────────────
     x: {
@@ -3074,6 +3099,11 @@ const STRINGS = {
       DNSSEC_RRSIG_NONE:   'No se devolvió ningún RRSIG para los registros DNSKEY/SOA — no se pudo comprobar la vigencia de las firmas',
       DNSSEC_NSEC3_GOOD:   'NSEC3 con 0 iteraciones y sin sal — como recomienda RFC 9276',
       DNSSEC_NSEC3_OPTOUT: 'Indicador opt-out de NSEC3 activo — no se demuestra la ausencia de delegaciones sin firmar (pensado para grandes zonas de delegación)',
+      RECS_COHERENCE:      'Coherencia entre protocolos',
+      COH_NONE:            'Sin conflictos entre los registros publicados.',
+      COH_TLSRPT_NO_POLICY: 'TLS-RPT est\u00e1 publicado pero no hay ni pol\u00edtica MTA-STS ni DANE \u2014 los receptores no tienen nada sobre lo que informar',
+      COH_MTASTS_TESTING_BLIND: 'MTA-STS est\u00e1 en modo de prueba pero no existe registro TLS-RPT \u2014 los fallos en modo de prueba no se informan a ning\u00fan sitio, as\u00ed que la prueba nunca te dir\u00e1 nada',
+      COH_BELT_AND_BRACES: 'Tanto DANE como una pol\u00edtica MTA-STS en modo enforce protegen el TLS entrante \u2014 doble seguridad',
     },
     d: {
       MX_HOSTS_FOUND:        n => n + ' servidor' + (n !== 1 ? 'es' : '') + ' MX encontrado' + (n !== 1 ? 's' : '') + '.',
@@ -3196,6 +3226,10 @@ const STRINGS = {
       DNSSEC_NSEC3_HIGH:     n => 'Las iteraciones NSEC3 (' + n + ') superan 100 — los validadores que siguen RFC 9276 tratan la zona como insegura (no firmada)',
       DNSSEC_NSEC3_PARAMS:   (n, salt) => 'NSEC3 con ' + n + ' iteraci' + (n !== 1 ? 'ones' : 'ón') + ' y sal ' + salt + ' — RFC 9276 recomienda 0 iteraciones y sin sal',
       DNSSEC_KEY_SMALL:      (tag, bits) => 'La clave RSA con etiqueta ' + tag + ' tiene solo ' + bits + ' bits — usa 2048 bits o más (RFC 8624)',
+      COH_BIMI_DMARC:        why => 'Hay un registro BIMI publicado pero DMARC no cumple los requisitos de BIMI (' + why + ') \u2014 se necesitan p=quarantine o p=reject, pct=100 y sp distinto de none, o el logotipo nunca se mostrar\u00e1',
+      COH_DMARC_NO_SPF:      p => 'DMARC aplica p=' + p + ' pero el dominio no tiene registro SPF \u2014 la alineaci\u00f3n depende por completo de DKIM; el correo sin firmar de este dominio ya est\u00e1 siendo ' + (p === 'reject' ? 'rechazado' : 'puesto en cuarentena'),
+      COH_RUA_UNDELIVERABLE: h => 'El destino de informes ' + h + ' no tiene MX ni registro de direcci\u00f3n \u2014 los informes DMARC/TLS-RPT enviados all\u00ed no se pueden entregar',
+      COH_RUA_DELIVERABLE:   n => n + ' destino' + (n !== 1 ? 's' : '') + ' de informes (rua/ruf) acepta' + (n !== 1 ? 'n' : '') + ' correo (hay MX o registro de direcci\u00f3n)',
     },
     x: {
       DMARC:
@@ -3842,6 +3876,11 @@ const STRINGS = {
       DNSSEC_RRSIG_NONE:   'Aucun RRSIG renvoyé pour les enregistrements DNSKEY/SOA — la durée de validité des signatures n’a pas pu être vérifiée',
       DNSSEC_NSEC3_GOOD:   'NSEC3 avec 0 itération et sans sel — comme le recommande la RFC 9276',
       DNSSEC_NSEC3_OPTOUT: 'Indicateur opt-out NSEC3 activé — l’absence des délégations non signées n’est pas prouvée (prévu pour les grandes zones de délégation)',
+      RECS_COHERENCE:      'Coh\u00e9rence entre protocoles',
+      COH_NONE:            'Aucun conflit entre les enregistrements publi\u00e9s.',
+      COH_TLSRPT_NO_POLICY: 'TLS-RPT est publi\u00e9 mais ni politique MTA-STS ni DANE ne sont en place \u2014 les destinataires n\u2019ont rien \u00e0 signaler',
+      COH_MTASTS_TESTING_BLIND: 'MTA-STS est en mode test mais aucun enregistrement TLS-RPT n\u2019existe \u2014 les \u00e9checs en mode test ne sont signal\u00e9s nulle part, le test ne vous apprendra donc jamais rien',
+      COH_BELT_AND_BRACES: 'DANE et une politique MTA-STS en mode enforce prot\u00e8gent tous deux le TLS entrant \u2014 ceinture et bretelles',
     },
 
     // ── d: chaînes dynamiques (fonctions fléchées) ────────────────────────────
@@ -3966,6 +4005,10 @@ const STRINGS = {
       DNSSEC_NSEC3_HIGH:     n => 'Les itérations NSEC3 (' + n + ') dépassent 100 — les validateurs conformes à la RFC 9276 traitent la zone comme non sécurisée (non signée)',
       DNSSEC_NSEC3_PARAMS:   (n, salt) => 'NSEC3 avec ' + n + ' itération' + (n !== 1 ? 's' : '') + ' et le sel ' + salt + ' — la RFC 9276 recommande 0 itération et aucun sel',
       DNSSEC_KEY_SMALL:      (tag, bits) => 'La clé RSA d’étiquette ' + tag + ' ne fait que ' + bits + ' bits — utilisez 2048 bits ou plus (RFC 8624)',
+      COH_BIMI_DMARC:        why => 'Un enregistrement BIMI est publi\u00e9 mais DMARC ne satisfait pas aux exigences BIMI (' + why + ') \u2014 p=quarantine ou p=reject, pct=100 et sp diff\u00e9rent de none sont requis, sinon le logo ne s\u2019affichera jamais',
+      COH_DMARC_NO_SPF:      p => 'DMARC applique p=' + p + ' mais le domaine n\u2019a pas d\u2019enregistrement SPF \u2014 l\u2019alignement repose enti\u00e8rement sur DKIM\u00a0; le courrier non sign\u00e9 de ce domaine est d\u00e9j\u00e0 ' + (p === 'reject' ? 'rejet\u00e9' : 'mis en quarantaine'),
+      COH_RUA_UNDELIVERABLE: h => 'La destination des rapports ' + h + ' n\u2019a ni MX ni enregistrement d\u2019adresse \u2014 les rapports DMARC/TLS-RPT qui y sont envoy\u00e9s ne peuvent pas \u00eatre remis',
+      COH_RUA_DELIVERABLE:   n => n + ' destination' + (n !== 1 ? 's' : '') + ' de rapports (rua/ruf) accepte' + (n !== 1 ? 'nt' : '') + ' le courrier (MX ou enregistrement d\u2019adresse pr\u00e9sent)',
     },
 
     // ── x: textes d'explication (HTML) ────────────────────────────────────────
@@ -4885,8 +4928,10 @@ function parseTLSAData(data) {
     if (bytes.length < 4) return null;
     return { usage: bytes[0], selector: bytes[1], matching: bytes[2], certData: bytes.slice(3).map(b => b.toString(16).padStart(2, '0')).join('') };
   }
-  // Presentation format: "3 1 1 abc123..."
-  const parts = data.trim().split(/\s+/);
+  // Presentation format: "3 1 1 abc123...". Cloudflare's JSON returns the
+  // multi-line form for long digests — "3 1 1 ( abc123... )" — so the
+  // parentheses are stripped before the digest is joined (critical bug 20).
+  const parts = data.replace(/[()]/g, ' ').trim().split(/\s+/);
   if (parts.length < 4) return null;
   return { usage: parseInt(parts[0]), selector: parseInt(parts[1]), matching: parseInt(parts[2]), certData: parts.slice(3).join('') };
 }
@@ -9112,6 +9157,81 @@ function settledValue(res) {
   return res && res.status === 'fulfilled' ? res.value : REJECTED_RESULT;
 }
 
+// ── Cross-protocol coherence ──────────────────────────────────────────────────
+// Findings that only exist *between* checks: a record that is correct on its
+// own but pointless or harmful given what the other records say. Display-only
+// (a section at the top of the Fixes tab); never scored, never a tab dot.
+// Takes the other checks' promises, so it starts as soon as they settle.
+async function checkCoherence(p) {
+  const [dmarc, tlsrpt, mtasts, dane, bimi, spf] = (await Promise.allSettled([p.dmarc, p.tlsrpt, p.mtasts, p.dane, p.bimi, p.spf])).map(settledValue);
+  const issues = [];
+  const ok = x => x && !x.error && !x.skipped;
+
+  const tlsrptPresent  = ok(tlsrpt) && !!tlsrpt.record;
+  const mtastsPolicy   = ok(mtasts) && mtasts.policy ? mtasts.policy : null;
+  const mtastsMode     = mtastsPolicy ? String(mtastsPolicy.mode || '').toLowerCase() : null;
+  const daneCovered    = ok(dane) && (dane.hosts || []).some(h => !h.error && h.records && h.records.length > 0 && h.ad && h.usable > 0);
+  const daneAny        = ok(dane) && (dane.hosts || []).some(h => !h.error && h.records && h.records.length > 0);
+
+  // 1. TLS-RPT without anything to report on. Decided on the MTA-STS *DNS record*,
+  //    not the fetched policy: a policy file blocked by CORS exists all the same.
+  //    Skipped MTA-STS is unknown, not absent.
+  if (tlsrptPresent && !daneAny && ok(mtasts) && !mtasts.skipped && !mtasts.record) {
+    issues.push({ rating: 'warning', textKey: 'COH_TLSRPT_NO_POLICY' });
+  }
+  // 2. MTA-STS testing mode is blind without TLS-RPT.
+  if (mtastsMode === 'testing' && ok(tlsrpt) && !tlsrptPresent) {
+    issues.push({ rating: 'warning', textKey: 'COH_MTASTS_TESTING_BLIND' });
+  }
+  // 3. Both DANE and MTA-STS enforce TLS: belt and braces.
+  if (daneCovered && mtastsMode === 'enforce') {
+    issues.push({ rating: 'excellent', textKey: 'COH_BELT_AND_BRACES' });
+  }
+  // 4. BIMI needs an enforcing DMARC policy (p=quarantine|reject, pct=100, sp not none).
+  if (ok(bimi) && bimi.record && !bimi.optOut && ok(dmarc)) {
+    const parsed = dmarc.parsed || {};
+    const tag = dmarc.inheritedFrom ? (dmarc.appliedTag || 'p') : 'p';
+    const policy = String(parsed[tag] || parsed.p || '').toLowerCase();
+    const pct = dmarc.pct === undefined ? 100 : dmarc.pct;
+    const sp = String(parsed.sp || '').toLowerCase();
+    const reasons = [];
+    if (policy !== 'quarantine' && policy !== 'reject') reasons.push('p=' + (policy || 'none'));
+    if (pct < 100) reasons.push('pct=' + pct);
+    if (sp === 'none') reasons.push('sp=none');
+    if (reasons.length) issues.push({ rating: 'warning', textKey: 'COH_BIMI_DMARC', textArgs: [reasons.join(', ')] });
+  }
+  // 5. DMARC enforces, but there is no SPF record: alignment rests on DKIM alone.
+  if (ok(dmarc) && ok(spf) && Array.isArray(spf.records) && spf.records.length === 0) {
+    const parsed = dmarc.parsed || {};
+    const policy = String(parsed[dmarc.inheritedFrom ? (dmarc.appliedTag || 'p') : 'p'] || parsed.p || '').toLowerCase();
+    if (policy === 'quarantine' || policy === 'reject') issues.push({ rating: 'warning', textKey: 'COH_DMARC_NO_SPF', textArgs: [policy] });
+  }
+  // 6. Report destinations (DMARC rua/ruf, TLS-RPT rua, mailto:) must be deliverable:
+  //    an MX, or failing that an A/AAAA (implicit MX, RFC 5321 §5.1). Null MX = never.
+  const uris = [];
+  if (ok(dmarc)) { const pr = dmarc.parsed || {}; uris.push(...splitDMARCUris(pr.rua), ...splitDMARCUris(pr.ruf)); }
+  if (ok(tlsrpt)) uris.push(...(tlsrpt.rua || []));
+  const hosts = [...new Set(uris.filter(u => /^mailto:/i.test(u)).map(uriHostname).filter(Boolean).map(h => h.toLowerCase()))];
+  const delivery = {};
+  if (hosts.length) {
+    const checks = await parallelLimit(hosts.map(h => async () => {
+      const mx = await getMXHosts(h);
+      if (mx.problem) return 'error';
+      if (mx.nullMX) return 'null-mx';
+      if (mx.hosts.length > 0) return 'mx';
+      const ips = await resolveHostIPs(h);
+      return ips.length > 0 ? 'implicit' : 'none';
+    }), DNS_CONCURRENCY);
+    hosts.forEach((h, i) => { delivery[h] = checks[i].status === 'fulfilled' ? checks[i].value : 'error'; });
+    const bad = hosts.filter(h => delivery[h] === 'none' || delivery[h] === 'null-mx');
+    for (const h of bad) issues.push({ rating: 'warning', textKey: 'COH_RUA_UNDELIVERABLE', textArgs: [h] });
+    const good = hosts.filter(h => delivery[h] === 'mx' || delivery[h] === 'implicit');
+    if (good.length === hosts.length) issues.push({ rating: 'good', textKey: 'COH_RUA_DELIVERABLE', textArgs: [hosts.length] });
+  }
+
+  return { issues, delivery, rating: issues.reduce((r, i) => worstRating(r, i.rating), 'excellent') };
+}
+
 function renderRecommendations(r) {
   const g = settledValue;
 
@@ -9158,6 +9278,17 @@ function renderRecommendations(r) {
       row.appendChild(header);
       if (issues.length > 0) row.appendChild(makeIssueList(issues));
       return row;
+    }
+
+    // Cross-protocol coherence — between-check findings, display-only. Absent
+    // (older stored results, the harness) → no section.
+    const coh = r.coherence && r.coherence.status === 'fulfilled' ? r.coherence.value : null;
+    if (coh && Array.isArray(coh.issues)) {
+      const sec = el('div', 'panel-section');
+      sec.appendChild(el('div', 'panel-section-title', ts('RECS_COHERENCE')));
+      if (coh.issues.length) sec.appendChild(makeIssueList(coh.issues));
+      else sec.appendChild(el('div', 'card-summary', ts('COH_NONE')));
+      body.appendChild(sec);
     }
 
     const scoredFail = SCORED.filter(c => c.result.rating !== 'excellent');
@@ -9534,17 +9665,26 @@ async function runChecks(domain, customSelectors, opts = {}) {
   if (!skipSecTxt) tabsToLoad.push('security-txt');
   tabsToLoad.forEach(setTabLoading);
 
-  const [dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois, bgp, conn] = await Promise.allSettled([
+  // The coherence step reads the DMARC/TLS-RPT/MTA-STS/DANE/BIMI/SPF results, so
+  // those promises are created first and handed to it; it settles right after
+  // the last of them does.
+  const pDane   = timed('dane',    checkDANE(domain));
+  const pSpf    = timed('spf',     checkSPF(domain));
+  const pDmarc  = timed('dmarc',   checkDMARC(domain));
+  const pBimi   = timed('bimi',    checkBIMI(domain));
+  const pTlsrpt = timed('tlsrpt',  checkTLSRPT(domain));
+  const pMtasts = timed('mtasts',  skipMTASTS ? Promise.resolve(SKIPPED) : checkMTASTS(domain));
+  const [dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois, bgp, conn, coherence] = await Promise.allSettled([
     timed('dnssec',  checkDNSSECFull(domain)),
     timed('mx',      checkMX(domain)),
     timed('ptr',     checkPTR(domain)),
-    timed('dane',    checkDANE(domain)),
-    timed('spf',     checkSPF(domain)),
+    pDane,
+    pSpf,
     timed('dkim',    checkDKIM(domain, customSelectors)),
-    timed('dmarc',   checkDMARC(domain)),
-    timed('bimi',    checkBIMI(domain)),
-    timed('tlsrpt',  checkTLSRPT(domain)),
-    timed('mtasts',  skipMTASTS ? Promise.resolve(SKIPPED) : checkMTASTS(domain)),
+    pDmarc,
+    pBimi,
+    pTlsrpt,
+    pMtasts,
     timed('caa',     checkCAA(domain)),
     timed('rpki',    checkRPKI(domain)),
     timed('ipv6',    checkIPv6(domain)),
@@ -9552,11 +9692,12 @@ async function runChecks(domain, customSelectors, opts = {}) {
     timed('whois',   checkWHOIS(domain)),
     timed('bgp',     checkBGPSafety()),
     timed('conn',    checkConnection()),
+    timed('coherence', checkCoherence({ dane: pDane, spf: pSpf, dmarc: pDmarc, bimi: pBimi, tlsrpt: pTlsrpt, mtasts: pMtasts })),
   ]);
   if (gen !== scanGeneration) return;   // superseded — see scanGeneration
   if (scanStats) scanStats.totalMs = Date.now() - scanStats.startMs;
 
-  lastResults = { dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois, bgp, conn };
+  lastResults = { dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois, bgp, conn, coherence };
   scanning = false;
   rerenderAll(lastResults);
   announce(td('SCAN_DONE', domain, document.getElementById('summary-grade').textContent));

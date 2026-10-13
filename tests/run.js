@@ -81,6 +81,11 @@ test('A5 SERVFAIL is reported as an error, not "no record"', async () => {
 });
 
 test('A6 DANE: PKIX usage → warning; invalid TLSA flagged; partial → good', async () => {
+  { // multi-line presentation form with parentheses (Cloudflare) is valid, not malformed
+    const app = load();
+    const d = app.parseTLSAData('3 1 1 ( ' + '9A'.repeat(32) + ' )');
+    eq(d.certData.length, 64); eq(app.tlsaInvalidReason(d), null, 'parentheses stripped');
+  }
   const app = load();
   app.rr('example.com', 'MX', 15, ['10 mx1.example.com.', '20 mx2.example.com.'], { AD: true });
   app.rr('_25._tcp.mx1.example.com', 'TLSA', 52, ['3 1 1 ' + 'ab'.repeat(32)], { AD: true });
@@ -406,6 +411,69 @@ test('D1 DNSSEC depth: DS match, RRSIG lifetime, NSEC3, RSA size, registry cross
   app.dns.set('plain.example|DNSKEY', { Status: 0, Answer: [] });
   r = await app.checkDNSSECFull('plain.example');
   eq(r.rating, 'fail'); eq(r.depth, undefined);
+});
+
+test('D5 cross-protocol coherence', async () => {
+  const run = async (app, over = {}) => {
+    const P = k => Promise.resolve(over[k] !== undefined ? over[k] : base[k]);
+    return app.checkCoherence({ dane: P('dane'), spf: P('spf'), dmarc: P('dmarc'), bimi: P('bimi'), tlsrpt: P('tlsrpt'), mtasts: P('mtasts') });
+  };
+  const base = {
+    dane:   { rating: 'fail', hosts: [{ hostname: 'mx.example.com', records: [], ad: false, usable: 0 }] },
+    spf:    { rating: 'excellent', records: ['v=spf1 -all'] },
+    dmarc:  { rating: 'excellent', parsed: { v: 'DMARC1', p: 'reject', rua: 'mailto:dmarc@reports.example' }, pct: 100 },
+    bimi:   { rating: 'fail', record: null },
+    tlsrpt: { rating: 'warning', record: null, rua: [] },
+    mtasts: { rating: 'warning', record: null, policy: null },
+  };
+  let app = load();
+  app.rr('reports.example', 'MX', 15, ['10 mx.reports.example.']);
+  let c = await run(app);
+  eq(c.issues.map(i => i.textKey), ['COH_RUA_DELIVERABLE'], 'baseline is coherent');
+  eq(c.delivery['reports.example'], 'mx');
+  // TLS-RPT with nothing to report on
+  c = await run(app, { tlsrpt: { rating: 'good', record: 'v=TLSRPTv1; rua=mailto:tls@reports.example', rua: ['mailto:tls@reports.example'] } });
+  has(c.issues, 'COH_TLSRPT_NO_POLICY');
+  // ...but an MTA-STS record whose policy could not be fetched (CORS) is not "absent"
+  c = await run(app, { tlsrpt: { rating: 'good', record: 'v=TLSRPTv1; rua=mailto:tls@reports.example', rua: ['mailto:tls@reports.example'] },
+                       mtasts: { rating: 'warning', record: 'v=STSv1; id=1', policy: null, policyErrorKey: 'MTASTS_ERR_CORS' } });
+  lacks(c.issues, 'COH_TLSRPT_NO_POLICY');
+  // MTA-STS testing without TLS-RPT; enforce + DANE = belt and braces
+  c = await run(app, { mtasts: { rating: 'good', record: 'v=STSv1; id=1', policy: { mode: 'testing', mx: ['mx.example.com'], max_age: '86400' } } });
+  has(c.issues, 'COH_MTASTS_TESTING_BLIND');
+  c = await run(app, { mtasts: { rating: 'excellent', record: 'v=STSv1; id=1', policy: { mode: 'enforce', mx: ['mx.example.com'], max_age: '86400' } },
+                       dane: { rating: 'excellent', hosts: [{ hostname: 'mx.example.com', records: [{ usage: 3 }], ad: true, usable: 1 }] },
+                       tlsrpt: { rating: 'good', record: 'v=TLSRPTv1; rua=mailto:tls@reports.example', rua: ['mailto:tls@reports.example'] } });
+  has(c.issues, 'COH_BELT_AND_BRACES'); lacks(c.issues, 'COH_TLSRPT_NO_POLICY'); lacks(c.issues, 'COH_MTASTS_TESTING_BLIND');
+  // BIMI vs DMARC
+  c = await run(app, { bimi: { rating: 'good', record: 'v=BIMI1; l=https://x/logo.svg', parsed: { l: 'https://x/logo.svg' } },
+                       dmarc: { rating: 'warning', parsed: { v: 'DMARC1', p: 'none', sp: 'none', pct: '50', rua: 'mailto:dmarc@reports.example' }, pct: 50 } });
+  const b = c.issues.find(i => i.textKey === 'COH_BIMI_DMARC');
+  eq(!!b, true); eq(b.textArgs[0], 'p=none, pct=50, sp=none');
+  c = await run(app, { bimi: { rating: 'good', record: 'v=BIMI1; l=https://x/logo.svg', parsed: { l: 'https://x/logo.svg' } } });
+  lacks(c.issues, 'COH_BIMI_DMARC');
+  // inherited policy: the applied tag counts
+  c = await run(app, { bimi: { rating: 'good', record: 'v=BIMI1; l=https://x/logo.svg', parsed: {} },
+                       dmarc: { rating: 'warning', parsed: { v: 'DMARC1', p: 'reject', sp: 'none', rua: 'mailto:dmarc@reports.example' }, pct: 100, inheritedFrom: 'example.com', appliedTag: 'sp' } });
+  has(c.issues, 'COH_BIMI_DMARC');
+  // DMARC enforcing with no SPF
+  c = await run(app, { spf: { rating: 'fail', records: [] } });
+  has(c.issues, 'COH_DMARC_NO_SPF');
+  // undeliverable report destination (no MX, no A) and null MX; implicit MX via A is fine
+  app = load();
+  app.dns.set('dead.example|MX', { Status: 0, Answer: [] });
+  app.rr('nullmx.example', 'MX', 15, ['0 .']);
+  app.dns.set('a-only.example|MX', { Status: 0, Answer: [] });
+  app.rr('a-only.example', 'A', 1, ['192.0.2.1']);
+  c = await run(app, { dmarc: { rating: 'excellent', parsed: { v: 'DMARC1', p: 'reject', rua: 'mailto:a@dead.example, mailto:b@nullmx.example', ruf: 'mailto:c@a-only.example' }, pct: 100 } });
+  eq(c.delivery, { 'dead.example': 'none', 'nullmx.example': 'null-mx', 'a-only.example': 'implicit' });
+  eq(c.issues.filter(i => i.textKey === 'COH_RUA_UNDELIVERABLE').map(i => i.textArgs[0]).sort(), ['dead.example', 'nullmx.example']);
+  lacks(c.issues, 'COH_RUA_DELIVERABLE');
+  // every issue resolves to text in every language
+  for (const lang of ['en', 'no', 'es', 'fr']) { app.currentLang = lang; for (const i of c.issues) { const s = i.textArgs ? app.td(i.textKey, ...i.textArgs) : app.ts(i.textKey); if (s === i.textKey) throw new Error('unresolved ' + i.textKey + ' in ' + lang); } }
+  // skipped MTA-STS is unknown, not absent: no TLS-RPT finding
+  c = await run(load(), { mtasts: { skipped: true, rating: 'skip' }, tlsrpt: { rating: 'good', record: 'v=TLSRPTv1; rua=https://r.example/x', rua: ['https://r.example/x'] } });
+  lacks(c.issues, 'COH_TLSRPT_NO_POLICY');
 });
 
 (async () => {

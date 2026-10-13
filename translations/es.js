@@ -375,6 +375,11 @@ const LANG_ES = {
     DNSSEC_RRSIG_NONE:   'No se devolvió ningún RRSIG para los registros DNSKEY/SOA — no se pudo comprobar la vigencia de las firmas',
     DNSSEC_NSEC3_GOOD:   'NSEC3 con 0 iteraciones y sin sal — como recomienda RFC 9276',
     DNSSEC_NSEC3_OPTOUT: 'Indicador opt-out de NSEC3 activo — no se demuestra la ausencia de delegaciones sin firmar (pensado para grandes zonas de delegación)',
+    RECS_COHERENCE:      'Coherencia entre protocolos',
+    COH_NONE:            'Sin conflictos entre los registros publicados.',
+    COH_TLSRPT_NO_POLICY: 'TLS-RPT est\u00e1 publicado pero no hay ni pol\u00edtica MTA-STS ni DANE \u2014 los receptores no tienen nada sobre lo que informar',
+    COH_MTASTS_TESTING_BLIND: 'MTA-STS est\u00e1 en modo de prueba pero no existe registro TLS-RPT \u2014 los fallos en modo de prueba no se informan a ning\u00fan sitio, as\u00ed que la prueba nunca te dir\u00e1 nada',
+    COH_BELT_AND_BRACES: 'Tanto DANE como una pol\u00edtica MTA-STS en modo enforce protegen el TLS entrante \u2014 doble seguridad',
   },
 
   // ── d: cadenas dinámicas (funciones flecha) ───────────────────────────────
@@ -498,6 +503,10 @@ const LANG_ES = {
     DNSSEC_NSEC3_HIGH:     n => 'Las iteraciones NSEC3 (' + n + ') superan 100 — los validadores que siguen RFC 9276 tratan la zona como insegura (no firmada)',
     DNSSEC_NSEC3_PARAMS:   (n, salt) => 'NSEC3 con ' + n + ' iteraci' + (n !== 1 ? 'ones' : 'ón') + ' y sal ' + salt + ' — RFC 9276 recomienda 0 iteraciones y sin sal',
     DNSSEC_KEY_SMALL:      (tag, bits) => 'La clave RSA con etiqueta ' + tag + ' tiene solo ' + bits + ' bits — usa 2048 bits o más (RFC 8624)',
+    COH_BIMI_DMARC:        why => 'Hay un registro BIMI publicado pero DMARC no cumple los requisitos de BIMI (' + why + ') \u2014 se necesitan p=quarantine o p=reject, pct=100 y sp distinto de none, o el logotipo nunca se mostrar\u00e1',
+    COH_DMARC_NO_SPF:      p => 'DMARC aplica p=' + p + ' pero el dominio no tiene registro SPF \u2014 la alineaci\u00f3n depende por completo de DKIM; el correo sin firmar de este dominio ya est\u00e1 siendo ' + (p === 'reject' ? 'rechazado' : 'puesto en cuarentena'),
+    COH_RUA_UNDELIVERABLE: h => 'El destino de informes ' + h + ' no tiene MX ni registro de direcci\u00f3n \u2014 los informes DMARC/TLS-RPT enviados all\u00ed no se pueden entregar',
+    COH_RUA_DELIVERABLE:   n => n + ' destino' + (n !== 1 ? 's' : '') + ' de informes (rua/ruf) acepta' + (n !== 1 ? 'n' : '') + ' correo (hay MX o registro de direcci\u00f3n)',
   },
 
   // ── x: textos de explicación (HTML) ──────────────────────────────────────

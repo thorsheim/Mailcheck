@@ -377,6 +377,11 @@ const LANG_FR = {
     DNSSEC_RRSIG_NONE:   'Aucun RRSIG renvoyé pour les enregistrements DNSKEY/SOA — la durée de validité des signatures n’a pas pu être vérifiée',
     DNSSEC_NSEC3_GOOD:   'NSEC3 avec 0 itération et sans sel — comme le recommande la RFC 9276',
     DNSSEC_NSEC3_OPTOUT: 'Indicateur opt-out NSEC3 activé — l’absence des délégations non signées n’est pas prouvée (prévu pour les grandes zones de délégation)',
+    RECS_COHERENCE:      'Coh\u00e9rence entre protocoles',
+    COH_NONE:            'Aucun conflit entre les enregistrements publi\u00e9s.',
+    COH_TLSRPT_NO_POLICY: 'TLS-RPT est publi\u00e9 mais ni politique MTA-STS ni DANE ne sont en place \u2014 les destinataires n\u2019ont rien \u00e0 signaler',
+    COH_MTASTS_TESTING_BLIND: 'MTA-STS est en mode test mais aucun enregistrement TLS-RPT n\u2019existe \u2014 les \u00e9checs en mode test ne sont signal\u00e9s nulle part, le test ne vous apprendra donc jamais rien',
+    COH_BELT_AND_BRACES: 'DANE et une politique MTA-STS en mode enforce prot\u00e8gent tous deux le TLS entrant \u2014 ceinture et bretelles',
   },
 
   // ── d: chaînes dynamiques (fonctions fléchées) ────────────────────────────
@@ -501,6 +506,10 @@ const LANG_FR = {
     DNSSEC_NSEC3_HIGH:     n => 'Les itérations NSEC3 (' + n + ') dépassent 100 — les validateurs conformes à la RFC 9276 traitent la zone comme non sécurisée (non signée)',
     DNSSEC_NSEC3_PARAMS:   (n, salt) => 'NSEC3 avec ' + n + ' itération' + (n !== 1 ? 's' : '') + ' et le sel ' + salt + ' — la RFC 9276 recommande 0 itération et aucun sel',
     DNSSEC_KEY_SMALL:      (tag, bits) => 'La clé RSA d’étiquette ' + tag + ' ne fait que ' + bits + ' bits — utilisez 2048 bits ou plus (RFC 8624)',
+    COH_BIMI_DMARC:        why => 'Un enregistrement BIMI est publi\u00e9 mais DMARC ne satisfait pas aux exigences BIMI (' + why + ') \u2014 p=quarantine ou p=reject, pct=100 et sp diff\u00e9rent de none sont requis, sinon le logo ne s\u2019affichera jamais',
+    COH_DMARC_NO_SPF:      p => 'DMARC applique p=' + p + ' mais le domaine n\u2019a pas d\u2019enregistrement SPF \u2014 l\u2019alignement repose enti\u00e8rement sur DKIM\u00a0; le courrier non sign\u00e9 de ce domaine est d\u00e9j\u00e0 ' + (p === 'reject' ? 'rejet\u00e9' : 'mis en quarantaine'),
+    COH_RUA_UNDELIVERABLE: h => 'La destination des rapports ' + h + ' n\u2019a ni MX ni enregistrement d\u2019adresse \u2014 les rapports DMARC/TLS-RPT qui y sont envoy\u00e9s ne peuvent pas \u00eatre remis',
+    COH_RUA_DELIVERABLE:   n => n + ' destination' + (n !== 1 ? 's' : '') + ' de rapports (rua/ruf) accepte' + (n !== 1 ? 'nt' : '') + ' le courrier (MX ou enregistrement d\u2019adresse pr\u00e9sent)',
   },
 
   // ── x: textes d'explication (HTML) ───────────────────────────────────────

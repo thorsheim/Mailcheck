@@ -14,10 +14,12 @@ const domains = process.argv.slice(2).length ? process.argv.slice(2) : ['cloudfl
     const settled = await Promise.allSettled(fns.map(f => f(domain)));
     const r = {};
     names.forEach((n, i) => { r[n] = settled[i]; });
+    const pick = n => r[n].status === 'fulfilled' ? Promise.resolve(r[n].value) : Promise.reject(r[n].reason);
+    r.coherence = (await Promise.allSettled([app.checkCoherence({ dane: pick('dane'), spf: pick('spf'), dmarc: pick('dmarc'), bimi: pick('bimi'), tlsrpt: pick('tlsrpt'), mtasts: pick('mtasts') })]))[0];
     r.bgp = { status: 'fulfilled', value: { status: 'error' } };
     r.conn = { status: 'fulfilled', value: { dnssec: 'error', ip: { v4: null, v6: null, v4Info: null, v6Info: null, holders: {} } } };
     app.lastResults = r;
-    const summary = names.map(n => n + '=' + (r[n].status === 'fulfilled' ? r[n].value.rating : 'REJECTED:' + r[n].reason)).join(' ');
+    const summary = [...names, 'coherence'].map(n => n + '=' + (r[n].status === 'fulfilled' ? r[n].value.rating : 'REJECTED:' + r[n].reason)).join(' ');
     console.log(domain, Math.round((Date.now() - t0) / 100) / 10 + 's', 'doh=' + app.scanStats.dohRequests, 'hits=' + app.scanStats.dohCacheHits);
     console.log('  ' + summary);
     for (const n of names) if (r[n].status === 'rejected') console.log('  REJECTED', n, r[n].reason && r[n].reason.stack);

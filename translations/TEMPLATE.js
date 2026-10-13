@@ -444,6 +444,11 @@ const LANG_TEMPLATE = {
     DNSSEC_RRSIG_NONE:   'No RRSIG returned for the DNSKEY/SOA records — signature lifetimes could not be checked',
     DNSSEC_NSEC3_GOOD:   'NSEC3 with 0 iterations and no salt — as recommended by RFC 9276',
     DNSSEC_NSEC3_OPTOUT: 'NSEC3 opt-out flag set — unsigned delegations are not proven absent (intended for large delegation-centric zones)',
+    RECS_COHERENCE:      'Cross-protocol coherence',
+    COH_NONE:            'No conflicts between the published records.',
+    COH_TLSRPT_NO_POLICY: 'TLS-RPT is published but neither an MTA-STS policy nor DANE is in place \u2014 there is nothing for receivers to report on',
+    COH_MTASTS_TESTING_BLIND: 'MTA-STS is in testing mode but no TLS-RPT record exists \u2014 failures in testing mode are reported nowhere, so testing can never tell you anything',
+    COH_BELT_AND_BRACES: 'Both DANE and an enforcing MTA-STS policy protect inbound TLS \u2014 belt and braces',
   },
 
   // ── d: dynamic strings (arrow functions) ───────────────────────────────────
@@ -576,6 +581,10 @@ const LANG_TEMPLATE = {
     DNSSEC_NSEC3_HIGH:     n => 'NSEC3 iterations ' + n + ' exceed 100 — validators following RFC 9276 treat the zone as insecure (unsigned)',
     DNSSEC_NSEC3_PARAMS:   (n, salt) => 'NSEC3 with ' + n + ' iteration' + (n !== 1 ? 's' : '') + ' and salt ' + salt + ' — RFC 9276 recommends 0 iterations and no salt',
     DNSSEC_KEY_SMALL:      (tag, bits) => 'RSA key tag ' + tag + ' is only ' + bits + ' bits — use 2048 bits or more (RFC 8624)',
+    COH_BIMI_DMARC:        why => 'A BIMI record is published but DMARC does not meet the BIMI requirements (' + why + ') \u2014 p=quarantine or p=reject, pct=100 and sp not none are needed, or the logo will never be displayed',
+    COH_DMARC_NO_SPF:      p => 'DMARC enforces p=' + p + ' but the domain has no SPF record \u2014 alignment rests entirely on DKIM; any unsigned mail from this domain is already being ' + (p === 'reject' ? 'rejected' : 'quarantined'),
+    COH_RUA_UNDELIVERABLE: h => 'Report destination ' + h + ' has no MX and no address record \u2014 DMARC/TLS-RPT reports sent there are undeliverable',
+    COH_RUA_DELIVERABLE:   n => n + ' report destination' + (n !== 1 ? 's' : '') + ' (rua/ruf) accept' + (n !== 1 ? '' : 's') + ' mail (MX or address record present)',
   },
 
   // ── x: explanation strings (HTML) ──────────────────────────────────────────

@@ -384,6 +384,11 @@ const LANG_NO = {
     DNSSEC_RRSIG_NONE:   'Ingen RRSIG returnert for DNSKEY/SOA-postene — signaturenes levetid kunne ikke sjekkes',
     DNSSEC_NSEC3_GOOD:   'NSEC3 med 0 iterasjoner og uten salt — som anbefalt i RFC 9276',
     DNSSEC_NSEC3_OPTOUT: 'NSEC3 opt-out-flagget er satt — usignerte delegeringer bevises ikke fraværende (ment for store delegeringssoner)',
+    RECS_COHERENCE:      'Samsvar mellom protokollene',
+    COH_NONE:            'Ingen konflikter mellom de publiserte postene.',
+    COH_TLSRPT_NO_POLICY: 'TLS-RPT er publisert, men verken en MTA-STS-policy eller DANE er p\u00e5 plass \u2014 mottakerne har ingenting \u00e5 rapportere om',
+    COH_MTASTS_TESTING_BLIND: 'MTA-STS er i testmodus, men det finnes ingen TLS-RPT-post \u2014 feil i testmodus rapporteres ingen steder, s\u00e5 testingen kan aldri fortelle deg noe',
+    COH_BELT_AND_BRACES: 'B\u00e5de DANE og en h\u00e5ndhevende MTA-STS-policy beskytter innkommende TLS \u2014 belte og bukseseler',
   },
   // ── d: dynamic strings (arrow functions) ─────────────────────────────────
   d: {
@@ -507,6 +512,10 @@ const LANG_NO = {
     DNSSEC_NSEC3_HIGH:     n => 'NSEC3-iterasjoner ' + n + ' overstiger 100 — validatorer som følger RFC 9276 behandler sonen som usikker (usignert)',
     DNSSEC_NSEC3_PARAMS:   (n, salt) => 'NSEC3 med ' + n + ' iterasjon' + (n !== 1 ? 'er' : '') + ' og salt ' + salt + ' — RFC 9276 anbefaler 0 iterasjoner og ingen salt',
     DNSSEC_KEY_SMALL:      (tag, bits) => 'RSA-nøkkel-tag ' + tag + ' er bare ' + bits + ' bit — bruk 2048 bit eller mer (RFC 8624)',
+    COH_BIMI_DMARC:        why => 'En BIMI-post er publisert, men DMARC oppfyller ikke BIMI-kravene (' + why + ') \u2014 p=quarantine eller p=reject, pct=100 og sp ulik none kreves, ellers vises logoen aldri',
+    COH_DMARC_NO_SPF:      p => 'DMARC h\u00e5ndhever p=' + p + ', men domenet har ingen SPF-post \u2014 justeringen hviler helt p\u00e5 DKIM; usignert e-post fra dette domenet blir allerede ' + (p === 'reject' ? 'avvist' : 'satt i karantene'),
+    COH_RUA_UNDELIVERABLE: h => 'Rapportmottakeren ' + h + ' har verken MX eller adressepost \u2014 DMARC/TLS-RPT-rapporter dit kan ikke leveres',
+    COH_RUA_DELIVERABLE:   n => n + ' rapportmottaker' + (n !== 1 ? 'e' : '') + ' (rua/ruf) tar imot e-post (MX eller adressepost finnes)',
   },
   // ── x: explanation strings (HTML) ────────────────────────────────────────
   x: {

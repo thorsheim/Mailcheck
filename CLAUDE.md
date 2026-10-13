@@ -8,7 +8,7 @@ Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-October-13-3**
+Current version: **2026-October-13-4**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -111,6 +111,7 @@ Every fan-out is bounded by `parallelLimit()`: `DKIM_CONCURRENCY` 10, `RIPE_CONC
 | MTA-STS | `_mta-sts.<domain>` TXT + HTTPS policy fetch | RFC 8461; collects all `mx:` lines as array; cross-checks against actual MX hosts |
 | CAA | `<domain>` CAA (type 257), climbing to parents when empty | Hex format parsed by `parseCAAData()`; RFC 8659 §3 parent inheritance (`climbedTo`); excellent = issue restriction **and** iodef, iodef alone = warning; `issuemail` reported separately (S/MIME, RFC 9495); DNSSEC checked for each CA domain; values linkified |
 | RPKI | RIPE Stat `network-info` + `rpki-validation` + `as-overview` + `aspa` | Checks NS+MX host IPs; includes ASPA section |
+| Coherence | no DNS of its own except MX / A+AAAA for each `mailto:` report host | `checkCoherence()` — between-check findings (TLS-RPT without MTA-STS/DANE, MTA-STS testing without TLS-RPT, BIMI vs DMARC, DMARC enforcing without SPF, undeliverable rua/ruf hosts, DANE + MTA-STS enforce); section at the top of the Fixes tab; never scored |
 | ISP BGP safety | isbgpsafeyet.com `cdn-cgi/trace` + valid/invalid RPKI beacons | Tests the **visitor's** connection, not the domain; renders in the Connection tab; cached per page session; never scored |
 | Connection | `sigok`/`sigfail.ippacket.stream` (no-cors probes) + `ipv4`/`ipv6.icanhazip.com` + RIPE Stat per visitor IP | Tests the **visitor's** connection: resolver DNSSEC validation, public IPv4/IPv6 egress addresses with ASN/prefix/ROA; cached per page session; never scored |
 | IPv6 | `<domain>` A+AAAA, `<domain>` NS → AAAA per NS host, `<domain>` MX → AAAA per MX host | Informational only; does not affect grade |
@@ -268,6 +269,10 @@ safeMarkup()        whitelist markup parser for explanation sections
 addExplanation()
 setTabLoading()     clears panel body, resets dot, adds spinner to panel header
 setTabResult()      updates dot color, removes spinner, adds rating badge, calls buildFn(body)
+checkCoherence(p)   takes the dane/spf/dmarc/bimi/tlsrpt/mtasts *promises* (created first in
+                      runChecks) and settles right after them; returns { issues, delivery, rating }
+                      → lastResults.coherence. Display-only: renderRecommendations shows it as the
+                      first section of the Fixes tab; renderSummary and the tab dots never read it
 renderRecommendations(r)
                     Aggregates all check results into a prioritized action list.
                       "What to fix": scored checks not at excellent, sorted by weight desc.
@@ -339,7 +344,7 @@ const resolvedText = iss.textKey
 **Current languages**: `en` (English, default), `es` (Spanish), `fr` (French), `no` (Norwegian Bokmål).
 All four are **complete** — no language relies on the English fallback. When adding a key, add it to every language, and mirror it into `translations/<lang>.js` **and `translations/TEMPLATE.js`** so the contributor files stay in sync. TEMPLATE.js is easy to forget because nothing in the app reads it — it had silently drifted 37 keys behind (the entire IPv6 block, plus `SELECTOR_HELP`, the SPF recursive-lookup counts and the RPKI nameserver-diversity keys) before being backfilled on 2026-08-13. A contributor starting from a stale template simply never sees those strings.
 
-To check for drift, run `node tests/static.js` — it parses the `STRINGS` block out of `index.html`, diffs the key sets across the four languages and the four `translations/*.js` files, and compares `d`-function *outputs* (not source text, which differs in whitespace between files). The three namespaces currently total **477 keys** (s=344, d=113, x=20). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
+To check for drift, run `node tests/static.js` — it parses the `STRINGS` block out of `index.html`, diffs the key sets across the four languages and the four `translations/*.js` files, and compares `d`-function *outputs* (not source text, which differs in whitespace between files). The three namespaces currently total **486 keys** (s=349, d=117, x=20). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
 
 There are now four contributor files — `es.js`, `fr.js`, `no.js` and `TEMPLATE.js` — and all four
 carry the full key set with no value drift from `index.html`.
@@ -656,12 +661,32 @@ still reports an inherited parent policy when the author domain has no record of
 - Shows expiry warning if domain expires within 30 days or has already expired.
 - Rating: `good` if data found, `warning` if lookup failed. Does not affect grade score.
 
+### Cross-protocol coherence — `checkCoherence`, 2026-October-13-4
+Findings that only exist between checks. Inputs are the settled results of DANE, SPF, DMARC, BIMI,
+TLS-RPT and MTA-STS; an errored or skipped input disables the rules that need it (a *skipped*
+MTA-STS is unknown, not absent — `COH_TLSRPT_NO_POLICY` is not raised then).
+- `COH_TLSRPT_NO_POLICY` (warning): TLS-RPT record, no MTA-STS policy fetched, no TLSA anywhere.
+- `COH_MTASTS_TESTING_BLIND` (warning): policy `mode: testing` and no TLS-RPT record.
+- `COH_BELT_AND_BRACES` (excellent): some MX host DANE-covered (validated, usable TLSA) **and**
+  `mode: enforce`.
+- `COH_BIMI_DMARC` (warning): BIMI record (not an opt-out) while the *effective* DMARC policy —
+  `parsed[appliedTag]` for an inherited record, else `p` — is not quarantine/reject, or `pct < 100`,
+  or `sp=none`. textArg lists the failing tags.
+- `COH_DMARC_NO_SPF` (warning): effective policy quarantine/reject and `spf.records` empty.
+- `COH_RUA_UNDELIVERABLE` (warning) per `mailto:` host from DMARC rua/ruf and TLS-RPT rua with
+  neither MX nor A/AAAA (implicit MX, RFC 5321 §5.1), or a null MX; `COH_RUA_DELIVERABLE` (good)
+  when every host accepts mail. `delivery` maps host → `mx | implicit | none | null-mx | error`.
+The step is wired in `runChecks` by creating the six promises first and passing them in, so it
+costs no extra wall-clock beyond the rua-host lookups. `tests/live.js` reproduces that wiring.
+Display-only by construction: `CHECK_WEIGHTS`/`INFO_CHECKS` do not list it, so the grade, the
+Overview bars, the Fixes dot and `RECS_ALL_EXCELLENT` are unaffected.
+
 ### Recommendations tab details
 - `renderRecommendations(r)` reads all 14 check results from the `Promise.allSettled` result object.
 - Scored checks (with weight): DKIM 20%, SPF 15%, DMARC 15%, MTA-STS 15%, DNSSEC 10%, MX 10%, DANE 10%, TLS-RPT 3%, CAA 2%.
 - Informational checks (weight=0): PTR, BIMI, RPKI, ASPA, Security.txt, WHOIS.
 - Tab dot color = worst rating across the 9 scored checks only (informational excluded).
-- Layout: "What to fix" section (scored non-excellent) → "Informational" section (info non-excellent) → `<details>` "All checks passing" (all excellent checks, collapsed unless everything passes).
+- Layout: "Cross-protocol coherence" section first (display-only, see above) → "What to fix" section (scored non-excellent) → "Informational" section (info non-excellent) → `<details>` "All checks passing" (all excellent checks, collapsed unless everything passes).
 - Each row: check name button (navigates to that tab on click) + weight badge (scored only) + rating badge + issue list from `makeIssueList()`.
 - When all checks are excellent: only shows "Everything is configured optimally." message + open passing list.
 - CSS classes: `.rec-check-row`, `.rec-check-header`, `.rec-check-name`, `.rec-weight-badge`.
@@ -781,6 +806,14 @@ helpers swallow the exception; the head theme script has its own try/catch.
 same key (anycast NS+MX, Connection tab alongside RPKI) all missed and all fetched, and a failed
 holder lookup was cached as `null` for the session. Use `cachedRipe()`; never `cache.set(key, value)`.
 
+### 20. TLSA presentation data may carry parentheses
+Cloudflare's DoH JSON returns long TLSA digests in the RFC 1035 multi-line form, `3 1 1 ( <hex> )`.
+`parseTLSAData` joins everything after the third field, so the digest became `(<hex>)` and the
+hex/length validation added in 2026-October-13-1 flagged every such record as malformed — DANE
+rated warning/fail for mailbox.org, proton.me, posteo.de and every other correct deployment for
+four releases. Strip `(` and `)` before splitting. Test: `A6` now includes a parenthesised record;
+`proton.me` live must rate DANE excellent.
+
 ### 12. Propagation checks compare sets, not `[0]`
 A DNS RRset is unordered and segment joins can differ in whitespace, so comparing Cloudflare's
 first record to Google's first record verbatim flagged perfectly matching domains as
@@ -822,7 +855,7 @@ Two pseudo-ratings sit outside that list and deliberately have `RATINGS.indexOf(
   or a function); `app.http` maps URLs for non-DoH fetches; `app.txt()`/`app.rr()` are shorthands;
   `app.resetScan()` clears caches and `scanStats`. `live: true` passes `fetch` through to the network.
 - `node tests/run.js` — regression tests, one per fixed bug (A1–A13, B5, B10, B11, B8, B9, C3, C9 in
-  the 2026-10-13 audit) plus D2 (DKIM wildcard control probe) and D1 (DNSSEC depth). Add one for every check-logic fix; they run in well under a second.
+  the 2026-10-13 audit) plus D2 (DKIM wildcard control probe) and D1 (DNSSEC depth) and D5 (cross-protocol coherence). Add one for every check-logic fix; they run in well under a second.
 - `node tests/static.js` — the static checks: key parity + `d` arity across languages and
   `translations/*.js` (value drift compared by *output*), referenced-key existence, CSS classes,
   dangerous sinks, tab/panel order, version string across the three files, legacy `text:` issues,
@@ -854,8 +887,18 @@ Two pseudo-ratings sit outside that list and deliberately have `RATINGS.indexOf(
 - `mail.cloudflare.com` — no `_dmarc` record of its own; must grade DMARC on cloudflare.com's
   inherited policy (`DMARC_INHERITED`), and CAA on cloudflare.com's records (`CAA_INHERITED`);
   WHOIS must query `cloudflare.com` (`WHOIS_QUERIED_PARENT`)
+- `proton.me` — DANE on both MX hosts **and** MTA-STS enforce: DANE excellent, and the Fixes tab's
+  coherence section must show `COH_BELT_AND_BRACES` (posteo.de likewise). `mailbox.org` — DANE on all
+  five MX hosts, MTA-STS record whose policy is CORS-blocked in a browser: DANE excellent, no
+  `COH_TLSRPT_NO_POLICY`. All three rated DANE warning/fail between 2026-October-13-1 and -4
+  (critical bug 20)
+- `cloudflare.com` — also has TLSA on all four MX hosts: DANE must be excellent (it read as warning
+  under critical bug 20)
 - `apple.com` — has BIMI record; tests BIMI tab
-- `fastmail.com` — MTA-STS enforce mode with multiple mx: lines; tests MX match check
+- `fastmail.com` — MTA-STS with a wildcard `mx: *.messagingengine.com` line; tests MX match check.
+  Verified 2026-10-13: the policy is in **testing** mode (it used to be enforce) and there is no
+  DANE; TLS-RPT is published, so the coherence section shows only the deliverable-rua note. In a
+  browser the policy fetch is CORS-blocked — `COH_TLSRPT_NO_POLICY` must NOT fire (record exists)
 - DMARC: `p=reject` → excellent, `p=quarantine` → good, `p=none` → warning, no record → fail
 - DMARCbis tree walk: `mail.cloudflare.com` (no own record → inherits via `sp=`), `zzz-no-such-host.thorsheim.net`
   (NXDOMAIN → `np=`/`sp=` selection path), `a.b.c.d.e.f.g.h.i.j.mail.example.com` (reproduces the eight-query
