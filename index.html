@@ -349,6 +349,8 @@
     color: var(--accent-hover);
   }
   .scoring-section { margin-bottom: 1.1rem; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+  .scoring-note { font-size: 0.78rem; color: var(--text-muted); margin: 0.2rem 0 0.8rem; }
   .scoring-section-title {
     font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 0.4rem;
@@ -504,7 +506,7 @@
 </head>
 <body>
 <div id="settings-menu">
-  <button id="settings-btn">&#9881;</button>
+  <button id="settings-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="settings-dropdown" data-i18n-aria="SETTINGS_OPEN">&#9881;</button>
   <div id="settings-dropdown" hidden>
     <button class="settings-item" id="theme-option"></button>
     <div class="settings-sep"></div>
@@ -512,7 +514,7 @@
   </div>
 </div>
 <div id="scoring-modal-backdrop">
-  <div id="scoring-modal"></div>
+  <div id="scoring-modal" role="dialog" aria-modal="true" aria-labelledby="scoring-title"></div>
 </div>
 <div id="nxdomain-modal-backdrop" role="alertdialog" aria-modal="true" aria-describedby="nxdomain-msg">
   <div id="nxdomain-modal">
@@ -537,7 +539,7 @@
       <div class="input-group selector-group">
         <div style="display:flex;align-items:center;gap:0.35rem">
           <label for="selector-input" data-i18n="LABEL_SELECTORS">Extra DKIM Selectors (comma-separated)</label>
-          <button type="button" class="help-btn" id="selector-help-btn" aria-label="What is a DKIM selector?">?</button>
+          <button type="button" class="help-btn" id="selector-help-btn" aria-label="What is a DKIM selector?" data-i18n-aria="SELECTOR_HELP_LABEL" aria-expanded="false" aria-controls="selector-help-popover">?</button>
         </div>
         <input type="text" id="selector-input" placeholder="sel1, sel2" autocomplete="off" spellcheck="false">
         <div class="help-popover" id="selector-help-popover"></div>
@@ -567,8 +569,9 @@
     <div id="input-error" role="status" aria-live="polite"></div>
   </div>
 
-  <div id="tab-bar" role="tablist" aria-label="Check results">
-    <button class="tab-btn active" data-tab="overview" role="tab" id="tab-overview" aria-controls="panel-overview" aria-selected="true" tabindex="0">Overview</button>
+  <div id="scan-status" class="sr-only" role="status" aria-live="polite"></div>
+  <div id="tab-bar" role="tablist" aria-label="Check results" data-i18n-aria="TABLIST_LABEL">
+    <button class="tab-btn active" data-tab="overview" role="tab" id="tab-overview" aria-controls="panel-overview" aria-selected="true" tabindex="0"><span data-i18n="PANEL_OVERVIEW">Overview</span></button>
     <button class="tab-btn" data-tab="dnssec" role="tab" id="tab-dnssec" aria-controls="panel-dnssec" aria-selected="false" tabindex="-1">DNSSEC <span class="tab-dot"></span></button>
     <button class="tab-btn" data-tab="mx" role="tab" id="tab-mx" aria-controls="panel-mx" aria-selected="false" tabindex="-1">MX <span class="tab-dot"></span></button>
     <button class="tab-btn" data-tab="ptr" role="tab" id="tab-ptr" aria-controls="panel-ptr" aria-selected="false" tabindex="-1">PTR <span class="tab-dot"></span></button>
@@ -585,8 +588,8 @@
     <button class="tab-btn" data-tab="ipv6" role="tab" id="tab-ipv6" aria-controls="panel-ipv6" aria-selected="false" tabindex="-1">IPv6 <span class="tab-dot"></span></button>
     <button class="tab-btn" data-tab="security-txt" role="tab" id="tab-security-txt" aria-controls="panel-security-txt" aria-selected="false" tabindex="-1">Security.txt <span class="tab-dot"></span></button>
     <button class="tab-btn" data-tab="whois" role="tab" id="tab-whois" aria-controls="panel-whois" aria-selected="false" tabindex="-1">WHOIS <span class="tab-dot"></span></button>
-    <button class="tab-btn" data-tab="connection" role="tab" id="tab-connection" aria-controls="panel-connection" aria-selected="false" tabindex="-1">Connection <span class="tab-dot"></span></button>
-    <button class="tab-btn" data-tab="recs" role="tab" id="tab-recs" aria-controls="panel-recs" aria-selected="false" tabindex="-1">Fixes <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="connection" role="tab" id="tab-connection" aria-controls="panel-connection" aria-selected="false" tabindex="-1"><span data-i18n="PANEL_CONN">Connection</span> <span class="tab-dot"></span></button>
+    <button class="tab-btn" data-tab="recs" role="tab" id="tab-recs" aria-controls="panel-recs" aria-selected="false" tabindex="-1"><span data-i18n="PANEL_RECS">Fixes</span> <span class="tab-dot"></span></button>
   </div>
 
   <div id="tab-panels">
@@ -756,8 +759,32 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-August-31-2 &mdash; click for changelog</summary>
+      <summary>Version 2026-October-13-1 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-October-13-1</span>
+          <ul class="cl-changes">
+            <li><b>Grades can move.</b> A full audit of the check logic found a number of ratings that were wrong in both directions; the fixes below change what some domains score.</li>
+            <li><b>DKIM:</b> a revoked selector (empty <code>p=</code>) no longer fails the whole check &mdash; revoking old keys is correct practice, so only live keys rate. A domain whose only discovered keys are revoked rates warning.</li>
+            <li><b>DANE:</b> null MX (RFC 7505) is &ldquo;not applicable&rdquo; rather than fail; PKIX usages 0/1 rate warning (RFC 7672 &sect;3.1.3); malformed TLSA records (bad field values, wrong digest length) are flagged; partial coverage now rates good as intended; excellent additionally requires the MX set itself to be DNSSEC-validated.</li>
+            <li><b>SPF:</b> a <code>redirect=</code> whose target cannot be fetched is reported as an error instead of silently rating excellent; <code>redirect=</code> is ignored when the record has an <code>all</code> mechanism (RFC 7208 &sect;6.1); mechanisms and findings listed before the redirect are kept; macro targets are no longer queried literally.</li>
+            <li><b>DMARC:</b> a subdomain without a record of its own is graded on the policy it inherits from the organizational domain (<code>sp=</code>, else <code>p=</code>, found by the DMARCbis tree walk) instead of fail; whitespace around <code>=</code> is accepted; <code>adkim</code>/<code>aspf</code> are case-insensitive; <code>sp=none</code> / <code>sp=quarantine</code> on an organizational domain now lower the rating; an invalid <code>pct=</code> is flagged.</li>
+            <li><b>DNS failures:</b> SERVFAIL and other resolver errors are reported as &ldquo;DNS lookup failed&rdquo; instead of &ldquo;not signed&rdquo;, &ldquo;no record&rdquo; or &ldquo;no DKIM records&rdquo; &mdash; across DNSSEC, MX, DANE, SPF, DKIM, DMARC, TLS-RPT, MTA-STS, CAA and BIMI. A broken DNSSEC chain is the most urgent finding there is and used to read as the mildest.</li>
+            <li><b>TLS-RPT:</b> an <code>https:</code> endpoint no longer erases a preceding bad-URI warning.</li>
+            <li><b>CAA:</b> an <code>iodef</code> tag alone no longer rates excellent (it restricts no CA); a subdomain with no CAA inherits its parent&rsquo;s records (RFC 8659 &sect;3); <code>issuemail</code> (S/MIME, RFC 9495) is reported separately from TLS issuers.</li>
+            <li><b>MTA-STS:</b> redirects are refused (RFC 8461 &sect;3.3); a body that is not a policy (an HTML page, say) is reported as such; <code>max_age</code> is required and bounded; fetch errors are translated instead of English-only.</li>
+            <li><b>BIMI:</b> an empty <code>l=</code> is the valid opt-out; more than one record counts as none; non-https URLs are flagged. <b>security.txt:</b> HTML catch-all pages no longer win (the file must be <code>text/plain</code>); a <code>__proto__:</code> line no longer crashes the check; the panel rating matches its worst issue; duplicate <code>Expires</code> flagged. <b>WHOIS:</b> registrar/registry locks rate excellent, hold/pending-delete and imminent expiry rate warning, subdomains query the registrable domain, dates follow the UI language.</li>
+            <li><b>Overview:</b> the rating next to each score bar is translated (it was English in every language); one scoring table now drives the grade, the Fixes tab and the scoring explanation, which also notes how a skipped check is renormalised.</li>
+            <li><b>One scan at a time.</b> Pressing Enter or using Back/Forward while a scan was running started a second scan on top of the first; the two then fought over the DNS cache, the statistics and the results, and the URL could end up naming a different domain from the one on screen. A scan now runs alone, and a scan abandoned by going Back drops its results instead of painting them over the start page.</li>
+            <li><b>Language switch mid-scan</b> no longer repaints the previous domain&rsquo;s results over the spinners; the running scan renders in the new language when it finishes.</li>
+            <li><b>History:</b> Back/Forward and opening a shared link no longer push a duplicate entry (which wiped the forward history).</li>
+            <li><b>Resolver fallback:</b> when cloudflare-dns.com is unreachable or blocked, the lookup is retried once via dns.google &mdash; corporate and national filters of Cloudflare&rsquo;s resolver no longer make every check fail. Counted in the statistics panel.</li>
+            <li><b>Faster:</b> the RIPE Stat caches now share in-flight lookups (two hosts on one address, or the Connection tab and the RPKI tab, used to fetch the same data twice); each address is looked up once per scan; holder names and ASPA records are fetched in one stage; the DMARCbis tree walk issues its lookups in parallel instead of up to seven in a row; a prefix with several origin ASes is validated for every origin and rated on the worst.</li>
+            <li><b>Accessibility:</b> a live region announces when a scan starts and finishes (with the grade); the coloured tab dots carry their rating as text (hover and screen reader); the settings button is labelled and announces its menu state; the scoring explanation is a proper dialog that moves focus in and back out; following a link in the Fixes tab keeps keyboard focus; the Overview, Connection and Fixes tab labels, the tab-list and help-button labels, the ROA labels in the Connection tab and the WHOIS dates are translated.</li>
+            <li><b>Robustness:</b> Firefox and Safari network errors are translated like Chrome&rsquo;s; non-JSON responses are normalised; DNSKEY records carrying the REVOKE flag or too few fields no longer break the DNSSEC check; a late lookup failure can no longer evict the next scan&rsquo;s cached query; every MX-host fan-out shares one parser, so null MX is handled identically everywhere; blocked <code>localStorage</code> (private mode, some embedded contexts) no longer stops the page from loading; a stored language name like <code>constructor</code> cannot slip through; a transient RIPE Stat failure is no longer remembered for the whole session; the WARP detection in the ISP BGP test needs a positive <code>warp=on</code> line rather than the absence of <code>warp=off</code>; IPv6 can rate excellent for a subdomain without name servers of its own.</li>
+            <li><b>Tests:</b> new <code>tests/</code> directory &mdash; a Node harness that loads <code>index.html</code> with canned DNS answers (<code>node tests/run.js</code>), the static consistency checks (<code>node tests/static.js</code>) and a live smoke run (<code>node tests/live.js</code>).</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-August-31-2</span>
           <ul class="cl-changes">
@@ -1465,6 +1492,30 @@ const STRINGS = {
       CONN_IP_NONE:        'no address detected',
       // Overview provider detection
       OVERVIEW_PROVIDERS:  'Detected email infrastructure',
+      // Added 2026-October-13-1
+      ERR_BAD_JSON:        'Unexpected response (not JSON)',
+      DANE_NULL_MX:        'Null MX (RFC 7505) \u2014 this domain receives no mail, so DANE is not applicable.',
+      DANE_PKIX_USAGE:     'Only PKIX usages (0/1) published \u2014 SMTP clients do not use them (RFC 7672 \u00a73.1.3); publish DANE-EE (3) or DANE-TA (2)',
+      DKIM_ONLY_REVOKED:   'Every selector found is revoked (empty p=) \u2014 no working DKIM key was discovered.',
+      MTASTS_ERR_TIMEOUT:  'Policy file fetch timed out',
+      MTASTS_ERR_CORS:     'Policy file not accessible (CORS, redirect or network error)',
+      MTASTS_NO_MAX_AGE:   'max_age missing or not a plain number \u2014 required by RFC 8461 \u00a73.2',
+      CAA_NO_RESTRICTION:  'No issue/issuewild record \u2014 every CA may still issue certificates; iodef alone restricts nothing',
+      BIMI_OPT_OUT:        'l= is empty \u2014 an explicit BIMI opt-out for this selector (valid)',
+      STXT_MULTI_EXPIRES:  'More than one Expires field \u2014 RFC 9116 allows exactly one',
+      WHOIS_NA:            'N/A',
+      WHOIS_UNLOCKED:      'No registrar/registry lock (transfer/delete/update prohibited) \u2014 enable it to resist domain hijacking',
+      WHOIS_NOT_FOUND:     'No RDAP record found for this domain.',
+      PTR_NULL_MX:         'Null MX \u2014 the domain receives no mail; nothing to check.',
+      SCORING_SKIP_NOTE:   'When a check is skipped (the CORS checkbox), its weight is left out and the remaining weights are scaled to 100.',
+      PANEL_OVERVIEW:      'Overview',
+      SETTINGS_OPEN:       'Settings',
+      TABLIST_LABEL:       'Check results',
+      SELECTOR_HELP_LABEL: 'What is a DKIM selector?',
+      CONN_ROA_VALID:      'valid',
+      CONN_ROA_INVALID:    'invalid',
+      CONN_ROA_NONE:       'no ROA',
+      CONN_ROA_NOT_ROUTED: 'not routed',
     },
     // ── d: dynamic strings (arrow functions) ─────────────────────────────────
     // Each value is an arrow function.  Write the translated sentence as the
@@ -1559,6 +1610,22 @@ const STRINGS = {
       // RPKI nameserver diversity
       RPKI_NS_SINGLE_ASN: (asn, holder) => 'All nameservers on a single ASN (' + asn + (holder ? ' — ' + holder : '') + ') — single point of failure for DNS routing',
       RPKI_NS_MULTI_ASN:  n => 'Nameservers span ' + n + ' different ASNs — good routing resilience',
+      // Added 2026-October-13-1
+      DNS_SERVFAIL:          s => 'DNS lookup failed (RCODE ' + s + (s === 2 ? ', SERVFAIL \u2014 often a DNSSEC validation failure' : '') + ')',
+      DANE_TLSA_INVALID:     n => n + ' malformed TLSA record(s) \u2014 invalid field value or digest length',
+      SPF_REDIRECT_IGNORED:  t => 'redirect=' + t + ' is ignored because the record has an "all" mechanism (RFC 7208 \u00a76.1)',
+      DMARC_INHERITED:       (d, tag) => 'No record of its own \u2014 policy inherited from ' + d + ' (the ' + tag + '= tag applies)',
+      DMARC_PCT_INVALID:     v => 'pct=' + v + ' is not an integer 0\u2013100 \u2014 receivers ignore it (treated as 100)',
+      MTASTS_ERR_HTTP:       s => 'Policy file returned HTTP ' + s,
+      MTASTS_NOT_A_POLICY:   url => 'The file at ' + url + ' is not an MTA-STS policy (first line must be "version: STSv1")',
+      MTASTS_MAX_AGE_HIGH:   a => 'max_age=' + a + ' exceeds the one-year maximum (31557600)',
+      CAA_INHERITED:         p => 'No CAA at this name \u2014 the records of ' + p + ' apply (RFC 8659 \u00a73)',
+      BIMI_MULTI_RECORDS:    n => n + ' BIMI records at this selector \u2014 treated as none',
+      BIMI_NOT_HTTPS:        u => 'URL is not https: \u2014 ' + u,
+      WHOIS_QUERIED_PARENT:  d => '(data for the registrable domain ' + d + ')',
+      WHOIS_HOLD:            s => 'Domain status: ' + s + ' \u2014 the domain is on hold or being deleted',
+      WHOIS_LOCKED:          n => 'Registrar/registry lock active (' + n + ' prohibited-status flag(s)) \u2014 protected against unauthorised transfer, deletion or update',
+      SCAN_DONE:             (d, g) => 'Scan of ' + d + ' complete. Overall grade ' + g + '.',
     },
     // ── x: explanation strings (HTML) ────────────────────────────────────────
     // Each value is an HTML string rendered in the expandable "What is this?"
@@ -2176,6 +2243,30 @@ const STRINGS = {
       CONN_IP_BADGE_ERROR: 'Ukjent',
       CONN_IP_NONE:        'ingen adresse funnet',
       OVERVIEW_PROVIDERS: 'Oppdaget e-postinfrastruktur',
+      // Added 2026-October-13-1
+      ERR_BAD_JSON:        'Uventet svar (ikke JSON)',
+      DANE_NULL_MX:        'Null-MX (RFC 7505) \u2014 domenet mottar ikke e-post, s\u00e5 DANE er ikke aktuelt.',
+      DANE_PKIX_USAGE:     'Bare PKIX-bruk (0/1) publisert \u2014 SMTP-klienter bruker dem ikke (RFC 7672 \u00a73.1.3); publiser DANE-EE (3) eller DANE-TA (2)',
+      DKIM_ONLY_REVOKED:   'Alle selektorene som ble funnet er tilbakekalt (tom p=) \u2014 ingen fungerende DKIM-n\u00f8kkel ble funnet.',
+      MTASTS_ERR_TIMEOUT:  'Henting av policyfilen tidsavbrutt',
+      MTASTS_ERR_CORS:     'Policyfilen er ikke tilgjengelig (CORS, omdirigering eller nettverksfeil)',
+      MTASTS_NO_MAX_AGE:   'max_age mangler eller er ikke et rent tall \u2014 p\u00e5krevd av RFC 8461 \u00a73.2',
+      CAA_NO_RESTRICTION:  'Ingen issue/issuewild-post \u2014 alle CA-er kan fortsatt utstede sertifikater; iodef alene begrenser ingenting',
+      BIMI_OPT_OUT:        'l= er tom \u2014 en eksplisitt BIMI-reservasjon for denne selektoren (gyldig)',
+      STXT_MULTI_EXPIRES:  'Mer enn ett Expires-felt \u2014 RFC 9116 tillater n\u00f8yaktig ett',
+      WHOIS_NA:            'Ikke tilgjengelig',
+      WHOIS_UNLOCKED:      'Ingen registrar-/registerl\u00e5s (transfer/delete/update prohibited) \u2014 aktiver det for \u00e5 motst\u00e5 domenekapring',
+      WHOIS_NOT_FOUND:     'Ingen RDAP-post funnet for dette domenet.',
+      PTR_NULL_MX:         'Null-MX \u2014 domenet mottar ikke e-post; ingenting \u00e5 sjekke.',
+      SCORING_SKIP_NOTE:   'N\u00e5r en sjekk hoppes over (CORS-avkrysningsboksen), utelates vekten dens og de gjenv\u00e6rende vektene skaleres til 100.',
+      PANEL_OVERVIEW:      'Oversikt',
+      SETTINGS_OPEN:       'Innstillinger',
+      TABLIST_LABEL:       'Sjekkresultater',
+      SELECTOR_HELP_LABEL: 'Hva er en DKIM-selektor?',
+      CONN_ROA_VALID:      'gyldig',
+      CONN_ROA_INVALID:    'ugyldig',
+      CONN_ROA_NONE:       'ingen ROA',
+      CONN_ROA_NOT_ROUTED: 'ikke rutet',
     },
     // ── d: dynamic strings (arrow functions) ─────────────────────────────────
     d: {
@@ -2266,6 +2357,22 @@ const STRINGS = {
       SPF_FOUND_LOOKUPS_TOTAL: (direct, total) => 'SPF-post funnet. ' + direct + ' direkte + ' + total + ' totale DNS-oppslag (rekursivt).',
       RPKI_NS_SINGLE_ASN: (asn, holder) => 'Alle navnetjenere på ett enkelt ASN (' + asn + (holder ? ' — ' + holder : '') + ') — enkeltpunkt for feil i DNS-rutingen',
       RPKI_NS_MULTI_ASN: n => 'Navnetjenerne fordeler seg på ' + n + ' ulike ASN-er — god rutingredundans',
+      // Added 2026-October-13-1
+      DNS_SERVFAIL:          s => 'DNS-oppslag mislyktes (RCODE ' + s + (s === 2 ? ', SERVFAIL \u2014 ofte en DNSSEC-valideringsfeil' : '') + ')',
+      DANE_TLSA_INVALID:     n => n + ' feilformet(e) TLSA-post(er) \u2014 ugyldig feltverdi eller sjekksumlengde',
+      SPF_REDIRECT_IGNORED:  t => 'redirect=' + t + ' ignoreres fordi posten har en "all"-mekanisme (RFC 7208 \u00a76.1)',
+      DMARC_INHERITED:       (d, tag) => 'Ingen egen post \u2014 policy arvet fra ' + d + ' (' + tag + '=-taggen gjelder)',
+      DMARC_PCT_INVALID:     v => 'pct=' + v + ' er ikke et heltall 0\u2013100 \u2014 mottakere ignorerer det (behandles som 100)',
+      MTASTS_ERR_HTTP:       s => 'Policyfilen svarte med HTTP ' + s,
+      MTASTS_NOT_A_POLICY:   url => 'Filen p\u00e5 ' + url + ' er ikke en MTA-STS-policy (f\u00f8rste linje m\u00e5 v\u00e6re "version: STSv1")',
+      MTASTS_MAX_AGE_HIGH:   a => 'max_age=' + a + ' overstiger maksimum p\u00e5 ett \u00e5r (31557600)',
+      CAA_INHERITED:         p => 'Ingen CAA p\u00e5 dette navnet \u2014 postene til ' + p + ' gjelder (RFC 8659 \u00a73)',
+      BIMI_MULTI_RECORDS:    n => n + ' BIMI-poster p\u00e5 denne selektoren \u2014 behandles som ingen',
+      BIMI_NOT_HTTPS:        u => 'URL-en er ikke https: \u2014 ' + u,
+      WHOIS_QUERIED_PARENT:  d => '(data for det registrerbare domenet ' + d + ')',
+      WHOIS_HOLD:            s => 'Domenestatus: ' + s + ' \u2014 domenet er sperret eller i ferd med \u00e5 bli slettet',
+      WHOIS_LOCKED:          n => 'Registrar-/registerl\u00e5s aktiv (' + n + ' prohibited-statusflagg) \u2014 beskyttet mot uautorisert overf\u00f8ring, sletting eller endring',
+      SCAN_DONE:             (d, g) => 'Skanning av ' + d + ' fullf\u00f8rt. Samlet karakter ' + g + '.',
     },
     // ── x: explanation strings (HTML) ────────────────────────────────────────
     x: {
@@ -2850,6 +2957,30 @@ const STRINGS = {
       CONN_IP_BADGE_ERROR: 'Desconocido',
       CONN_IP_NONE:        'ninguna dirección detectada',
       OVERVIEW_PROVIDERS: 'Infraestructura de correo detectada',
+      // Added 2026-October-13-1
+      ERR_BAD_JSON:        'Respuesta inesperada (no es JSON)',
+      DANE_NULL_MX:        'MX nulo (RFC 7505) \u2014 este dominio no recibe correo, por lo que DANE no es aplicable.',
+      DANE_PKIX_USAGE:     'Solo usos PKIX (0/1) publicados \u2014 los clientes SMTP no los utilizan (RFC 7672 \u00a73.1.3); publica DANE-EE (3) o DANE-TA (2)',
+      DKIM_ONLY_REVOKED:   'Todos los selectores encontrados est\u00e1n revocados (p= vac\u00edo) \u2014 no se encontr\u00f3 ninguna clave DKIM operativa.',
+      MTASTS_ERR_TIMEOUT:  'La descarga del archivo de pol\u00edtica agot\u00f3 el tiempo de espera',
+      MTASTS_ERR_CORS:     'Archivo de pol\u00edtica no accesible (CORS, redirecci\u00f3n o error de red)',
+      MTASTS_NO_MAX_AGE:   'max_age ausente o no es un n\u00famero simple \u2014 obligatorio seg\u00fan RFC 8461 \u00a73.2',
+      CAA_NO_RESTRICTION:  'Sin registro issue/issuewild \u2014 cualquier CA puede seguir emitiendo certificados; iodef por s\u00ed solo no restringe nada',
+      BIMI_OPT_OUT:        'l= est\u00e1 vac\u00edo \u2014 una exclusi\u00f3n expl\u00edcita de BIMI para este selector (v\u00e1lido)',
+      STXT_MULTI_EXPIRES:  'M\u00e1s de un campo Expires \u2014 RFC 9116 permite exactamente uno',
+      WHOIS_NA:            'N/D',
+      WHOIS_UNLOCKED:      'Sin bloqueo de registrador/registro (transfer/delete/update prohibited) \u2014 act\u00edvalo para resistir el secuestro del dominio',
+      WHOIS_NOT_FOUND:     'No se encontr\u00f3 ning\u00fan registro RDAP para este dominio.',
+      PTR_NULL_MX:         'MX nulo \u2014 el dominio no recibe correo; nada que comprobar.',
+      SCORING_SKIP_NOTE:   'Cuando se omite una comprobaci\u00f3n (la casilla CORS), su peso se excluye y los pesos restantes se escalan a 100.',
+      PANEL_OVERVIEW:      'Resumen',
+      SETTINGS_OPEN:       'Ajustes',
+      TABLIST_LABEL:       'Resultados de las comprobaciones',
+      SELECTOR_HELP_LABEL: '\u00bfQu\u00e9 es un selector DKIM?',
+      CONN_ROA_VALID:      'v\u00e1lida',
+      CONN_ROA_INVALID:    'inv\u00e1lida',
+      CONN_ROA_NONE:       'sin ROA',
+      CONN_ROA_NOT_ROUTED: 'no enrutado',
     },
     d: {
       MX_HOSTS_FOUND:        n => n + ' servidor' + (n !== 1 ? 'es' : '') + ' MX encontrado' + (n !== 1 ? 's' : '') + '.',
@@ -2939,6 +3070,22 @@ const STRINGS = {
       SPF_FOUND_LOOKUPS_TOTAL: (direct, total) => 'Registro SPF encontrado. ' + direct + ' directas + ' + total + ' consultas DNS totales (recursivas).',
       RPKI_NS_SINGLE_ASN: (asn, holder) => 'Todos los servidores de nombres en un único ASN (' + asn + (holder ? ' — ' + holder : '') + ') — punto único de fallo para el enrutamiento DNS',
       RPKI_NS_MULTI_ASN: n => 'Los servidores de nombres se reparten entre ' + n + ' ASN distintos — buena resiliencia de enrutamiento',
+      // Added 2026-October-13-1
+      DNS_SERVFAIL:          s => 'La consulta DNS fall\u00f3 (RCODE ' + s + (s === 2 ? ', SERVFAIL \u2014 a menudo un fallo de validaci\u00f3n DNSSEC' : '') + ')',
+      DANE_TLSA_INVALID:     n => n + ' registro(s) TLSA malformado(s) \u2014 valor de campo o longitud de resumen no v\u00e1lidos',
+      SPF_REDIRECT_IGNORED:  t => 'redirect=' + t + ' se ignora porque el registro tiene un mecanismo "all" (RFC 7208 \u00a76.1)',
+      DMARC_INHERITED:       (d, tag) => 'Sin registro propio \u2014 pol\u00edtica heredada de ' + d + ' (se aplica la etiqueta ' + tag + '=)',
+      DMARC_PCT_INVALID:     v => 'pct=' + v + ' no es un entero 0\u2013100 \u2014 los receptores lo ignoran (se trata como 100)',
+      MTASTS_ERR_HTTP:       s => 'El archivo de pol\u00edtica devolvi\u00f3 HTTP ' + s,
+      MTASTS_NOT_A_POLICY:   url => 'El archivo en ' + url + ' no es una pol\u00edtica MTA-STS (la primera l\u00ednea debe ser "version: STSv1")',
+      MTASTS_MAX_AGE_HIGH:   a => 'max_age=' + a + ' supera el m\u00e1ximo de un a\u00f1o (31557600)',
+      CAA_INHERITED:         p => 'Sin CAA en este nombre \u2014 se aplican los registros de ' + p + ' (RFC 8659 \u00a73)',
+      BIMI_MULTI_RECORDS:    n => n + ' registros BIMI en este selector \u2014 se tratan como ninguno',
+      BIMI_NOT_HTTPS:        u => 'La URL no es https: \u2014 ' + u,
+      WHOIS_QUERIED_PARENT:  d => '(datos del dominio registrable ' + d + ')',
+      WHOIS_HOLD:            s => 'Estado del dominio: ' + s + ' \u2014 el dominio est\u00e1 retenido o en proceso de eliminaci\u00f3n',
+      WHOIS_LOCKED:          n => 'Bloqueo de registrador/registro activo (' + n + ' indicador(es) prohibited) \u2014 protegido contra transferencias, eliminaciones o cambios no autorizados',
+      SCAN_DONE:             (d, g) => 'An\u00e1lisis de ' + d + ' completado. Calificaci\u00f3n general ' + g + '.',
     },
     x: {
       DMARC:
@@ -3546,6 +3693,30 @@ const STRINGS = {
       CONN_IP_BADGE_ERROR: 'Inconnu',
       CONN_IP_NONE:        'aucune adresse détectée',
       OVERVIEW_PROVIDERS: 'Infrastructure de messagerie détectée',
+      // Added 2026-October-13-1
+      ERR_BAD_JSON:        'R\u00e9ponse inattendue (pas du JSON)',
+      DANE_NULL_MX:        'MX nul (RFC 7505) \u2014 ce domaine ne re\u00e7oit pas de courrier, DANE est donc sans objet.',
+      DANE_PKIX_USAGE:     'Seuls des usages PKIX (0/1) sont publi\u00e9s \u2014 les clients SMTP ne les utilisent pas (RFC 7672 \u00a73.1.3)\u00a0; publiez DANE-EE (3) ou DANE-TA (2)',
+      DKIM_ONLY_REVOKED:   'Tous les s\u00e9lecteurs trouv\u00e9s sont r\u00e9voqu\u00e9s (p= vide) \u2014 aucune cl\u00e9 DKIM fonctionnelle n\u2019a \u00e9t\u00e9 trouv\u00e9e.',
+      MTASTS_ERR_TIMEOUT:  'D\u00e9lai d\u2019attente d\u00e9pass\u00e9 pour le fichier de politique',
+      MTASTS_ERR_CORS:     'Fichier de politique inaccessible (CORS, redirection ou erreur r\u00e9seau)',
+      MTASTS_NO_MAX_AGE:   'max_age absent ou pas un nombre simple \u2014 requis par la RFC 8461 \u00a73.2',
+      CAA_NO_RESTRICTION:  'Aucun enregistrement issue/issuewild \u2014 toute AC peut encore \u00e9mettre des certificats\u00a0; iodef seul ne restreint rien',
+      BIMI_OPT_OUT:        'l= est vide \u2014 un refus explicite de BIMI pour ce s\u00e9lecteur (valide)',
+      STXT_MULTI_EXPIRES:  'Plus d\u2019un champ Expires \u2014 la RFC 9116 n\u2019en autorise qu\u2019un seul',
+      WHOIS_NA:            'N/D',
+      WHOIS_UNLOCKED:      'Aucun verrou registrar/registre (transfer/delete/update prohibited) \u2014 activez-le pour r\u00e9sister au d\u00e9tournement de domaine',
+      WHOIS_NOT_FOUND:     'Aucun enregistrement RDAP trouv\u00e9 pour ce domaine.',
+      PTR_NULL_MX:         'MX nul \u2014 le domaine ne re\u00e7oit pas de courrier\u00a0; rien \u00e0 v\u00e9rifier.',
+      SCORING_SKIP_NOTE:   'Lorsqu\u2019une v\u00e9rification est ignor\u00e9e (case CORS), son poids est exclu et les poids restants sont ramen\u00e9s \u00e0 100.',
+      PANEL_OVERVIEW:      'Aper\u00e7u',
+      SETTINGS_OPEN:       'Param\u00e8tres',
+      TABLIST_LABEL:       'R\u00e9sultats des v\u00e9rifications',
+      SELECTOR_HELP_LABEL: 'Qu\u2019est-ce qu\u2019un s\u00e9lecteur DKIM\u00a0?',
+      CONN_ROA_VALID:      'valide',
+      CONN_ROA_INVALID:    'invalide',
+      CONN_ROA_NONE:       'aucune ROA',
+      CONN_ROA_NOT_ROUTED: 'non rout\u00e9',
     },
 
     // ── d: chaînes dynamiques (fonctions fléchées) ────────────────────────────
@@ -3637,6 +3808,22 @@ const STRINGS = {
       SPF_FOUND_LOOKUPS_TOTAL: (direct, total) => 'Enregistrement SPF trouvé. ' + direct + ' directes + ' + total + ' requêtes DNS au total (récursif).',
       RPKI_NS_SINGLE_ASN: (asn, holder) => 'Tous les serveurs de noms sur un seul ASN (' + asn + (holder ? ' — ' + holder : '') + ') — point unique de défaillance pour le routage DNS',
       RPKI_NS_MULTI_ASN: n => 'Les serveurs de noms se répartissent sur ' + n + ' ASN différents — bonne résilience de routage',
+      // Added 2026-October-13-1
+      DNS_SERVFAIL:          s => 'La requ\u00eate DNS a \u00e9chou\u00e9 (RCODE ' + s + (s === 2 ? ', SERVFAIL \u2014 souvent un \u00e9chec de validation DNSSEC' : '') + ')',
+      DANE_TLSA_INVALID:     n => n + ' enregistrement(s) TLSA malform\u00e9(s) \u2014 valeur de champ ou longueur d\u2019empreinte invalide',
+      SPF_REDIRECT_IGNORED:  t => 'redirect=' + t + ' est ignor\u00e9 car l\u2019enregistrement contient un m\u00e9canisme "all" (RFC 7208 \u00a76.1)',
+      DMARC_INHERITED:       (d, tag) => 'Aucun enregistrement propre \u2014 politique h\u00e9rit\u00e9e de ' + d + ' (la balise ' + tag + '= s\u2019applique)',
+      DMARC_PCT_INVALID:     v => 'pct=' + v + ' n\u2019est pas un entier 0\u2013100 \u2014 les destinataires l\u2019ignorent (trait\u00e9 comme 100)',
+      MTASTS_ERR_HTTP:       s => 'Le fichier de politique a renvoy\u00e9 HTTP ' + s,
+      MTASTS_NOT_A_POLICY:   url => 'Le fichier \u00e0 ' + url + ' n\u2019est pas une politique MTA-STS (la premi\u00e8re ligne doit \u00eatre "version: STSv1")',
+      MTASTS_MAX_AGE_HIGH:   a => 'max_age=' + a + ' d\u00e9passe le maximum d\u2019un an (31557600)',
+      CAA_INHERITED:         p => 'Aucun CAA sur ce nom \u2014 les enregistrements de ' + p + ' s\u2019appliquent (RFC 8659 \u00a73)',
+      BIMI_MULTI_RECORDS:    n => n + ' enregistrements BIMI sur ce s\u00e9lecteur \u2014 trait\u00e9s comme aucun',
+      BIMI_NOT_HTTPS:        u => 'L\u2019URL n\u2019est pas en https: \u2014 ' + u,
+      WHOIS_QUERIED_PARENT:  d => '(donn\u00e9es du domaine enregistrable ' + d + ')',
+      WHOIS_HOLD:            s => 'Statut du domaine\u00a0: ' + s + ' \u2014 le domaine est suspendu ou en cours de suppression',
+      WHOIS_LOCKED:          n => 'Verrou registrar/registre actif (' + n + ' indicateur(s) prohibited) \u2014 prot\u00e9g\u00e9 contre tout transfert, suppression ou modification non autoris\u00e9s',
+      SCAN_DONE:             (d, g) => 'Analyse de ' + d + ' termin\u00e9e. Note globale ' + g + '.',
     },
 
     // ── x: textes d'explication (HTML) ────────────────────────────────────────
@@ -3926,10 +4113,17 @@ const STRINGS = {
 // A language stored by an older build may no longer exist (languages can be
 // removed); fall back to English and rewrite the preference so the <select>
 // and currentLang can never disagree.
-let currentLang = localStorage.getItem('mailcheck-lang') || 'en';
-if (!STRINGS[currentLang]) {
+// localStorage throws (SecurityError) when storage is blocked — a privacy
+// mode, an embedded frame, some file:// setups. An unguarded call at script
+// top level would take the whole application down with it.
+function storageGet(key) { try { return localStorage.getItem(key); } catch (_) { return null; } }
+function storageSet(key, value) { try { localStorage.setItem(key, value); } catch (_) {} }
+
+let currentLang = storageGet('mailcheck-lang') || 'en';
+// hasOwnProperty: a stored "constructor" or "toString" must not pass as a language.
+if (!Object.prototype.hasOwnProperty.call(STRINGS, currentLang)) {
   currentLang = 'en';
-  try { localStorage.setItem('mailcheck-lang', currentLang); } catch (_) {}
+  storageSet('mailcheck-lang', currentLang);
 }
 
 function t(ns, key, ...args) {
@@ -3945,6 +4139,7 @@ const tx = key        => t('x', key);
 function applyI18n() {
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = ts(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = ts(el.dataset.i18nPlaceholder); });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', ts(el.dataset.i18nAria)); });
   document.documentElement.lang = currentLang === 'no' ? 'nb' : currentLang;
   // No RTL language currently ships. The stylesheet uses CSS logical properties
   // throughout, so adding one back only needs this line to select 'rtl'.
@@ -4016,19 +4211,44 @@ function timeoutSignal(ms) {
 // caller can rely on e.message being something a user can read.
 function describeFetchError(e) {
   if (e && (e.name === 'TimeoutError' || e.name === 'AbortError')) return ts('ERR_TIMEOUT');
-  if (e && e.message === 'Failed to fetch') return ts('ERR_NETWORK');
+  // A network-level failure surfaces as a TypeError whose message is browser-
+  // specific ("Failed to fetch" in Chrome, "NetworkError when attempting to
+  // fetch resource." in Firefox, "Load failed" in Safari) — match the type, not
+  // the text, or two of the three get an untranslated raw message.
+  if (e instanceof TypeError) return ts('ERR_NETWORK');
+  if (e && e.name === 'SyntaxError') return ts('ERR_BAD_JSON');
   return (e && e.message) || String(e);
 }
 
+// Error-shaped result shared by every check that gives up on a DNS answer the
+// resolver could not produce: SERVFAIL (RCODE 2, typically a DNSSEC validation
+// failure — the most urgent case, and the one that used to read as "not
+// signed" / "no record"), REFUSED, NOTIMP and anything else that is neither
+// NOERROR nor NXDOMAIN.
+function dohStatusProblem(resp) {
+  if (!resp || typeof resp.Status !== 'number') return null;
+  if (resp.Status === 0 || resp.Status === 3) return null;
+  return { error: true, rating: 'fail', messageKey: 'DNS_SERVFAIL', messageArgs: [resp.Status], dnsStatus: resp.Status };
+}
+
 async function fetchJSON(url, { timeout = TIMEOUT_HTTP, headers, label = 'HTTP' } = {}) {
+  // Every error carries a `kind` (network | timeout | http | json) so callers
+  // can decide on a retry without parsing the (translated) message.
+  const fail = (msg, kind, status) => { const err = new Error(msg); err.kind = kind; if (status) err.status = status; return err; };
   let resp;
   try {
     resp = await fetch(url, { headers, signal: timeoutSignal(timeout) });
   } catch (e) {
-    throw new Error(describeFetchError(e));
+    throw fail(describeFetchError(e), (e && (e.name === 'TimeoutError' || e.name === 'AbortError')) ? 'timeout' : 'network');
   }
-  if (!resp.ok) throw new Error(label + ' ' + resp.status);
-  return resp.json();
+  if (!resp.ok) throw fail(label + ' ' + resp.status, 'http', resp.status);
+  // Awaited inside the try so a body that is not JSON (an HTML 200 from a
+  // captive portal, say) is normalised like every other failure.
+  try {
+    return await resp.json();
+  } catch (e) {
+    throw fail(describeFetchError(e), 'json');
+  }
 }
 
 // ── DNS-over-HTTPS ────────────────────────────────────────────────────────────
@@ -4051,9 +4271,21 @@ function dohQuery(name, type) {
 
   if (scanStats) scanStats.dohRequests++;
   const url = 'https://cloudflare-dns.com/dns-query?name=' + encodeURIComponent(name) + '&type=' + encodeURIComponent(type);
-  const p = fetchJSON(url, { headers: { Accept: 'application/dns-json' }, timeout: TIMEOUT_DOH, label: 'DoH HTTP' });
-  // A rejected lookup must not be cached — the next caller should retry.
-  p.catch(() => dohCache.delete(key));
+  // Cloudflare's resolver is blocked on some corporate and national networks
+  // (a network error, or an HTTP block page). One retry against Google's
+  // equivalent endpoint — same JSON shape, same AD semantics — keeps the scan
+  // alive there; a timeout is not retried, it would only double the wait.
+  const p = fetchJSON(url, { headers: { Accept: 'application/dns-json' }, timeout: TIMEOUT_DOH, label: 'DoH HTTP' })
+    .catch(e => {
+      if (e.kind !== 'network' && e.kind !== 'http') throw e;
+      if (scanStats) scanStats.dohFallbacks++;
+      return dohQueryGoogle(name, type);
+    });
+  // A rejected lookup must not be cached — the next caller should retry. Only
+  // evict our own entry: after clearDNSCaches() a new scan may already have put
+  // its own in-flight promise under this key, and a late rejection from the old
+  // scan must not throw that one away.
+  p.catch(() => { if (dohCache.get(key) === p) dohCache.delete(key); });
   dohCache.set(key, p);
   return p;
 }
@@ -4147,6 +4379,12 @@ async function checkDNSSECUncached(domain) {
       dohQuery(domain, 'SOA'),
     ]);
 
+    // SERVFAIL on a signed zone almost always means validation *failed* — the
+    // opposite of "not signed". Report it as such rather than falling through
+    // to the no-DNSKEY/no-AD branch below.
+    const problem = dohStatusProblem(dnskeyResp) || dohStatusProblem(soaResp);
+    if (problem) return { ...problem, ad: false, hasDNSKEY: false, algorithms: [] };
+
     let ad = dnskeyResp.AD === true || soaResp.AD === true;
     let dnskeyRecords = (dnskeyResp.Answer || []).filter(r => r.type === 48);
 
@@ -4177,13 +4415,19 @@ async function checkDNSSECUncached(domain) {
       return { rating: 'fail', ad: false, hasDNSKEY: false, algorithms: [], messageKey: 'DNSSEC_NOT_SIGNED' };
     }
 
+    // A key carrying the REVOKE flag (RFC 5011, bit 0x80) is no longer used to
+    // sign anything; it is listed but excluded from the rating. A record with
+    // fewer than three fields cannot be parsed and is skipped rather than
+    // allowed to throw the whole check into the error branch.
     const algorithms = dnskeyRecords.map(r => {
       const parts = r.data.trim().split(/\s+/);
-      const flags  = parseInt(parts[0]);
+      if (parts.length < 3) return null;
+      const flags  = parseInt(parts[0], 10) || 0;
       const algNum = resolveAlgNum(parts[2]);   // Cloudflare uses text mnemonics
       const info   = (algNum !== null && ALG_INFO[algNum]) || { name: parts[2] || 'Unknown', rating: 'warning' };
-      return { algNum, ...info, isKSK: (flags & 1) !== 0 };
-    });
+      return { algNum, ...info, isKSK: (flags & 1) !== 0, revoked: (flags & 0x80) !== 0 };
+    }).filter(Boolean);
+    const liveAlgorithms = algorithms.filter(a => !a.revoked);
 
     // The rating follows the WEAKEST algorithm in the DNSKEY RRset, not the
     // strongest. RFC 6781 §4.1.4 requires a multi-algorithm zone to be signed
@@ -4194,16 +4438,16 @@ async function checkDNSSECUncached(domain) {
     // its rollover. Every algorithm is still listed in the panel, with the
     // deciding one marked.
     let algRating, weakestAlg = null;
-    if (algorithms.length === 0) {
-      // AD set but no DNSKEY visible at this name — unchanged from before.
+    if (liveAlgorithms.length === 0) {
+      // AD set but no (live) DNSKEY visible at this name — unchanged from before.
       algRating = 'warning';
     } else {
       algRating = 'excellent';
-      for (const a of algorithms) {
+      for (const a of liveAlgorithms) {
         const worse = worstRating(algRating, a.rating);
         if (worse !== algRating) { algRating = worse; weakestAlg = a; }
       }
-      if (!weakestAlg) weakestAlg = algorithms[0];   // all algorithms rate equally
+      if (!weakestAlg) weakestAlg = liveAlgorithms[0];   // all algorithms rate equally
     }
 
     let rating;
@@ -4219,37 +4463,61 @@ async function checkDNSSECUncached(domain) {
   }
 }
 
+// ── MX / NS host helpers ──────────────────────────────────────────────────────
+
+// One parse of the MX RRset shared by every check that fans out over MX hosts
+// (MX, DANE, PTR, MTA-STS, RPKI, IPv6). Six hand-copied versions of this used
+// to disagree on exactly the case that matters: null MX (RFC 7505, `MX 0 .`),
+// which checkMX recognised and checkDANE turned into a TLSA query for the
+// empty hostname. The network cost is unchanged — dohQuery already memoises.
+async function getMXHosts(domain) {
+  const resp = await dohQuery(domain, 'MX');
+  const problem = dohStatusProblem(resp);
+  const ad = resp.AD === true;
+  if (problem) return { status: resp.Status, problem, ad, hosts: [], nullMX: false };
+  const hosts = (resp.Answer || []).filter(r => r.type === 15)
+    .map(r => {
+      const parts = r.data.trim().split(/\s+/);
+      const priority = parseInt(parts[0], 10);
+      const hostname = (parts[1] || '').replace(/\.$/, '').toLowerCase();
+      return { priority: isNaN(priority) ? 0 : priority, hostname };
+    })
+    .sort((a, b) => a.priority - b.priority);
+  // Null MX: a single record, preference 0, target "." (empty after the trailing
+  // dot is stripped). A "." mixed into a larger set is not null MX, and the
+  // empty host is dropped so no caller ever queries "_25._tcp." or "".
+  const nullMX = hosts.length === 1 && hosts[0].priority === 0 && hosts[0].hostname === '';
+  return { status: resp.Status, problem: null, ad, nullMX, hosts: nullMX ? [] : hosts.filter(h => h.hostname && h.hostname !== '.') };
+}
+
+// Deduplicated, lowercased MX hostnames in preference order — the shape most
+// callers want. Rejects on a network error (callers decide what that means).
+async function getMXHostnames(domain) {
+  const mx = await getMXHosts(domain);
+  return [...new Set(mx.hosts.map(h => h.hostname))];
+}
+
+async function getNSHosts(domain) {
+  const resp = await dohQuery(domain, 'NS');
+  return [...new Set((resp.Answer || []).filter(r => r.type === 2)
+    .map(r => r.data.trim().replace(/\.$/, '').toLowerCase()).filter(Boolean))];
+}
+
 // ── MX ────────────────────────────────────────────────────────────────────────
 
 async function checkMX(domain) {
   try {
-    const mxResp = await dohQuery(domain, 'MX');
-    const adMX = mxResp.AD === true;
-    if (mxResp.Status === 3) return { rating: 'fail', adMX, hosts: [], messageKey: 'MSG_NXDOMAIN' };
+    const mx = await getMXHosts(domain);
+    const adMX = mx.ad;
+    if (mx.status === 3) return { rating: 'fail', adMX, hosts: [], messageKey: 'MSG_NXDOMAIN' };
+    if (mx.problem) return { ...mx.problem, adMX, hosts: [] };
+    if (mx.nullMX) return { rating: 'good', adMX, hosts: [], message: null, nullMX: true };
+    if (mx.hosts.length === 0) return { rating: 'fail', adMX, hosts: [], messageKey: 'MX_NO_RECORDS' };
 
-    const mxRecords = (mxResp.Answer || []).filter(r => r.type === 15);
-    if (mxRecords.length === 0) return { rating: 'fail', adMX, hosts: [], messageKey: 'MX_NO_RECORDS' };
-
-    const mxParsed = mxRecords.map(r => {
-      const parts = r.data.trim().split(/\s+/);
-      let hostname = parts[1] || '';
-      if (hostname.endsWith('.')) hostname = hostname.slice(0, -1);
-      return { priority: parseInt(parts[0]), hostname };
-    }).sort((a, b) => a.priority - b.priority);
-
-    // Null MX (RFC 7505): single record with priority 0 and empty/dot hostname
-    if (mxParsed.length === 1 && mxParsed[0].priority === 0 && mxParsed[0].hostname === '') {
-      return { rating: 'good', adMX, hosts: [], message: null, nullMX: true };
-    }
-
-    const dnssecResults = await Promise.allSettled(mxParsed.map(mx => checkDNSSEC(mx.hostname)));
-
-    const hosts = mxParsed.map((mx, i) => {
-      const dnssec = dnssecResults[i].status === 'fulfilled'
-        ? dnssecResults[i].value
-        : { error: true, rating: 'fail', message: String(dnssecResults[i].reason) };
-      return { ...mx, dnssec };
-    });
+    // checkDNSSEC never rejects (it returns an error-shaped result), so a plain
+    // Promise.all is enough here.
+    const dnssecResults = await Promise.all(mx.hosts.map(h => checkDNSSEC(h.hostname)));
+    const hosts = mx.hosts.map((h, i) => ({ ...h, dnssec: dnssecResults[i] }));
 
     let rating = adMX ? 'excellent' : 'warning';
     for (const h of hosts) rating = worstRating(rating, h.dnssec.rating);
@@ -4280,69 +4548,94 @@ function parseTLSAData(data) {
   return { usage: parseInt(parts[0]), selector: parseInt(parts[1]), matching: parseInt(parts[2]), certData: parts.slice(3).join('') };
 }
 
+// RFC 7672 §3.1.3: SMTP clients SHOULD NOT use the PKIX usages (0 and 1) —
+// an MTA has no trust anchors to validate against, so those records are
+// effectively unusable for SMTP. Only DANE-TA (2) and DANE-EE (3) count.
 function rateTLSA(rec) {
   if (rec.usage === 3 || rec.usage === 2) {
     return (rec.matching === 1 || rec.matching === 2) ? 'excellent' : 'good';
   }
-  return 'good';
+  return 'warning';
+}
+
+// Structural validity of one TLSA record: field ranges from RFC 6698 §2.1 and
+// the digest length implied by the matching type. A record that fails this is
+// published but can never match a certificate.
+function tlsaInvalidReason(rec) {
+  if (!Number.isInteger(rec.usage) || rec.usage < 0 || rec.usage > 3)        return 'usage';
+  if (!Number.isInteger(rec.selector) || rec.selector < 0 || rec.selector > 1) return 'selector';
+  if (!Number.isInteger(rec.matching) || rec.matching < 0 || rec.matching > 2) return 'matching';
+  const hex = (rec.certData || '').toLowerCase();
+  if (!/^[0-9a-f]*$/.test(hex) || hex.length === 0)                           return 'data';
+  if (rec.matching === 1 && hex.length !== 64)                                return 'length';
+  if (rec.matching === 2 && hex.length !== 128)                               return 'length';
+  return null;
 }
 
 async function checkDANE(domain) {
   try {
-    const mxResp = await dohQuery(domain, 'MX');
-    if (mxResp.Status === 3) return { rating: 'fail', hosts: [], messageKey: 'MSG_NXDOMAIN' };
-
-    const mxRecords = (mxResp.Answer || []).filter(r => r.type === 15);
-    if (mxRecords.length === 0) return { rating: 'warning', hosts: [], messageKey: 'DANE_NOT_APPLICABLE' };
-
-    const mxHosts = mxRecords.map(r => {
-      const parts = r.data.trim().split(/\s+/);
-      let hostname = parts[1] || '';
-      if (hostname.endsWith('.')) hostname = hostname.slice(0, -1);
-      return { priority: parseInt(parts[0]), hostname };
-    }).sort((a, b) => a.priority - b.priority);
+    const mx = await getMXHosts(domain);
+    if (mx.status === 3) return { rating: 'fail', hosts: [], messageKey: 'MSG_NXDOMAIN' };
+    if (mx.problem) return { ...mx.problem, hosts: [] };
+    // Null MX: the domain receives no mail, so there is nothing for DANE to
+    // protect. Reported like checkMX does — a correct setup, not a failure.
+    if (mx.nullMX) return { rating: 'good', hosts: [], nullMX: true, messageKey: 'DANE_NULL_MX' };
+    if (mx.hosts.length === 0) return { rating: 'warning', hosts: [], messageKey: 'DANE_NOT_APPLICABLE' };
 
     const tlsaResults = await Promise.allSettled(
-      mxHosts.map(mx => dohQuery('_25._tcp.' + mx.hostname, 'TLSA'))
+      mx.hosts.map(h => dohQuery('_25._tcp.' + h.hostname, 'TLSA'))
     );
 
-    const hosts = mxHosts.map((mx, i) => {
+    const hosts = mx.hosts.map((h, i) => {
       if (tlsaResults[i].status === 'rejected') {
-        return { ...mx, error: true, records: [], ad: false, rating: 'fail' };
+        return { ...h, error: true, records: [], ad: false, rating: 'fail', invalid: 0, usable: 0 };
       }
       const resp = tlsaResults[i].value;
+      const problem = dohStatusProblem(resp);
+      if (problem) return { ...h, error: true, dnsStatus: resp.Status, records: [], ad: false, rating: 'fail', invalid: 0, usable: 0 };
       const ad = resp.AD === true;
       const records = (resp.Answer || [])
         .filter(r => r.type === 52)
         .map(r => parseTLSAData(r.data))
-        .filter(Boolean);
+        .filter(Boolean)
+        .map(rec => ({ ...rec, invalidReason: tlsaInvalidReason(rec) }));
+      const invalid = records.filter(r => r.invalidReason).length;
+      const usable  = records.filter(r => !r.invalidReason && (r.usage === 2 || r.usage === 3)).length;
 
       let rating;
-      if (records.length === 0) {
-        rating = 'fail';
-      } else if (!ad) {
-        rating = 'warning';
-      } else {
-        rating = records.reduce((best, rec) => {
-          const r = rateTLSA(rec);
-          return RATINGS.indexOf(r) < RATINGS.indexOf(best) ? r : best;
-        }, 'good');
+      if (records.length === 0)            rating = 'fail';
+      else if (usable === 0 && invalid > 0) rating = 'fail';     // nothing publishable can ever match
+      else if (!ad)                         rating = 'warning';  // unvalidated TLSA is ignored by senders (RFC 7672 §2.2)
+      else if (usable === 0)                rating = 'warning';  // only PKIX usages
+      else {
+        rating = records.filter(r => !r.invalidReason).reduce((best, rec) => {
+          const rr = rateTLSA(rec);
+          return RATINGS.indexOf(rr) < RATINGS.indexOf(best) ? rr : best;
+        }, 'warning');
+        if (invalid > 0) rating = worstRating(rating, 'good');
       }
-      return { ...mx, records, ad, rating };
+      return { ...h, records, ad, rating, invalid, usable };
     });
 
-    const validatedHosts = hosts.filter(h => !h.error && h.records.length > 0 && h.ad);
-    const tlsaHosts      = hosts.filter(h => !h.error && h.records.length > 0);
-
+    // One decision for the whole set (RFC 7672 §2.2.1 also requires the MX
+    // RRset itself to be DNSSEC-validated, or the TLSA lookups are moot):
+    //   excellent — every MX host has a validated, usable TLSA set, MX validated
+    //   good      — some hosts covered, or all covered but the MX set is unsigned
+    //   warning   — TLSA published but not validated / only PKIX usages
+    //   fail      — no (usable) TLSA anywhere
+    const covered = hosts.filter(h => !h.error && h.ad && h.usable > 0);
+    const anyTLSA = hosts.some(h => !h.error && h.records.length > 0);
     let rating;
-    if (validatedHosts.length === hosts.length && hosts.length > 0) rating = 'excellent';
-    else if (validatedHosts.length > 0) rating = 'good';
-    else if (tlsaHosts.length > 0) rating = 'warning';
-    else rating = 'fail';
+    if (covered.length === hosts.length) rating = mx.ad ? 'excellent' : 'good';
+    else if (covered.length > 0)         rating = 'good';
+    else if (anyTLSA)                    rating = 'warning';
+    else                                 rating = 'fail';
+    // Any individually broken host (invalid-only or PKIX-only) caps the set.
+    for (const h of hosts) if (h.rating === 'warning' || (h.rating === 'fail' && h.records.length > 0)) rating = worstRating(rating, 'warning');
+    // Covered hosts whose best record only rates 'good' (e.g. matching type 0)
+    for (const h of covered) rating = worstRating(rating, h.rating);
 
-    for (const h of hosts) rating = worstRating(rating, h.rating);
-
-    return { rating, hosts, message: null };
+    return { rating, hosts, mxValidated: mx.ad, message: null };
   } catch (e) {
     return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
@@ -4383,16 +4676,17 @@ async function countSPFLookupsFull(record, domain, depth, visited) {
   if (visited === undefined) visited = new Set();
   if (depth > 5 || visited.has(domain)) return 0;
   visited.add(domain);
-  const terms = record.split(/\s+/).slice(1);
+  const terms = record.split(/\s+/).slice(1).map(parseSPFTerm).filter(Boolean);
+  // RFC 7208 §6.1: redirect= is ignored when the record has an "all" mechanism.
+  const hasAll = terms.some(t => t.mech === 'all');
   let count = 0;
   const subTargets = [];
-  for (const term of terms) {
-    const parsed = parseSPFTerm(term);
-    if (!parsed) continue;
-    const { mech, val } = parsed;
+  for (const { mech, val } of terms) {
     if (['a', 'mx', 'ptr', 'exists', 'include'].includes(mech)) count++;
-    if (mech === 'include' && val) subTargets.push(val);
-    if (mech === 'redirect' && val) { count++; subTargets.push(val); }
+    // A macro-bearing target expands per message; querying it literally is a
+    // wasted request that can never answer.
+    if (mech === 'include' && val && !val.includes('%')) subTargets.push(val);
+    if (mech === 'redirect' && val && !hasAll) { count++; if (!val.includes('%')) subTargets.push(val); }
   }
   // Bounded: a deep include: chain branches at every level, so an unbounded
   // Promise.allSettled here can put a large burst of DoH queries in flight.
@@ -4400,7 +4694,7 @@ async function countSPFLookupsFull(record, domain, depth, visited) {
     try {
       const resp = await dohQuery(target, 'TXT');
       const spfRecs = (resp.Answer || []).filter(r => r.type === 16)
-        .map(r => parseTxtData(r.data)).filter(t => t.toLowerCase().startsWith('v=spf1'));
+        .map(r => parseTxtData(r.data)).filter(isSPFRecord);
       if (spfRecs.length === 1)
         return countSPFLookupsFull(spfRecs[0], target, depth + 1, new Set(visited));
     } catch (_) {}
@@ -4410,11 +4704,17 @@ async function countSPFLookupsFull(record, domain, depth, visited) {
   return count;
 }
 
+// "v=spf1" followed by whitespace or end of string — a bare startsWith would
+// also accept a hypothetical "v=spf10".
+function isSPFRecord(txt) {
+  return /^v=spf1(\s|$)/i.test(txt);
+}
+
 function analyzeSPF(record, domain) {
   const issues = [];
   let rating = 'excellent';
   const terms = record.split(/\s+/).slice(1);
-  let lookupCount = 0, hasAll = false, allQualifier = null, redirectDomain = null;
+  let lookupCount = 0, hasAll = false, allQualifier = null, redirectTarget = null;
   const ipAddresses = [], ipPrefixes = [], dnsNames = [];
 
   for (const term of terms) {
@@ -4424,12 +4724,12 @@ function analyzeSPF(record, domain) {
 
     if (mech === 'all') { hasAll = true; allQualifier = qual || '+'; }
     if (mech === 'ptr') {
-      issues.push({ rating: 'warning', textKey: 'SPF_PTR_DEPRECATED', rfcLink: { text: '(RFC 7208 \u00a75.5)', href: 'https://www.rfc-editor.org/rfc/rfc7208#section-5.5' } });
+      issues.push({ rating: 'warning', textKey: 'SPF_PTR_DEPRECATED', rfcLink: { text: '(RFC 7208 §5.5)', href: 'https://www.rfc-editor.org/rfc/rfc7208#section-5.5' } });
       rating = worstRating(rating, 'warning');
     }
     if (['include','a','mx','ptr','exists','redirect'].includes(mech)) lookupCount++;
     if (mech === 'redirect' && val) {
-      redirectDomain = val;
+      redirectTarget = val;
     }
     if (mech === 'ip4' && val) {
       const slash = val.indexOf('/');
@@ -4465,6 +4765,18 @@ function analyzeSPF(record, domain) {
     }
   }
 
+  // RFC 7208 §6.1: a redirect= modifier is ignored when the record contains an
+  // "all" mechanism. It then neither replaces the policy nor costs a lookup.
+  let redirectDomain = null;
+  if (redirectTarget && hasAll) {
+    issues.push({ rating: 'good', textKey: 'SPF_REDIRECT_IGNORED', textArgs: [redirectTarget] });
+    lookupCount--;
+    const idx = dnsNames.findIndex(m => m.mech === 'redirect');
+    if (idx !== -1) dnsNames.splice(idx, 1);
+  } else if (redirectTarget) {
+    redirectDomain = redirectTarget;
+  }
+
   if (lookupCount > 10) {
     issues.push({ rating: 'fail', textKey: 'SPF_LOOKUP_EXCEED', textArgs: [lookupCount] });
     rating = worstRating(rating, 'fail');
@@ -4494,6 +4806,47 @@ function analyzeSPF(record, domain) {
   return { rating, issues, lookupCount, mechanisms: { ipAddresses, ipPrefixes, dnsNames }, allQualifier, redirectDomain };
 }
 
+const SPF_LOOKUP_KEYS = new Set(['SPF_LOOKUP_EXCEED', 'SPF_LOOKUP_HIGH']);
+
+// The steps every SPF result goes through once the effective record is known,
+// whether that is the domain's own record or a followed redirect= target:
+// DNSSEC status for every mechanism that names a domain, the recursive lookup
+// count across include:/redirect= chains, and the propagation check against a
+// second resolver. One copy, so the two paths cannot drift.
+async function finishSPFAnalysis(analysis, originalRecords, domain, totalCountP, googleP) {
+  const dnsNames = analysis.mechanisms.dnsNames;
+  const [dnssecResults, totalCountRes, googleResp] = await Promise.all([
+    Promise.all(dnsNames.map(m => checkDNSSEC(m.checkDomain))),   // checkDNSSEC never rejects
+    totalCountP.catch(() => null),
+    googleP,
+  ]);
+  dnsNames.forEach((m, i) => { m.dnssec = dnssecResults[i]; });
+
+  const totalLookupCount = totalCountRes === null ? analysis.lookupCount : totalCountRes;
+  if (totalLookupCount > analysis.lookupCount) {
+    analysis.issues = analysis.issues.filter(i => !SPF_LOOKUP_KEYS.has(i.textKey));
+    if (totalLookupCount > 10) {
+      analysis.issues.push({ rating: 'fail', textKey: 'SPF_LOOKUP_TOTAL_EXCEED', textArgs: [totalLookupCount] });
+      analysis.rating = worstRating(analysis.rating, 'fail');
+    } else if (totalLookupCount >= 8) {
+      analysis.issues.push({ rating: 'warning', textKey: 'SPF_LOOKUP_TOTAL_HIGH', textArgs: [totalLookupCount] });
+      analysis.rating = worstRating(analysis.rating, 'warning');
+    }
+  }
+
+  // Propagation: the domain's own record as seen by a second resolver.
+  if (googleResp) {
+    const googleSpf = (googleResp.Answer || []).filter(r => r.type === 16)
+      .map(r => parseTxtData(r.data)).filter(isSPFRecord);
+    if (!sameRecordSet(googleSpf, originalRecords)) {
+      analysis.issues.push({ rating: 'warning', textKey: 'SPF_PROPAGATION_MISMATCH' });
+      analysis.rating = worstRating(analysis.rating, 'warning');
+    }
+  }
+  analysis.totalLookupCount = totalLookupCount;
+  return analysis;
+}
+
 async function checkSPF(domain) {
   try {
     // Parallel: main TXT + legacy type-99 SPF record check
@@ -4502,8 +4855,12 @@ async function checkSPF(domain) {
       dohQuery(domain, 'SPF'),
     ]);
 
-    const resp = txtRes.status === 'fulfilled' ? txtRes.value : { Status: -1, Answer: [] };
+    // A failed TXT lookup is an error, not evidence of a missing record.
+    if (txtRes.status === 'rejected') return { error: true, rating: 'fail', message: describeFetchError(txtRes.reason) };
+    const resp = txtRes.value;
     if (resp.Status === 3) return { rating: 'fail', records: [], issues: [], messageKey: 'MSG_NXDOMAIN' };
+    const problem = dohStatusProblem(resp);
+    if (problem) return { ...problem, records: [], issues: [] };
 
     const hasLegacySpf = spfTypeRes.status === 'fulfilled' &&
       (spfTypeRes.value.Answer || []).some(r => r.type === 99);
@@ -4511,7 +4868,7 @@ async function checkSPF(domain) {
     const spfRecords = (resp.Answer || [])
       .filter(r => r.type === 16)
       .map(r => parseTxtData(r.data))
-      .filter(t => t.toLowerCase().startsWith('v=spf1'));
+      .filter(isSPFRecord);
 
     if (spfRecords.length === 0) {
       const issues = [{ rating: 'fail', textKey: 'SPF_NO_RECORD' }];
@@ -4523,121 +4880,74 @@ async function checkSPF(domain) {
         rating: 'fail', records: spfRecords,
         issues: [{ rating: 'fail', textKey: 'SPF_MULTI_RECORDS', textArgs: [spfRecords.length], rfcLink: { text: '(RFC 7208)', href: 'https://www.rfc-editor.org/rfc/rfc7208' } }],
         multiRecord: true, multiCount: spfRecords.length,
+        lookupCount: 0, mechanisms: { ipAddresses: [], ipPrefixes: [], dnsNames: [] }, allQualifier: null, message: null,
       };
     }
 
     const analysis = analyzeSPF(spfRecords[0], domain);
     if (hasLegacySpf) analysis.issues.push({ rating: 'warning', textKey: 'SPF_LEGACY_TYPE' });
 
-    // Follow redirect= when present and no 'all' mechanism (RFC 7208 §6.1)
+    // Both of these are needed whichever path we take; start them now.
+    const totalCountP = countSPFLookupsFull(spfRecords[0], domain);
+    const googleP     = dohQueryGoogle(domain, 'TXT').catch(() => null);
+
+    let effective = analysis;
+    let redirectDomain = null, redirectRecord = null;
+
+    // Follow redirect= (RFC 7208 §6.1). analyzeSPF only sets redirectDomain
+    // when the record has no "all" mechanism.
     if (analysis.redirectDomain) {
       const redirDomain = analysis.redirectDomain;
-      try {
-        const [redirTxtRes, googleTxtRes, totalCountRes] = await Promise.allSettled([
-          dohQuery(redirDomain, 'TXT'),
-          dohQueryGoogle(domain, 'TXT').catch(() => null),
-          countSPFLookupsFull(spfRecords[0], domain),
-        ]);
-        const redirResp = redirTxtRes.status === 'fulfilled' ? redirTxtRes.value : null;
-        const totalLookupCount = totalCountRes.status === 'fulfilled' ? totalCountRes.value : analysis.lookupCount;
-
-        if (redirResp) {
-          const redirSpf = (redirResp.Answer || [])
-            .filter(r => r.type === 16).map(r => parseTxtData(r.data))
-            .filter(t => t.toLowerCase().startsWith('v=spf1'));
-          if (redirSpf.length === 1) {
-            const redirAnalysis = analyzeSPF(redirSpf[0], redirDomain);
-            const redirDnsNames = redirAnalysis.mechanisms.dnsNames;
-            if (redirDnsNames.length > 0) {
-              const dnssecRes = await Promise.allSettled(redirDnsNames.map(m => checkDNSSEC(m.checkDomain)));
-              redirDnsNames.forEach((m, i) => {
-                m.dnssec = dnssecRes[i].status === 'fulfilled'
-                  ? dnssecRes[i].value
-                  : { error: true, rating: 'fail', message: String(dnssecRes[i].reason) };
-              });
-            }
-            const effectiveIssues = [
-              { rating: 'good', textKey: 'SPF_REDIRECT_FOLLOWED', textArgs: [redirDomain] },
-              ...redirAnalysis.issues,
-            ];
-            // Recursive lookup count check
-            if (totalLookupCount > redirAnalysis.lookupCount) {
-              const overIdx = effectiveIssues.findIndex(i => i.textKey === 'SPF_LOOKUP_EXCEED' || i.textKey === 'SPF_LOOKUP_HIGH');
-              if (overIdx !== -1) effectiveIssues.splice(overIdx, 1);
-              if (totalLookupCount > 10) {
-                effectiveIssues.push({ rating: 'fail', textKey: 'SPF_LOOKUP_TOTAL_EXCEED', textArgs: [totalLookupCount] });
-                redirAnalysis.rating = worstRating(redirAnalysis.rating, 'fail');
-              } else if (totalLookupCount >= 8) {
-                effectiveIssues.push({ rating: 'warning', textKey: 'SPF_LOOKUP_TOTAL_HIGH', textArgs: [totalLookupCount] });
-                redirAnalysis.rating = worstRating(redirAnalysis.rating, 'warning');
-              }
-            }
-            // Propagation check on original domain record
-            const googleResp = googleTxtRes.status === 'fulfilled' ? googleTxtRes.value : null;
-            if (googleResp) {
-              const googleSpf = (googleResp.Answer || []).filter(r => r.type === 16)
-                .map(r => parseTxtData(r.data)).filter(t => t.toLowerCase().startsWith('v=spf1'));
-              if (!sameRecordSet(googleSpf, spfRecords)) {
-                effectiveIssues.push({ rating: 'warning', textKey: 'SPF_PROPAGATION_MISMATCH' });
-                redirAnalysis.rating = worstRating(redirAnalysis.rating, 'warning');
-              }
-            }
-            return {
-              rating: redirAnalysis.rating, records: spfRecords,
-              redirectDomain: redirDomain, redirectRecord: redirSpf[0],
-              issues: effectiveIssues, lookupCount: redirAnalysis.lookupCount, totalLookupCount,
-              mechanisms: redirAnalysis.mechanisms, allQualifier: redirAnalysis.allQualifier, message: null,
-            };
-          } else {
-            const errKey = redirSpf.length === 0 ? 'SPF_REDIRECT_NO_RECORD' : 'SPF_REDIRECT_MULTI';
-            return { rating: 'fail', records: spfRecords, redirectDomain: redirDomain, issues: [{ rating: 'fail', textKey: errKey, textArgs: [redirDomain] }], lookupCount: 0, totalLookupCount, mechanisms: { ipAddresses: [], ipPrefixes: [], dnsNames: [] }, allQualifier: null, message: null };
-          }
-        }
-      } catch (redirErr) {
-        return { rating: 'fail', records: spfRecords, redirectDomain: analysis.redirectDomain, issues: [{ rating: 'fail', textKey: 'SPF_REDIRECT_ERROR', textArgs: [analysis.redirectDomain] }], lookupCount: 0, mechanisms: { ipAddresses: [], ipPrefixes: [], dnsNames: [] }, allQualifier: null, message: null };
-      }
-    }
-
-    const dnsNames = analysis.mechanisms.dnsNames;
-    const [dnssecResults, totalCountRes, googleTxtRes] = await Promise.allSettled([
-      Promise.allSettled(dnsNames.map(m => checkDNSSEC(m.checkDomain))),
-      countSPFLookupsFull(spfRecords[0], domain),
-      dohQueryGoogle(domain, 'TXT').catch(() => null),
-    ]);
-
-    if (dnssecResults.status === 'fulfilled') {
-      dnsNames.forEach((m, i) => {
-        m.dnssec = dnssecResults.value[i].status === 'fulfilled'
-          ? dnssecResults.value[i].value
-          : { error: true, rating: 'fail', message: String(dnssecResults.value[i].reason) };
+      const emptyMech = { ipAddresses: [], ipPrefixes: [], dnsNames: [] };
+      const redirFailure = (textKey) => ({
+        rating: 'fail', records: spfRecords, redirectDomain: redirDomain,
+        issues: [{ rating: 'fail', textKey, textArgs: [redirDomain] }],
+        lookupCount: analysis.lookupCount, mechanisms: emptyMech, allQualifier: null, message: null,
       });
-    }
+      let redirResp;
+      try { redirResp = await dohQuery(redirDomain, 'TXT'); }
+      catch (_) { totalCountP.catch(() => {}); return redirFailure('SPF_REDIRECT_ERROR'); }
+      if (dohStatusProblem(redirResp)) { totalCountP.catch(() => {}); return redirFailure('SPF_REDIRECT_ERROR'); }
 
-    // Recursive lookup count
-    const totalLookupCount = totalCountRes.status === 'fulfilled' ? totalCountRes.value : analysis.lookupCount;
-    if (totalLookupCount > analysis.lookupCount) {
-      analysis.issues = analysis.issues.filter(i => i.textKey !== 'SPF_LOOKUP_EXCEED' && i.textKey !== 'SPF_LOOKUP_HIGH');
-      if (totalLookupCount > 10) {
-        analysis.issues.push({ rating: 'fail', textKey: 'SPF_LOOKUP_TOTAL_EXCEED', textArgs: [totalLookupCount] });
-        analysis.rating = worstRating(analysis.rating, 'fail');
-      } else if (totalLookupCount >= 8) {
-        analysis.issues.push({ rating: 'warning', textKey: 'SPF_LOOKUP_TOTAL_HIGH', textArgs: [totalLookupCount] });
-        analysis.rating = worstRating(analysis.rating, 'warning');
+      const redirSpf = (redirResp.Answer || [])
+        .filter(r => r.type === 16).map(r => parseTxtData(r.data)).filter(isSPFRecord);
+      if (redirSpf.length !== 1) {
+        totalCountP.catch(() => {});
+        return redirFailure(redirSpf.length === 0 ? 'SPF_REDIRECT_NO_RECORD' : 'SPF_REDIRECT_MULTI');
       }
+
+      const redirAnalysis = analyzeSPF(redirSpf[0], redirDomain);
+      // Mechanisms listed before redirect= are evaluated first and still count,
+      // so the effective policy is the original record's mechanisms (minus the
+      // redirect itself) followed by the target's — and the original record's
+      // own findings (deprecated ptr, overly broad ip4:, legacy type 99) are
+      // carried over rather than dropped.
+      const ownNames = analysis.mechanisms.dnsNames.filter(m => m.mech !== 'redirect');
+      const carried  = analysis.issues.filter(i => !SPF_LOOKUP_KEYS.has(i.textKey) && i.textKey !== 'SPF_MISSING_ALL');
+      effective = {
+        rating: carried.reduce((r, i) => worstRating(r, i.rating), redirAnalysis.rating),
+        issues: [{ rating: 'good', textKey: 'SPF_REDIRECT_FOLLOWED', textArgs: [redirDomain] }, ...carried, ...redirAnalysis.issues],
+        lookupCount: redirAnalysis.lookupCount,
+        mechanisms: {
+          ipAddresses: [...analysis.mechanisms.ipAddresses, ...redirAnalysis.mechanisms.ipAddresses],
+          ipPrefixes:  [...analysis.mechanisms.ipPrefixes,  ...redirAnalysis.mechanisms.ipPrefixes],
+          dnsNames:    [...ownNames, ...redirAnalysis.mechanisms.dnsNames],
+        },
+        allQualifier: redirAnalysis.allQualifier,
+        redirectDomain: null,
+      };
+      redirectDomain = redirDomain;
+      redirectRecord = redirSpf[0];
     }
 
-    // Propagation check
-    const googleResp = googleTxtRes.status === 'fulfilled' ? googleTxtRes.value : null;
-    if (googleResp) {
-      const googleSpf = (googleResp.Answer || []).filter(r => r.type === 16)
-        .map(r => parseTxtData(r.data)).filter(t => t.toLowerCase().startsWith('v=spf1'));
-      if (!sameRecordSet(googleSpf, spfRecords)) {
-        analysis.issues.push({ rating: 'warning', textKey: 'SPF_PROPAGATION_MISMATCH' });
-        analysis.rating = worstRating(analysis.rating, 'warning');
-      }
-    }
+    await finishSPFAnalysis(effective, spfRecords, domain, totalCountP, googleP);
 
-    return { rating: analysis.rating, records: spfRecords, issues: analysis.issues, lookupCount: analysis.lookupCount, totalLookupCount, mechanisms: analysis.mechanisms, allQualifier: analysis.allQualifier, message: null };
+    return {
+      rating: effective.rating, records: spfRecords,
+      redirectDomain, redirectRecord,
+      issues: effective.issues, lookupCount: effective.lookupCount, totalLookupCount: effective.totalLookupCount,
+      mechanisms: effective.mechanisms, allQualifier: effective.allQualifier, message: null,
+    };
   } catch (e) {
     return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
@@ -4895,11 +5205,15 @@ async function parallelLimit(tasks, limit) {
   return results;
 }
 
+// Resolves to a selector result, null when the selector does not exist, or
+// { selector, error } when the lookup itself failed — so a scan where every
+// probe timed out is reported as an error rather than as "no DKIM records".
 async function probeDKIMSelector(selector, domain) {
   const name = selector + '._domainkey.' + domain;
   try {
     const resp = await dohQuery(name, 'TXT');
     if (resp.Status === 3) return null;
+    if (dohStatusProblem(resp)) return { selector, error: true, dnsStatus: resp.Status };
     // parseTxtData already joins the segments *within* one TXT record. These are
     // separate records, so pick one rather than concatenating — gluing two
     // distinct keys together produces a record that parses as neither.
@@ -4915,22 +5229,41 @@ async function probeDKIMSelector(selector, domain) {
     const analysis = parseDKIMRecord(rawRecord);
     const ad = resp.AD === true;
     return { selector, ...analysis, ad, rawRecord };
-  } catch (_) { return null; }
+  } catch (e) { return { selector, error: true, message: describeFetchError(e) }; }
 }
 
 async function checkDKIM(domain, customSelectors) {
   try {
     const allSelectors = [...new Set([...AUTO_SELECTORS, ...customSelectors])];
     const results = await parallelLimit(allSelectors.map(sel => () => probeDKIMSelector(sel, domain)), DKIM_CONCURRENCY);
-    const found = results
-      .filter(r => r.status === 'fulfilled' && r.value !== null)
-      .map(r => ({ ...r.value, provider: SELECTOR_PROVIDER[r.value.selector] || null }));
+    const values  = results.filter(r => r.status === 'fulfilled' && r.value !== null).map(r => r.value);
+    const errored = values.filter(v => v.error);
+    const found   = values.filter(v => !v.error)
+      .map(v => ({ ...v, provider: SELECTOR_PROVIDER[v.selector] || null }));
+    const errorCount = errored.length + results.filter(r => r.status === 'rejected').length;
     if (found.length === 0) {
-      return { rating: 'fail', found: [], testedCount: allSelectors.length, messageKey: 'DKIM_NO_RECORDS_MSG' };
+      // Every single probe failed at the network/resolver level: that is an
+      // outage, not a domain without DKIM.
+      if (errorCount === allSelectors.length) {
+        const first = errored[0] || {};
+        return { error: true, rating: 'fail', found: [], testedCount: allSelectors.length,
+          messageKey: first.dnsStatus ? 'DNS_SERVFAIL' : undefined, messageArgs: first.dnsStatus ? [first.dnsStatus] : undefined,
+          message: first.dnsStatus ? undefined : (first.message || ts('ERR_NETWORK')) };
+      }
+      return { rating: 'fail', found: [], testedCount: allSelectors.length, errorCount, messageKey: 'DKIM_NO_RECORDS_MSG' };
+    }
+    // A revoked key (empty p=, RFC 6376 §3.6.1) is the *recommended* way to
+    // retire a selector. It is listed, but it does not rate — only live keys
+    // decide the grade. A domain where every discovered selector is revoked has
+    // no working DKIM, which is a warning rather than the "critically weak"
+    // fail a revoked key used to produce.
+    const live = found.filter(s => !s.revoked);
+    if (live.length === 0) {
+      return { rating: 'warning', found, testedCount: allSelectors.length, errorCount, rotationNote: true, messageKey: 'DKIM_ONLY_REVOKED' };
     }
     let rating = 'excellent';
-    for (const r of found) rating = worstRating(rating, r.rating);
-    return { rating, found, testedCount: allSelectors.length, rotationNote: true, message: null };
+    for (const r of live) rating = worstRating(rating, r.rating);
+    return { rating, found, testedCount: allSelectors.length, errorCount, rotationNote: true, message: null };
   } catch (e) {
     return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
@@ -5013,12 +5346,19 @@ async function dmarcTreeWalk(domain, authorRecord, authorMulti) {
     let cur = labels.length >= DMARCBIS_TW_MAX_QUERIES
       ? labels.slice(labels.length - 7)
       : labels.slice(1);
-    while (cur.length >= 1 && steps.length < DMARCBIS_TW_MAX_QUERIES) {
-      const target = cur.join('.');
-      const res = await dmarcTreeWalkQuery(target);
-      steps.push({ name: target, ...res, start: false });
-      if (res.record && (res.psd === 'y' || res.psd === 'n')) break;   // step 6
+    // Every candidate name is known up front, so the (at most seven) lookups
+    // are issued together and consumed in order; the walk still stops at the
+    // first psd= record (step 6), the surplus answers simply go unused. This
+    // turns seven sequential round trips into one.
+    const targets = [];
+    while (cur.length >= 1 && targets.length < DMARCBIS_TW_MAX_QUERIES - 1) {
+      targets.push(cur.join('.'));
       cur = cur.slice(1);                                              // step 7
+    }
+    const results = await Promise.all(targets.map(dmarcTreeWalkQuery));
+    for (let i = 0; i < targets.length; i++) {
+      steps.push({ name: targets[i], ...results[i], start: false });
+      if (results[i].record && (results[i].psd === 'y' || results[i].psd === 'n')) break;   // step 6
     }
   }
 
@@ -5064,7 +5404,10 @@ async function dmarcTreeWalk(domain, authorRecord, authorMulti) {
 // taken from sp= (existing subdomain) or np= (non-existent subdomain).
 async function dmarcDomainExists(domain) {
   try {
-    const resp = await dohQuery(domain, 'A');
+    // NXDOMAIN is name-based, not type-based (RFC 8020), so the SOA answer the
+    // NXDOMAIN gate already fetched (and dohQuery cached) settles this without
+    // another request.
+    const resp = await dohQuery(domain, 'SOA');
     return resp.Status !== 3;
   } catch (_) {
     return null;   // unknown — reported as such rather than guessed
@@ -5376,110 +5719,159 @@ async function analyzeDMARCbis(domain, authorRecord, authorMulti) {
 async function checkDMARC(domain) {
   try {
     const resp = await dohQuery('_dmarc.' + domain, 'TXT');
+    const problem = dohStatusProblem(resp);
+    if (problem) return { ...problem, record: null, parsed: {}, issues: [] };
+
     // The DMARCbis layer is additive and must never break the RFC 7489 checks
     // below, so every call is guarded and its failure degrades to "no section".
     const bis = (rec, multi) => analyzeDMARCbis(domain, rec, multi).catch(() => null);
 
-    if (resp.Status === 3) {
-      return { rating: 'fail', record: null, parsed: {}, issues: [{ rating: 'fail', textKey: 'DMARC_NO_RECORD_NXDOMAIN' }], dmarcbis: await bis(null, false) };
-    }
-    const txts = (resp.Answer || []).filter(r => r.type === 16)
-      .map(r => parseTxtData(r.data)).filter(t => /^v=DMARC1/i.test(t));
+    const txts = (resp.Status === 3 ? [] : (resp.Answer || [])).filter(r => r.type === 16)
+      .map(r => parseTxtData(r.data)).filter(isDMARCRecord);
 
-    if (txts.length === 0) {
-      return { rating: 'fail', record: null, parsed: {}, issues: [{ rating: 'fail', textKey: 'DMARC_NO_RECORD' }], dmarcbis: await bis(null, false) };
-    }
     if (txts.length > 1) {
       return { rating: 'fail', record: txts[0], parsed: {}, issues: [{ rating: 'fail', textKey: 'DMARC_MULTI_RECORDS' }], dmarcbis: await bis(null, true) };
     }
 
-    const record = txts[0];
-    const parsed = {};
-    for (const part of record.split(';')) {
-      const kv = part.trim().match(/^([a-z]+)=(.*)$/i);
-      if (kv) parsed[kv[1].toLowerCase()] = kv[2].trim();
-    }
-
-    const issues = [];
-    let rating = 'fail';
-    const policy = (parsed.p || '').toLowerCase();
-
-    if (!policy || policy === 'none') {
-      issues.push({ rating: 'warning', textKey: 'DMARC_POLICY_NONE' });
-      rating = 'warning';
-    } else if (policy === 'quarantine') {
-      issues.push({ rating: 'good', textKey: 'DMARC_POLICY_QUARANTINE' });
-      rating = 'good';
-    } else if (policy === 'reject') {
-      issues.push({ rating: 'excellent', textKey: 'DMARC_POLICY_REJECT' });
-      rating = 'excellent';
-    } else {
-      issues.push({ rating: 'warning', textKey: 'DMARC_POLICY_UNKNOWN', textArgs: [policy] });
-      rating = 'warning';
-    }
-
-    const pct = parsed.pct !== undefined ? parseInt(parsed.pct, 10) : 100;
-    if (!isNaN(pct) && pct < 100 && policy !== 'none') {
-      issues.push({ rating: 'warning', textKey: 'DMARC_PCT_LOW', textArgs: [pct] });
-      rating = worstRating(rating, 'warning');
-    }
-
-    if (!parsed.rua) {
-      issues.push({ rating: 'warning', textKey: 'DMARC_NO_RUA' });
-      rating = worstRating(rating, 'warning');
-    } else {
-      for (const uri of parsed.rua.split(',').map(u => u.trim()).filter(Boolean)) {
-        issues.push({ rating: 'good', textKey: 'DMARC_RUA_URI', textArgs: [uri] });
+    if (txts.length === 0) {
+      // No record of its own. RFC 7489 §6.6.3 / RFC 9989 §4.10: a subdomain is
+      // covered by the organizational domain's policy (its sp=, or p= when
+      // there is no sp=). The tree walk already finds that record, so grade on
+      // it rather than reporting a failure the receivers would not see.
+      const dmarcbis = await bis(null, false);
+      const tw = dmarcbis && dmarcbis.treeWalk;
+      if (tw && tw.policyRecord && tw.inherited) {
+        return analyzeDMARCRecord(domain, tw.policyRecord, {
+          inheritedFrom: tw.policyDomain,
+          appliedTag: dmarcbis.appliedTag || 'p',
+          isOrgDomain: false,
+          dmarcbis,
+        });
       }
+      const key = resp.Status === 3 ? 'DMARC_NO_RECORD_NXDOMAIN' : 'DMARC_NO_RECORD';
+      return { rating: 'fail', record: null, parsed: {}, issues: [{ rating: 'fail', textKey: key }], dmarcbis };
     }
 
-    if (parsed.ruf) {
-      for (const uri of parsed.ruf.split(',').map(u => u.trim()).filter(Boolean)) {
-        issues.push({ rating: 'good', textKey: 'DMARC_RUF_URI', textArgs: [uri] });
-      }
-    }
-
-    if (parsed.sp) {
-      const sp = parsed.sp.toLowerCase();
-      if (sp === 'reject')          issues.push({ rating: 'excellent', textKey: 'DMARC_SP_REJECT' });
-      else if (sp === 'quarantine') issues.push({ rating: 'good',      textKey: 'DMARC_SP_QUARANTINE' });
-      else if (sp === 'none')       issues.push({ rating: 'warning',   textKey: 'DMARC_SP_NONE' });
-    }
-
-    if (parsed.adkim === 's') issues.push({ rating: 'excellent', textKey: 'DMARC_ADKIM_STRICT' });
-    if (parsed.aspf  === 's') issues.push({ rating: 'excellent', textKey: 'DMARC_ASPF_STRICT' });
-
-    const allUris = [
-      ...(parsed.rua ? parsed.rua.split(',').map(u => u.trim()) : []),
-      ...(parsed.ruf ? parsed.ruf.split(',').map(u => u.trim()) : []),
-    ].filter(Boolean);
-    const endpointHosts = [...new Set(allUris.map(uriHostname).filter(Boolean))];
-    const endpointDnssec = {};
-    if (endpointHosts.length > 0) {
-      const dsResults = await Promise.allSettled(endpointHosts.map(h => checkDNSSEC(h)));
-      endpointHosts.forEach((h, i) => {
-        endpointDnssec[h] = dsResults[i].status === 'fulfilled' ? dsResults[i].value : { error: true, rating: 'fail', messageKey: 'ERR_CHECK_FAILED' };
-      });
-    }
-
-    // Propagation check vs Google DoH
-    const googleDmarc = await dohQueryGoogle('_dmarc.' + domain, 'TXT').catch(() => null);
-    if (googleDmarc) {
-      const gTxts = (googleDmarc.Answer || []).filter(r => r.type === 16)
-        .map(r => parseTxtData(r.data)).filter(t => /^v=DMARC1/i.test(t));
-      if (!sameRecordSet(gTxts, txts)) {
-        issues.push({ rating: 'warning', textKey: 'DMARC_PROPAGATION_MISMATCH' });
-        rating = worstRating(rating, 'warning');
-      }
-    }
-
-    // DMARCbis conformance — informational, does not feed `rating`.
-    const dmarcbis = await bis(record, false);
-
-    return { rating, record, parsed, pct, issues, endpointDnssec, dmarcbis };
+    return analyzeDMARCRecord(domain, txts[0], { bisPromise: bis(txts[0], false) });
   } catch (e) {
     return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
+}
+
+function isDMARCRecord(txt) {
+  return /^v\s*=\s*DMARC1(\s*;|\s*$)/i.test(txt);
+}
+
+// RFC 7489 analysis of one DMARC record — either the domain's own or the one it
+// inherits. `opts.inheritedFrom` names the ancestor and `opts.appliedTag` the
+// tag (p / sp / np) whose value is the effective policy for this domain.
+async function analyzeDMARCRecord(domain, record, opts) {
+  const inherited = !!opts.inheritedFrom;
+  // One parser (shared with the DMARCbis layer) so "p = reject" is read the
+  // same way everywhere: RFC 7489 §6.4 allows whitespace around "=".
+  const parsed = {};
+  for (const t of parseDMARCTagList(record)) if (!(t.name in parsed)) parsed[t.name] = t.value;
+  const lower = n => (parsed[n] || '').toLowerCase();
+
+  const issues = [];
+  if (inherited) issues.push({ rating: 'good', textKey: 'DMARC_INHERITED', textArgs: [opts.inheritedFrom, opts.appliedTag] });
+
+  let rating = 'fail';
+  const policy = inherited ? (lower(opts.appliedTag) || lower('p')) : lower('p');
+
+  if (!policy || policy === 'none') {
+    issues.push({ rating: 'warning', textKey: 'DMARC_POLICY_NONE' });
+    rating = 'warning';
+  } else if (policy === 'quarantine') {
+    issues.push({ rating: 'good', textKey: 'DMARC_POLICY_QUARANTINE' });
+    rating = 'good';
+  } else if (policy === 'reject') {
+    issues.push({ rating: 'excellent', textKey: 'DMARC_POLICY_REJECT' });
+    rating = 'excellent';
+  } else {
+    issues.push({ rating: 'warning', textKey: 'DMARC_POLICY_UNKNOWN', textArgs: [policy] });
+    rating = 'warning';
+  }
+
+  // pct= must be an integer 0..100 (RFC 7489 §6.3); anything else is ignored
+  // by receivers (treated as 100) and flagged here.
+  let pct = 100;
+  if (parsed.pct !== undefined) {
+    if (/^\d+$/.test(parsed.pct) && parseInt(parsed.pct, 10) <= 100) {
+      pct = parseInt(parsed.pct, 10);
+    } else {
+      issues.push({ rating: 'warning', textKey: 'DMARC_PCT_INVALID', textArgs: [parsed.pct] });
+      rating = worstRating(rating, 'warning');
+    }
+  }
+  if (pct < 100 && policy !== 'none') {
+    issues.push({ rating: 'warning', textKey: 'DMARC_PCT_LOW', textArgs: [pct] });
+    rating = worstRating(rating, 'warning');
+  }
+
+  if (!parsed.rua) {
+    issues.push({ rating: 'warning', textKey: 'DMARC_NO_RUA' });
+    rating = worstRating(rating, 'warning');
+  } else {
+    for (const uri of splitDMARCUris(parsed.rua)) {
+      issues.push({ rating: 'good', textKey: 'DMARC_RUA_URI', textArgs: [uri] });
+    }
+  }
+
+  if (parsed.ruf) {
+    for (const uri of splitDMARCUris(parsed.ruf)) {
+      issues.push({ rating: 'good', textKey: 'DMARC_RUF_URI', textArgs: [uri] });
+    }
+  }
+
+  // sp= only has meaning on an organizational domain's record (on a subdomain
+  // it is ignored). A weaker subdomain policy leaves every subdomain spoofable,
+  // so it lowers the rating; on an inherited record sp= *is* the policy already
+  // graded above.
+  let spPenalty = null;
+  if (parsed.sp && !inherited) {
+    const sp = lower('sp');
+    if (sp === 'reject')          issues.push({ rating: 'excellent', textKey: 'DMARC_SP_REJECT' });
+    else if (sp === 'quarantine') { issues.push({ rating: 'good',    textKey: 'DMARC_SP_QUARANTINE' }); spPenalty = 'good'; }
+    else if (sp === 'none')       { issues.push({ rating: 'warning', textKey: 'DMARC_SP_NONE' });       spPenalty = 'warning'; }
+  }
+
+  if (lower('adkim') === 's') issues.push({ rating: 'excellent', textKey: 'DMARC_ADKIM_STRICT' });
+  if (lower('aspf')  === 's') issues.push({ rating: 'excellent', textKey: 'DMARC_ASPF_STRICT' });
+
+  const allUris = [...splitDMARCUris(parsed.rua), ...splitDMARCUris(parsed.ruf)];
+  const endpointHosts = [...new Set(allUris.map(uriHostname).filter(Boolean))];
+
+  // The three remaining steps are independent — run them together rather than
+  // one after another (each was a full round trip on the critical path).
+  const propagationName = '_dmarc.' + (inherited ? opts.inheritedFrom : domain);
+  const [dsResults, googleDmarc, dmarcbis] = await Promise.all([
+    Promise.all(endpointHosts.map(h => checkDNSSEC(h))),           // never rejects
+    dohQueryGoogle(propagationName, 'TXT').catch(() => null),
+    opts.bisPromise !== undefined ? opts.bisPromise : Promise.resolve(opts.dmarcbis || null),
+  ]);
+
+  const endpointDnssec = {};
+  endpointHosts.forEach((h, i) => { endpointDnssec[h] = dsResults[i]; });
+
+  // Only an organizational domain's sp= can be penalised; the tree walk says
+  // which this is. Without a usable walk the record is assumed organizational.
+  const isOrg = inherited ? false : !(dmarcbis && dmarcbis.treeWalk && dmarcbis.treeWalk.isOrgDomain === false);
+  if (spPenalty && isOrg) rating = worstRating(rating, spPenalty);
+
+  if (googleDmarc) {
+    const gTxts = (googleDmarc.Answer || []).filter(r => r.type === 16)
+      .map(r => parseTxtData(r.data)).filter(isDMARCRecord);
+    if (!sameRecordSet(gTxts, [record])) {
+      issues.push({ rating: 'warning', textKey: 'DMARC_PROPAGATION_MISMATCH' });
+      rating = worstRating(rating, 'warning');
+    }
+  }
+
+  return {
+    rating, record, parsed, pct, issues, endpointDnssec, dmarcbis,
+    inheritedFrom: opts.inheritedFrom || null, appliedTag: inherited ? opts.appliedTag : 'p',
+  };
 }
 
 // ── TLS-RPT (RFC 8460) ────────────────────────────────────────────────────────
@@ -5490,8 +5882,10 @@ async function checkTLSRPT(domain) {
     if (resp.Status === 3) {
       return { rating: 'warning', record: null, rua: [], issues: [{ rating: 'warning', textKey: 'TLSRPT_NO_RECORD_NXDOMAIN', rfcLink: { text: '(RFC 8460)', href: 'https://www.rfc-editor.org/rfc/rfc8460' } }] };
     }
+    const problem = dohStatusProblem(resp);
+    if (problem) return { ...problem, record: null, rua: [], issues: [] };
     const txts = (resp.Answer || []).filter(r => r.type === 16)
-      .map(r => parseTxtData(r.data)).filter(t => /^v=TLSRPTv1/i.test(t));
+      .map(r => parseTxtData(r.data)).filter(t => /^v=TLSRPTv1(\s*;|\s*$)/i.test(t));
 
     if (txts.length === 0) {
       return { rating: 'warning', record: null, rua: [], issues: [{ rating: 'warning', textKey: 'TLSRPT_NO_RECORD' }] };
@@ -5510,18 +5904,23 @@ async function checkTLSRPT(domain) {
       return { rating: 'warning', record, rua, issues };
     }
 
-    let rating = 'good';
+    // An https: endpoint earns 'excellent', but only when nothing worse was
+    // seen — a plain assignment used to let it erase a preceding bad-URI
+    // warning.
+    let rating = 'good', sawHttps = false;
     for (const uri of rua) {
-      if (uri.startsWith('https:')) {
+      const lower = uri.toLowerCase();
+      if (lower.startsWith('https:')) {
         issues.push({ rating: 'excellent', textKey: 'TLSRPT_ENDPOINT', textArgs: [uri] });
-        rating = 'excellent';
-      } else if (uri.startsWith('mailto:')) {
+        sawHttps = true;
+      } else if (lower.startsWith('mailto:')) {
         issues.push({ rating: 'good', textKey: 'TLSRPT_ENDPOINT', textArgs: [uri] });
       } else {
         issues.push({ rating: 'warning', textKey: 'TLSRPT_BAD_URI', textArgs: [uri] });
         rating = worstRating(rating, 'warning');
       }
     }
+    if (sawHttps && rating === 'good') rating = 'excellent';
 
     const endpointHosts = [...new Set(rua.map(uriHostname).filter(Boolean))];
     const endpointDnssec = {};
@@ -5546,8 +5945,10 @@ async function checkMTASTS(domain) {
     if (resp.Status === 3) {
       return { rating: 'warning', record: null, policy: null, issues: [{ rating: 'warning', textKey: 'MTASTS_NO_RECORD_NXDOMAIN', rfcLink: { text: '(RFC 8461)', href: 'https://www.rfc-editor.org/rfc/rfc8461' } }] };
     }
+    const problem = dohStatusProblem(resp);
+    if (problem) return { ...problem, record: null, policy: null, issues: [] };
     const txts = (resp.Answer || []).filter(r => r.type === 16)
-      .map(r => parseTxtData(r.data)).filter(t => /^v=STSv1/i.test(t));
+      .map(r => parseTxtData(r.data)).filter(t => /^v=STSv1(\s*;|\s*$)/i.test(t));
 
     if (txts.length === 0) {
       return { rating: 'warning', record: null, policy: null, issues: [{ rating: 'warning', textKey: 'MTASTS_NO_RECORD' }] };
@@ -5564,40 +5965,51 @@ async function checkMTASTS(domain) {
 
     const policyUrl = 'https://mta-sts.' + domain + '/.well-known/mta-sts.txt';
     let policy = null;
-    let policyError = null;
+    let notAPolicy = false;
+    // The failure is carried as an i18n key + args, never as prose: the panel
+    // resolves it at render time so a language switch re-translates it.
+    let policyErrorKey = null, policyErrorArgs = [];
     try {
       if (scanStats) scanStats.httpRequests++;
-      const pResp = await fetch(policyUrl, { signal: timeoutSignal(TIMEOUT_HTTP) });
+      // RFC 8461 §3.3: the policy MUST be fetched without following redirects.
+      const pResp = await fetch(policyUrl, { signal: timeoutSignal(TIMEOUT_HTTP), redirect: 'error' });
       if (pResp.ok) {
         const text = await pResp.text();
-        const lines = text.split(/\r?\n/).filter(Boolean);
-        policy = {};
-        for (const line of lines) {
-          const eq = line.indexOf(':');
-          if (eq !== -1) {
-            const key = line.slice(0, eq).trim().toLowerCase();
-            const val = line.slice(eq + 1).trim();
-            if (key === 'mx') {
-              policy.mx = [...(policy.mx || []), val];
-            } else {
-              policy[key] = val;
+        const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        // §3.2: the first line is "version: STSv1". Anything else — an HTML
+        // catch-all page, say — is not a policy at all.
+        if (!/^version\s*:\s*STSv1$/i.test(lines[0] || '')) {
+          notAPolicy = true;
+        } else {
+          policy = {};
+          for (const line of lines) {
+            const eq = line.indexOf(':');
+            if (eq !== -1) {
+              const key = line.slice(0, eq).trim().toLowerCase();
+              const val = line.slice(eq + 1).trim();
+              if (key === 'mx') {
+                policy.mx = [...(policy.mx || []), val];
+              } else {
+                policy[key] = val;
+              }
             }
           }
         }
       } else {
-        policyError = 'Policy file returned HTTP ' + pResp.status;
+        policyErrorKey = 'MTASTS_ERR_HTTP'; policyErrorArgs = [pResp.status];
       }
     } catch (fe) {
-      policyError = (fe.name === 'TimeoutError' || fe.name === 'AbortError')
-                  ? 'Policy file fetch timed out'
-                  : 'Policy file not accessible (CORS or network error)';
+      if (fe && (fe.name === 'TimeoutError' || fe.name === 'AbortError')) policyErrorKey = 'MTASTS_ERR_TIMEOUT';
+      else policyErrorKey = 'MTASTS_ERR_CORS';   // TypeError: CORS, redirect refused, or network
     }
-    const corsBlocked = policyError === 'Policy file not accessible (CORS or network error)';
+    const corsBlocked = policyErrorKey === 'MTASTS_ERR_CORS';
 
     const issues = [];
     let rating = 'warning';
 
-    if (policy) {
+    if (notAPolicy) {
+      issues.push({ rating: 'warning', textKey: 'MTASTS_NOT_A_POLICY', textArgs: [policyUrl] });
+    } else if (policy) {
       const mode = (policy['mode'] || '').toLowerCase();
       if (mode === 'enforce') {
         issues.push({ rating: 'excellent', textKey: 'MTASTS_MODE_ENFORCE' });
@@ -5613,10 +6025,17 @@ async function checkMTASTS(domain) {
         rating = 'warning';
       }
 
-      if (policy['max_age']) {
-        const age = parseInt(policy['max_age']);
-        if (!isNaN(age) && age < 86400) {
+      // §3.2: max_age is required; plain digits, at most 31557600 (one year).
+      if (policy['max_age'] === undefined || !/^\d+$/.test(policy['max_age'])) {
+        issues.push({ rating: 'warning', textKey: 'MTASTS_NO_MAX_AGE' });
+        rating = worstRating(rating, 'warning');
+      } else {
+        const age = parseInt(policy['max_age'], 10);
+        if (age < 86400) {
           issues.push({ rating: 'warning', textKey: 'MTASTS_MAX_AGE_LOW', textArgs: [age] });
+          rating = worstRating(rating, 'warning');
+        } else if (age > 31557600) {
+          issues.push({ rating: 'warning', textKey: 'MTASTS_MAX_AGE_HIGH', textArgs: [age] });
           rating = worstRating(rating, 'warning');
         }
       }
@@ -5624,10 +6043,7 @@ async function checkMTASTS(domain) {
       // MX match check
       const mxPatterns = policy.mx || [];
       try {
-        const mxResp = await dohQuery(domain, 'MX');
-        const mxHosts = (mxResp.Answer || []).filter(r => r.type === 15)
-          .map(r => { const p = r.data.split(/\s+/); return (p[1] || '').toLowerCase().replace(/\.$/, ''); })
-          .filter(h => h && h !== '.');
+        const mxHosts = await getMXHostnames(domain);
         if (mxHosts.length > 0) {
           if (mxPatterns.length === 0) {
             issues.push({ rating: 'warning', textKey: 'MTASTS_MX_NO_PATTERNS' });
@@ -5652,12 +6068,14 @@ async function checkMTASTS(domain) {
         }
       } catch (_) { /* MX query failure — skip match check */ }
 
-    } else if (policyError) {
-      issues.push({ rating: 'warning', textKey: 'MTASTS_POLICY_ERROR', textArgs: [policyError, policyUrl] });
+    } else if (policyErrorKey) {
+      // textArgs[0] is itself a key: makeIssueList resolves nested keys so the
+      // error text follows the UI language.
+      issues.push({ rating: 'warning', textKey: 'MTASTS_POLICY_ERROR', textArgs: [{ key: policyErrorKey, args: policyErrorArgs }, policyUrl] });
       rating = 'warning';
     }
 
-    return { rating, record, policy, policyUrl, issues, corsBlocked };
+    return { rating, record, policy, policyUrl, issues, corsBlocked, policyErrorKey, policyErrorArgs };
   } catch (e) {
     return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
@@ -5687,61 +6105,88 @@ async function checkCAA(domain) {
     if (resp.Status === 3) {
       return { rating: 'warning', records: [], parsed: [], issues: [{ rating: 'warning', textKey: 'CAA_NXDOMAIN' }] };
     }
+    const problem = dohStatusProblem(resp);
+    if (problem) return { ...problem, records: [], parsed: [], issues: [] };
 
-    const rawRecords = (resp.Answer || []).filter(r => r.type === 257);
+    let rawRecords = (resp.Answer || []).filter(r => r.type === 257);
+
+    // RFC 8659 §3: when a name has no CAA records, the closest ancestor's set
+    // applies. Climb towards the registrable domain so that scanning a
+    // subdomain reports the policy a CA would actually enforce. Stops at the
+    // first set found, or when fewer than two labels remain.
+    let climbedTo = null;
+    if (rawRecords.length === 0) {
+      const labels = domain.split('.');
+      for (let i = 1; i < labels.length - 1 && rawRecords.length === 0; i++) {
+        const parent = labels.slice(i).join('.');
+        const pResp = await dohQuery(parent, 'CAA');
+        if (pResp.Status !== 0) continue;
+        const recs = (pResp.Answer || []).filter(r => r.type === 257);
+        if (recs.length > 0) { rawRecords = recs; climbedTo = parent; }
+      }
+    }
     if (rawRecords.length === 0) {
       return { rating: 'warning', records: [], parsed: [], issues: [{ rating: 'warning', textKey: 'CAA_NO_RECORDS_ISSUE' }] };
     }
 
     const parsed = rawRecords.map(r => parseCAAData(r.data)).filter(Boolean);
     const issues = [];
-    let rating = 'good';
+    if (climbedTo) issues.push({ rating: 'good', textKey: 'CAA_INHERITED', textArgs: [climbedTo] });
 
     const issueTags     = parsed.filter(p => p.tag === 'issue').map(p => p.value.trim());
     const wildTags      = parsed.filter(p => p.tag === 'issuewild').map(p => p.value.trim());
     const issuemailTags = parsed.filter(p => p.tag === 'issuemail').map(p => p.value.trim());
     const iodefTags     = parsed.filter(p => p.tag === 'iodef').map(p => p.value.trim());
 
-    const allowedCAs = [...new Set([...issueTags, ...wildTags, ...issuemailTags].filter(v => v && v !== ';'))];
+    // issue/issuewild restrict TLS certificate issuance; issuemail (RFC 9495)
+    // restricts S/MIME certificates and is reported separately — it says
+    // nothing about the certificates an MX host presents.
+    const allowedCAs   = [...new Set([...issueTags, ...wildTags].filter(v => v && v !== ';'))];
+    const smimeCAs     = [...new Set(issuemailTags.filter(v => v && v !== ';'))];
+    const issueProhibited = issueTags.some(v => v === ';' || v === '');
+    const restricted = allowedCAs.length > 0 || issueProhibited;
 
     if (allowedCAs.length > 0) {
       issues.push({ rating: 'good', textKey: 'CAA_AUTHORIZED_CA', textArgs: [allowedCAs.length], _caList: allowedCAs });
     }
-
-    const issueProhibited = issueTags.includes(';');
     if (issueProhibited && allowedCAs.length === 0) {
       issues.push({ rating: 'excellent', textKey: 'CAA_ISSUE_PROHIBITED' });
     }
-
-    if (issuemailTags.some(v => v && v !== ';')) {
+    if (!restricted) {
+      issues.push({ rating: 'warning', textKey: 'CAA_NO_RESTRICTION' });
+    }
+    if (smimeCAs.length > 0) {
       issues.push({ rating: 'good', textKey: 'CAA_ISSUEMAIL_NOTE' });
     }
 
     if (iodefTags.length > 0) {
       issues.push({ rating: 'excellent', textKey: 'CAA_IODEF', textArgs: [iodefTags.join(', ')] });
-      rating = 'excellent';
     } else {
       issues.push({ rating: 'warning', textKey: 'CAA_NO_IODEF' });
-      rating = worstRating(rating, 'warning');
     }
+
+    // excellent — issuance restricted AND a reporting address
+    // good      — issuance restricted, no iodef
+    // warning   — nothing restricted (iodef alone restricts no CA)
+    let rating = !restricted ? 'warning' : (iodefTags.length > 0 ? 'excellent' : 'good');
 
     const criticalRecords = parsed.filter(p => p.flags & 128);
     if (criticalRecords.length > 0) {
       issues.push({ rating: 'warning', textKey: 'CAA_CRITICAL_COUNT', textArgs: [criticalRecords.length] });
     }
 
-    // DNSSEC check for each CA domain listed in issue/issuewild/issuemail tags
+    // DNSSEC check for each CA domain listed in issue/issuewild/issuemail tags.
+    // checkDNSSEC never rejects, so one slow CA cannot sink the others.
     const caDomains = [...new Set(
       [...issueTags, ...wildTags, ...issuemailTags]
         .map(v => v.split(';')[0].trim())
         .filter(v => v && /^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/i.test(v))
     )];
     const caDnssec = {};
-    await Promise.all(caDomains.map(async ca => {
-      caDnssec[ca] = await checkDNSSEC(ca);
-    }));
+    const dsResults = await parallelLimit(caDomains.map(ca => () => checkDNSSEC(ca)), DNS_CONCURRENCY);
+    caDomains.forEach((ca, i) => { if (dsResults[i].status === 'fulfilled') caDnssec[ca] = dsResults[i].value; });
 
-    return { rating, records: rawRecords, parsed, issues, caDnssec };
+    return { rating, records: rawRecords, parsed, issues, caDnssec, climbedTo };
   } catch (e) {
     return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
@@ -5763,12 +6208,23 @@ async function checkSecurityTxt(domain) {
   // inside the parallel scan, so it would dominate the wall-clock time.
   // Priority still follows `urls` order — the first *successful* entry wins,
   // not the first to answer.
+  try {
   const attempts = await Promise.all(urls.map(async url => {
     try {
       if (scanStats) scanStats.httpRequests++;
       const resp = await fetch(url, { signal: timeoutSignal(TIMEOUT_HTTP) });
       if (!resp.ok) return { url, text: null, cors: false };
-      return { url, text: await resp.text(), cors: false };
+      // RFC 9116 §3: the file MUST be served as text/plain. A single-page app
+      // or CDN that answers every path with its HTML shell would otherwise
+      // "win" here, parse to no Contact, and be rated fail — and on the bare
+      // domain it would also hide a real file on www. Servers that omit the
+      // header entirely are given the benefit of the doubt unless the body is
+      // visibly markup.
+      const ctype = (resp.headers && resp.headers.get && resp.headers.get('content-type')) || '';
+      const text = await resp.text();
+      if (ctype && !/^text\/plain\b/i.test(ctype)) return { url, text: null, cors: false, wrongType: ctype };
+      if (!ctype && /^\s*</.test(text)) return { url, text: null, cors: false, wrongType: 'markup' };
+      return { url, text, cors: false };
     } catch (e) {
       // TypeError usually means CORS or network failure; track for messaging
       return { url, text: null, cors: e instanceof TypeError };
@@ -5779,13 +6235,16 @@ async function checkSecurityTxt(domain) {
   const text = winner ? winner.text : null;
   const fetchedUrl = winner ? winner.url : null;
   const corsBlocked = !winner && attempts.some(a => a.cors);
+  const wrongType = !winner ? (attempts.find(a => a.wrongType) || {}).wrongType || null : null;
 
   if (!text) {
-    return { rating: 'warning', found: false, corsBlocked, checkedUrls: urls };
+    return { rating: 'warning', found: false, corsBlocked, wrongType, checkedUrls: urls };
   }
 
-  // Parse RFC 9116 fields (key: value lines, # comments ignored)
-  const fields = {};
+  // Parse RFC 9116 fields (key: value lines, # comments ignored). A null-
+  // prototype object, so a line such as "__proto__: x" or "constructor: y"
+  // cannot collide with inherited properties and throw.
+  const fields = Object.create(null);
   for (const line of text.split(/\r?\n/)) {
     const t = line.trim();
     if (!t || t.startsWith('#')) continue;
@@ -5799,10 +6258,12 @@ async function checkSecurityTxt(domain) {
 
   const issues = [];
   let rating = 'excellent';
+  // The panel rating always matches the worst issue listed under it — a
+  // "fail" dot under a "good" badge was the old behaviour for Expires.
 
   if (!fields['contact'] || fields['contact'].length === 0) {
-    // Contact is the one MUST in RFC 9116 §2.5.3 — without it the file cannot
-    // serve its purpose, so the panel rating matches the issue rating.
+    // Contact is a MUST in RFC 9116 §2.5.3 — without it the file cannot serve
+    // its purpose.
     issues.push({ rating: 'fail', textKey: 'STXT_NO_CONTACT' });
     rating = worstRating(rating, 'fail');
   } else {
@@ -5810,24 +6271,30 @@ async function checkSecurityTxt(domain) {
   }
 
   if (!fields['expires'] || fields['expires'].length === 0) {
+    // Expires is a MUST as well (§2.5.5).
     issues.push({ rating: 'warning', textKey: 'STXT_NO_EXPIRES', rfcLink: { text: 'RFC 9116', href: 'https://www.rfc-editor.org/rfc/rfc9116' } });
-    rating = worstRating(rating, 'good');
+    rating = worstRating(rating, 'warning');
   } else {
     const expDate = new Date(fields['expires'][0]);
     if (isNaN(expDate.getTime())) {
       issues.push({ rating: 'warning', textKey: 'STXT_BAD_DATE' });
-      rating = worstRating(rating, 'good');
+      rating = worstRating(rating, 'warning');
     } else if (expDate < new Date()) {
       issues.push({ rating: 'fail', textKey: 'STXT_EXPIRED', textArgs: [fields['expires'][0]] });
-      rating = worstRating(rating, 'warning');
+      rating = worstRating(rating, 'fail');
     } else {
       const daysLeft = Math.floor((expDate - new Date()) / 86400000);
       if (daysLeft < 30) {
         issues.push({ rating: 'warning', textKey: 'STXT_EXPIRES_WARN', textArgs: [daysLeft] });
-        rating = worstRating(rating, 'good');
+        rating = worstRating(rating, 'warning');
       } else {
-        issues.push({ rating: 'excellent', textKey: 'STXT_EXPIRES_OK', textArgs: [expDate.toDateString(), daysLeft] });
+        // The raw RFC 3339 value is passed through; it is language-neutral.
+        issues.push({ rating: 'excellent', textKey: 'STXT_EXPIRES_OK', textArgs: [fields['expires'][0], daysLeft] });
       }
+    }
+    if (fields['expires'].length > 1) {
+      issues.push({ rating: 'warning', textKey: 'STXT_MULTI_EXPIRES' });
+      rating = worstRating(rating, 'warning');
     }
   }
 
@@ -5835,17 +6302,43 @@ async function checkSecurityTxt(domain) {
   if (fields['policy'])     issues.push({ rating: 'good',      textKey: 'STXT_POLICY' });
 
   return { rating, found: true, fetchedUrl, fields, issues, rawText: text };
+  } catch (e) {
+    return { rating: 'warning', found: false, error: true, message: describeFetchError(e), checkedUrls: urls };
+  }
 }
 
 // ── WHOIS / RDAP ──────────────────────────────────────────────────────────────
 
+// Registry/registrar lock statuses (RFC 8056 / EPP). Any of these means the
+// domain cannot be transferred, deleted or updated without the lock being
+// lifted first — the single most effective guard against domain hijacking.
+const RDAP_LOCK_STATUSES = ['client transfer prohibited', 'server transfer prohibited',
+  'client delete prohibited', 'server delete prohibited',
+  'client update prohibited', 'server update prohibited'];
+// Statuses meaning the domain is not currently resolving or is on its way out.
+const RDAP_HOLD_STATUSES = ['client hold', 'server hold', 'pending delete', 'redemption period', 'inactive'];
+
 async function checkWHOIS(domain) {
   try {
-    if (scanStats) scanStats.httpRequests++;
-    const data = await fetchJSON('https://rdap.org/domain/' + encodeURIComponent(domain), {
-      headers: { Accept: 'application/rdap+json, application/json' },
-      label: 'RDAP HTTP',
-    });
+    // RDAP only knows registrable domains: a scan of mail.example.com has to
+    // ask about example.com. Strip leading labels on 404 until something
+    // answers, at most three times.
+    const labels = domain.split('.');
+    let data = null, queriedDomain = domain;
+    for (let i = 0; i < 3 && labels.length - i >= 2; i++) {
+      queriedDomain = labels.slice(i).join('.');
+      if (scanStats) scanStats.httpRequests++;
+      try {
+        data = await fetchJSON('https://rdap.org/domain/' + encodeURIComponent(queriedDomain), {
+          headers: { Accept: 'application/rdap+json, application/json' },
+          label: 'RDAP HTTP',
+        });
+        break;
+      } catch (e) {
+        if (!/^RDAP HTTP 404$/.test(e.message) || labels.length - i - 1 < 2) throw e;
+      }
+    }
+    if (!data) throw new Error('RDAP HTTP 404');
 
     const events = {};
     for (const ev of (data.events || [])) events[ev.eventAction] = ev.eventDate;
@@ -5866,18 +6359,35 @@ async function checkWHOIS(domain) {
       .map(ns => (ns.ldhName || ns.unicodeName || '').toLowerCase().replace(/\.$/, ''))
       .filter(Boolean);
 
+    const status = (data.status || []).map(s => String(s).toLowerCase());
+    const lockStatuses = status.filter(s => RDAP_LOCK_STATUSES.includes(s));
+    const holdStatuses = status.filter(s => RDAP_HOLD_STATUSES.includes(s));
+    const expires = events['expiration'] || null;
+    const expMs = expires ? new Date(expires).getTime() : NaN;
+    const daysToExpiry = isNaN(expMs) ? null : Math.floor((expMs - Date.now()) / 86400000);
+
+    // excellent — registered, not expiring, and locked against transfer/
+    //             delete/update at the registry or registrar
+    // good      — registered and healthy, but no lock
+    // warning   — on hold / pending delete, or expiring within 30 days
+    let rating = lockStatuses.length > 0 ? 'excellent' : 'good';
+    if (holdStatuses.length > 0 || (daysToExpiry !== null && daysToExpiry < 30)) rating = 'warning';
+
     return {
-      rating: 'good', found: true,
+      rating, found: true,
       handle:      data.handle || null,
       registrar,
       status:      data.status || [],
+      lockStatuses, holdStatuses, daysToExpiry,
+      queriedDomain: queriedDomain !== domain ? queriedDomain : null,
       created:     events['registration']   || null,
       updated:     events['last changed']   || null,
-      expires:     events['expiration']     || null,
+      expires,
       nameservers,
     };
   } catch (e) {
-    return { rating: 'warning', found: false, message: describeFetchError(e) };
+    const notFound = /^RDAP HTTP 404$/.test(e.message);
+    return { rating: 'warning', found: false, notFound, messageKey: notFound ? 'WHOIS_NOT_FOUND' : undefined, message: notFound ? undefined : describeFetchError(e) };
   }
 }
 
@@ -5886,14 +6396,18 @@ async function checkWHOIS(domain) {
 async function checkBIMI(domain) {
   try {
     const resp = await dohQuery('default._bimi.' + domain, 'TXT');
-    if (resp.Status === 3) {
-      return { rating: 'fail', record: null, parsed: {}, issues: [{ rating: 'fail', textKey: 'BIMI_NO_RECORD' }] };
-    }
+    const problem = dohStatusProblem(resp);
+    if (problem) return { ...problem, record: null, parsed: {}, issues: [] };
     const txts = (resp.Answer || []).filter(r => r.type === 16)
-      .map(r => parseTxtData(r.data)).filter(t => /^v=BIMI1/i.test(t));
+      .map(r => parseTxtData(r.data)).filter(t => /^v\s*=\s*BIMI1(\s*;|\s*$)/i.test(t));
 
+    // NXDOMAIN and an empty answer are the same thing here: no record.
     if (txts.length === 0) {
       return { rating: 'fail', record: null, parsed: {}, issues: [{ rating: 'fail', textKey: 'BIMI_NO_RECORD' }] };
+    }
+    // More than one BIMI record at a selector is treated as none at all.
+    if (txts.length > 1) {
+      return { rating: 'fail', record: txts[0], parsed: {}, issues: [{ rating: 'fail', textKey: 'BIMI_MULTI_RECORDS', textArgs: [txts.length] }] };
     }
 
     const record = txts[0];
@@ -5912,9 +6426,18 @@ async function checkBIMI(domain) {
 
     const logoUrl = parsed['l'] || '';
     const authorityUrl = parsed['a'] || '';
+    const isHttps = u => /^https:\/\//i.test(u);
 
+    // An explicitly empty l= is the documented way to opt out of BIMI for this
+    // selector — a deliberate choice, not a misconfiguration.
+    if ('l' in parsed && !logoUrl) {
+      issues.push({ rating: 'good', textKey: 'BIMI_OPT_OUT' });
+      return { rating: 'good', record, parsed, issues, optOut: true };
+    }
     if (!logoUrl) {
       issues.push({ rating: 'warning', textKey: 'BIMI_NO_LOGO' });
+    } else if (!isHttps(logoUrl)) {
+      issues.push({ rating: 'warning', textKey: 'BIMI_NOT_HTTPS', textArgs: [logoUrl] });
     } else {
       issues.push({ rating: 'good', textKey: 'BIMI_LOGO_URL', textArgs: [logoUrl] });
       rating = 'good';
@@ -5922,9 +6445,11 @@ async function checkBIMI(domain) {
 
     if (!authorityUrl) {
       issues.push({ rating: 'warning', textKey: 'BIMI_NO_AUTHORITY' });
+    } else if (!isHttps(authorityUrl)) {
+      issues.push({ rating: 'warning', textKey: 'BIMI_NOT_HTTPS', textArgs: [authorityUrl] });
     } else {
       issues.push({ rating: 'excellent', textKey: 'BIMI_AUTHORITY_URL', textArgs: [authorityUrl] });
-      if (logoUrl) rating = 'excellent';
+      if (rating === 'good') rating = 'excellent';
     }
 
     return { rating, record, parsed, issues };
@@ -5960,16 +6485,18 @@ function reverseIPv6(ip) {
 
 async function checkPTR(domain) {
   try {
-    const mxResp = await dohQuery(domain, 'MX');
-    const mxHosts = (mxResp.Answer || []).filter(r => r.type === 15)
-      .map(r => { const p = r.data.split(/\s+/); return (p[1] || '').replace(/\.$/, '').toLowerCase(); })
-      .filter(h => h && h !== '.');
+    const mx = await getMXHosts(domain);
+    if (mx.problem) return { ...mx.problem, hosts: [], issues: [] };
+    if (mx.nullMX) return { rating: 'good', hosts: [], nullMX: true, issues: [{ rating: 'good', textKey: 'PTR_NULL_MX' }] };
+    const mxHosts = [...new Set(mx.hosts.map(h => h.hostname))];
 
     if (mxHosts.length === 0) {
       return { rating: 'fail', hosts: [], issues: [{ rating: 'fail', textKey: 'PTR_NO_MX' }] };
     }
 
-    const hostResults = await Promise.allSettled(mxHosts.map(async hostname => {
+    // Bounded like every other host fan-out: each host costs A + AAAA, then up
+    // to four PTR queries.
+    const hostResults = await parallelLimit(mxHosts.map(hostname => async () => {
       const ips = await resolveHostIPs(hostname);
       const ipResults = await Promise.allSettled(ips.slice(0, 4).map(async ip => {
         const isV6 = ip.includes(':');
@@ -5992,7 +6519,7 @@ async function checkPTR(domain) {
       }));
       const ipData = ipResults.map(r => r.status === 'fulfilled' ? r.value : { ip: '?', ptr: null, match: false, rating: 'warning' });
       return { hostname, ips: ipData };
-    }));
+    }), DNS_CONCURRENCY);
 
     const hosts = hostResults.map(r => r.status === 'fulfilled' ? r.value : { hostname: '?', ips: [] });
     let overallRating = 'excellent';
@@ -6033,95 +6560,92 @@ const asnInfoCache = new Map();  // asn → holder name string | null
 let bgpSafetyPromise = null;     // in-flight/settled ISP BGP-safety test (see checkBGPSafety)
 let connTestPromise  = null;     // in-flight/settled visitor connection test (see checkConnection)
 
-async function rpkiLookupIP(ip) {
-  if (rpkiIpCache.has(ip)) { if (scanStats) scanStats.ripeStatCacheHits++; return rpkiIpCache.get(ip); }
-
-  const base = 'https://stat.ripe.net/data/';
-  const qs = '&sourceapp=email-security-checker';
-
-  if (scanStats) scanStats.ripeStatRequests++;
-  const netData = await fetchJSON(base + 'network-info/data.json?resource=' + encodeURIComponent(ip) + qs,
-    { label: 'network-info HTTP' });
-
-  const asns   = (netData.data && netData.data.asns)   || [];
-  const prefix = (netData.data && netData.data.prefix) || null;
-  if (!prefix || asns.length === 0) {
-    const result = { ip, status: 'not_routed', asn: null, prefix: null, roas: [] };
-    rpkiIpCache.set(ip, result);
-    return result;
-  }
-
-  const asn = asns[0];
-  if (scanStats) scanStats.ripeStatRequests++;
-  const valData = await fetchJSON(
-    base + 'rpki-validation/data.json?resource=AS' + encodeURIComponent(asn) +
-    '&prefix=' + encodeURIComponent(prefix) + qs,
-    { label: 'rpki-validation HTTP' });
-
-  const status = (valData.data && valData.data.status) || 'unknown';
-  const roas   = (valData.data && valData.data.validating_roas) || [];
-  const result = { ip, asn, prefix, status, roas };
-  rpkiIpCache.set(ip, result);
-  return result;
+// The three caches store the in-flight *promise*, exactly like dohCache: two
+// hosts sharing an address (anycast, or one box listed as both NS and MX) and
+// the Connection tab's lookups all run concurrently under parallelLimit, and
+// a value cache made every one of them miss and fetch. A rejected lookup is
+// evicted so the next scan retries instead of carrying a transient failure
+// for the rest of the session.
+function cachedRipe(cache, key, producer) {
+  if (cache.has(key)) { if (scanStats) scanStats.ripeStatCacheHits++; return cache.get(key); }
+  const p = producer();
+  cache.set(key, p);
+  p.catch(() => { if (cache.get(key) === p) cache.delete(key); });
+  return p;
 }
 
-async function aspaLookupASN(asn) {
-  if (aspaAsnCache.has(asn)) { if (scanStats) scanStats.ripeStatCacheHits++; return aspaAsnCache.get(asn); }
+const RIPE_BASE = 'https://stat.ripe.net/data/';
+const RIPE_QS   = '&sourceapp=email-security-checker';
+// Worst-of ordering for a prefix announced by more than one origin AS.
+const RPKI_STATUS_ORDER = ['valid', 'unknown', 'not_routed', 'invalid'];
 
-  if (scanStats) scanStats.ripeStatRequests++;
-  const json = await fetchJSON(
-    'https://stat.ripe.net/data/aspa/data.json?resource=AS' + encodeURIComponent(asn) +
-    '&sourceapp=email-security-checker',
-    { headers: { Accept: 'application/json' } });
-  const d = json.data;
-  if (!d) {
-    const result = { asn, published: false, providers: [] };
-    aspaAsnCache.set(asn, result);
-    return result;
-  }
+function rpkiLookupIP(ip) {
+  return cachedRipe(rpkiIpCache, ip, async () => {
+    if (scanStats) scanStats.ripeStatRequests++;
+    const netData = await fetchJSON(RIPE_BASE + 'network-info/data.json?resource=' + encodeURIComponent(ip) + RIPE_QS,
+      { label: 'network-info HTTP' });
 
-  // Normalize provider list — RIPE Stat may return objects or plain numbers
-  let providers = [];
-  const raw = d.provider_asns || d.providers || [];
-  for (const p of raw) {
-    const num = typeof p === 'object' ? (p.provider_asn ?? p.asn) : p;
-    if (num != null) providers.push(String(num));
-  }
+    const asns   = ((netData.data && netData.data.asns) || []).map(String);
+    const prefix = (netData.data && netData.data.prefix) || null;
+    if (!prefix || asns.length === 0) {
+      return { ip, status: 'not_routed', asn: null, asns: [], prefix: null, roas: [], validations: [] };
+    }
 
-  const result = { asn, published: providers.length > 0, providers };
-  aspaAsnCache.set(asn, result);
-  return result;
+    // Every origin AS is validated (a multi-origin prefix is only as good as
+    // its worst origin); the first stays `asn` for display. Capped at three.
+    const validations = await Promise.all(asns.slice(0, 3).map(async asn => {
+      if (scanStats) scanStats.ripeStatRequests++;
+      const valData = await fetchJSON(
+        RIPE_BASE + 'rpki-validation/data.json?resource=AS' + encodeURIComponent(asn) +
+        '&prefix=' + encodeURIComponent(prefix) + RIPE_QS,
+        { label: 'rpki-validation HTTP' });
+      return { asn, status: (valData.data && valData.data.status) || 'unknown',
+               roas: (valData.data && valData.data.validating_roas) || [] };
+    }));
+    const worst = validations.reduce((w, v) =>
+      RPKI_STATUS_ORDER.indexOf(v.status) > RPKI_STATUS_ORDER.indexOf(w.status) ? v : w, validations[0]);
+    return { ip, asn: asns[0], asns, prefix, status: worst.status, roas: worst.roas, validations };
+  });
 }
 
-async function fetchASNHolder(asn) {
-  if (asnInfoCache.has(asn)) { if (scanStats) scanStats.ripeStatCacheHits++; return asnInfoCache.get(asn); }
-  if (scanStats) scanStats.ripeStatRequests++;
-  let j;
-  try {
-    j = await fetchJSON(
-      'https://stat.ripe.net/data/as-overview/data.json?resource=AS' + encodeURIComponent(asn) +
-      '&sourceapp=email-security-checker');
-  } catch (_) { asnInfoCache.set(asn, null); return null; }
-  const holder = (j.data && j.data.holder) || null;
-  asnInfoCache.set(asn, holder);
-  return holder;
+function aspaLookupASN(asn) {
+  return cachedRipe(aspaAsnCache, asn, async () => {
+    if (scanStats) scanStats.ripeStatRequests++;
+    const json = await fetchJSON(
+      RIPE_BASE + 'aspa/data.json?resource=AS' + encodeURIComponent(asn) + RIPE_QS,
+      { headers: { Accept: 'application/json' } });
+    const d = json.data;
+    if (!d) return { asn, published: false, providers: [] };
+
+    // Normalize provider list — RIPE Stat may return objects or plain numbers
+    const providers = [];
+    const raw = d.provider_asns || d.providers || [];
+    for (const p of raw) {
+      const num = typeof p === 'object' ? (p.provider_asn ?? p.asn) : p;
+      if (num != null) providers.push(String(num));
+    }
+    return { asn, published: providers.length > 0, providers };
+  });
+}
+
+// Resolves to the holder name or null; never rejects. A failed lookup is not
+// cached (cachedRipe evicts it), so the name is retried on the next scan.
+function fetchASNHolder(asn) {
+  return cachedRipe(asnInfoCache, asn, async () => {
+    if (scanStats) scanStats.ripeStatRequests++;
+    const j = await fetchJSON(RIPE_BASE + 'as-overview/data.json?resource=AS' + encodeURIComponent(asn) + RIPE_QS);
+    return (j.data && j.data.holder) || null;
+  }).catch(() => null);
 }
 
 async function checkRPKI(domain) {
   try {
-    const [nsResp, mxResp] = await Promise.allSettled([
-      dohQuery(domain, 'NS'),
-      dohQuery(domain, 'MX'),
+    const [nsRes, mxRes] = await Promise.allSettled([
+      getNSHosts(domain),
+      getMXHostnames(domain),
     ]);
-
-    const nsHosts = (nsResp.status === 'fulfilled' ? (nsResp.value.Answer || []) : [])
-      .filter(r => r.type === 2)
-      .map(r => r.data.trim().replace(/\.$/, '').toLowerCase());
-
-    const mxHosts = (mxResp.status === 'fulfilled' ? (mxResp.value.Answer || []) : [])
-      .filter(r => r.type === 15)
-      .map(r => (r.data.trim().split(/\s+/)[1] || '').replace(/\.$/, '').toLowerCase())
-      .filter(h => h && h !== '.');
+    const nsHosts = nsRes.status === 'fulfilled' ? nsRes.value : [];
+    const mxHosts = mxRes.status === 'fulfilled' ? mxRes.value : [];
 
     const allHosts = [...new Set([...nsHosts, ...mxHosts])];
     if (allHosts.length === 0)
@@ -6134,21 +6658,16 @@ async function checkRPKI(domain) {
     // Each host costs an A and an AAAA query, so a domain with many NS+MX names
     // opens 2x that many at once unless this is bounded too.
     const ipSettled = await parallelLimit(allHosts.map(host => () => resolveHostIPs(host)), DNS_CONCURRENCY);
-    const hostIPs = ipSettled.map(r => (r.status === 'fulfilled' ? r.value : []));
-    const lookups = [];   // flat list of { hostIdx, ip } across every host
-    allHosts.forEach((host, hi) => {
-      // Cap at 4 IPs per host to avoid hammering RIPE Stat
-      hostIPs[hi].slice(0, 4).forEach(ip => lookups.push({ hi, ip }));
+    const hostIPs = ipSettled.map(r => (r.status === 'fulfilled' ? r.value.slice(0, 4) : []));   // ≤ 4 IPs per host
+    // One lookup per distinct address, then mapped back to every host using it.
+    const uniqueIPs = [...new Set(hostIPs.flat())];
+    const settled = await parallelLimit(uniqueIPs.map(ip => () => rpkiLookupIP(ip)), RIPE_CONCURRENCY);
+    const byIP = {};
+    uniqueIPs.forEach((ip, i) => {
+      byIP[ip] = settled[i].status === 'fulfilled' ? settled[i].value
+        : { ip, status: 'error', error: describeFetchError(settled[i].reason), asn: null, prefix: null, roas: [] };
     });
-    const settled = await parallelLimit(
-      lookups.map(l => () => rpkiLookupIP(l.ip)), RIPE_CONCURRENCY);
-
-    const perHost = allHosts.map(() => []);
-    settled.forEach((res, i) => {
-      const { hi, ip } = lookups[i];
-      perHost[hi].push(res.status === 'fulfilled' ? res.value
-        : { ip, status: 'error', error: describeFetchError(res.reason), asn: null, prefix: null, roas: [] });
-    });
+    const perHost = hostIPs.map(ips => ips.map(ip => byIP[ip]));
 
     const hostResults = allHosts.map((host, hi) => ({
       host, isNS: nsHosts.includes(host), isMX: mxHosts.includes(host),
@@ -6167,31 +6686,28 @@ async function checkRPKI(domain) {
     }
 
     let rating;
-    if (hasInvalid)                        rating = 'fail';
-    else if (hasValid && !hasNotFound)     rating = 'excellent';
-    else if (hasValid)                     rating = 'good';
-    else if (hasError)                     rating = 'warning';
-    else                                   rating = 'warning';   // all unknown
+    if (hasInvalid)                                    rating = 'fail';
+    else if (hasValid && !hasNotFound && !hasError)    rating = 'excellent';   // an unanswered lookup is not a clean bill
+    else if (hasValid)                                 rating = 'good';
+    else                                               rating = 'warning';     // all unknown, or errors only
 
-    // Fetch AS holder names for all unique ASNs found
+    // Holder names and ASPA records for every unique ASN. The two depend only
+    // on the ASN list, so they run as one stage rather than two.
     const uniqueASNs = [...new Set(
-      hostResults.flatMap(h => h.ipResults.map(r => r.asn)).filter(Boolean)
+      hostResults.flatMap(h => h.ipResults.flatMap(r => r.asns && r.asns.length ? r.asns : [r.asn])).filter(Boolean)
     )];
     const asnInfo = {};
-    const holderResults = await parallelLimit(
-      uniqueASNs.map(asn => () => fetchASNHolder(asn)), RIPE_CONCURRENCY);
-    uniqueASNs.forEach((asn, i) => {
-      if (holderResults[i].status === 'fulfilled') asnInfo[asn] = holderResults[i].value;
-    });
-
-    // Fetch ASPA records for each unique ASN
     const aspaData = {};
-    const aspaResults = await parallelLimit(
-      uniqueASNs.map(asn => () => aspaLookupASN(asn)), RIPE_CONCURRENCY);
+    const stage = await parallelLimit([
+      ...uniqueASNs.map(asn => () => fetchASNHolder(asn)),
+      ...uniqueASNs.map(asn => () => aspaLookupASN(asn)),
+    ], RIPE_CONCURRENCY);
     uniqueASNs.forEach((asn, i) => {
-      aspaData[asn] = aspaResults[i].status === 'fulfilled'
-        ? aspaResults[i].value
-        : { asn, published: false, providers: [], error: true, errorMsg: describeFetchError(aspaResults[i].reason) };
+      asnInfo[asn] = stage[i].status === 'fulfilled' ? stage[i].value : null;
+      const a = stage[uniqueASNs.length + i];
+      aspaData[asn] = a.status === 'fulfilled'
+        ? a.value
+        : { asn, published: false, providers: [], error: true, errorMsg: describeFetchError(a.reason) };
     });
 
     // Fetch holder names for provider ASNs not already in asnInfo
@@ -6259,7 +6775,9 @@ async function runBGPSafetyTest() {
     // trace fetch is non-fatal — proceed without WARP info (deviation from
     // upstream, which errors out).
     const trace = await tracePromise;
-    if (trace !== null && !trace.includes('warp=off')) return { status: 'warp' };
+    // Positive match: a trace without any warp= line (a format change, a
+    // truncated body) must not be cached for the session as a WARP verdict.
+    if (trace !== null && /^warp=(on|plus)\s*$/m.test(trace)) return { status: 'warp' };
 
     let valid;
     try { valid = await validPromise; } catch (_) { return { status: 'error' }; }
@@ -6343,9 +6861,9 @@ async function runConnectionTest() {
 
 async function checkIPv6(domain) {
   try {
-    const [nsResp, mxResp, domainAaaaResp, domainAResp] = await Promise.allSettled([
-      dohQuery(domain, 'NS'),
-      dohQuery(domain, 'MX'),
+    const [nsRes, mxRes, domainAaaaResp, domainAResp] = await Promise.allSettled([
+      getNSHosts(domain),
+      getMXHostnames(domain),
       dohQuery(domain, 'AAAA'),
       dohQuery(domain, 'A'),
     ]);
@@ -6357,16 +6875,8 @@ async function checkIPv6(domain) {
       ? (domainAResp.value.Answer || []).filter(r => r.type === 1).map(r => r.data.trim())
       : []);
 
-    const nsHosts = (nsResp.status === 'fulfilled' ? (nsResp.value.Answer || []) : [])
-      .filter(r => r.type === 2)
-      .map(r => r.data.trim().replace(/\.$/, '').toLowerCase());
-    const mxEntries = (mxResp.status === 'fulfilled' ? (mxResp.value.Answer || []) : [])
-      .filter(r => r.type === 15)
-      .map(r => { const p = r.data.trim().split(/\s+/); return (p[1] || '').replace(/\.$/, '').toLowerCase(); })
-      .filter(h => h && h !== '.');
-
-    const uniqueNS = [...new Set(nsHosts)];
-    const uniqueMX = [...new Set(mxEntries)];
+    const uniqueNS = nsRes.status === 'fulfilled' ? nsRes.value : [];
+    const uniqueMX = mxRes.status === 'fulfilled' ? mxRes.value : [];
 
     // Bounded for the same reason as checkRPKI: two queries per host.
     const allIPResults = await parallelLimit(
@@ -6396,9 +6906,16 @@ async function checkIPv6(domain) {
     const someMXHaveV6 = mxWithV6.length > 0 && !allMXHaveV6;
     const someNSHaveV6 = nsWithV6.length > 0 && !allNSHaveV6;
 
+    // A host set that is empty (a subdomain with no NS of its own, a domain
+    // with no MX) imposes no requirement — only sets that exist must be fully
+    // IPv6-capable for 'excellent'. The domain's own AAAA counts as a set too.
+    const sets = [];
+    if (mxWithIPs.length > 0) sets.push(allMXHaveV6);
+    if (nsWithIPs.length > 0) sets.push(allNSHaveV6);
+    if (domainV4.length > 0 || domainV6.length > 0) sets.push(domainV6.length > 0);
     let rating;
-    if (allMXHaveV6 && allNSHaveV6) rating = 'excellent';
-    else if (mxWithV6.length > 0 || nsWithV6.length > 0) rating = 'good';
+    if (sets.length > 0 && sets.every(Boolean)) rating = 'excellent';
+    else if (mxWithV6.length > 0 || nsWithV6.length > 0 || domainV6.length > 0) rating = 'good';
     else rating = 'warning';
 
     const issues = [];
@@ -6441,12 +6958,17 @@ function clearNode(n) { while (n.firstChild) n.removeChild(n.firstChild); }
 // `message` is passed through, since those come from describeFetchError() and
 // are already localised. fallbackKey covers a result carrying neither.
 function msgText(d, fallbackKey) {
-  if (d.messageKey) return ts(d.messageKey);
+  if (d.messageKey) return d.messageArgs ? td(d.messageKey, ...d.messageArgs) : ts(d.messageKey);
   if (d.message) return d.message;
   return fallbackKey ? ts(fallbackKey) : '';
 }
 
-function makeSpinner() { return el('span', 'spinner'); }
+function makeSpinner() {
+  const sp = el('span', 'spinner');
+  sp.setAttribute('role', 'img');
+  sp.setAttribute('aria-label', ts('CHECKING'));
+  return sp;
+}
 
 function makeBadge(rating) {
   // ts() falls back to the key name for an unknown rating, which is exactly the
@@ -6481,8 +7003,15 @@ function makeIssueList(issues, endpointDnssec) {
   for (const iss of issues) {
     const li = el('li', 'issue-item');
     li.appendChild(el('span', 'issue-dot dot-' + iss.rating));
+    // A textArg may itself be { key, args } — a nested string-table reference
+    // (used for e.g. the MTA-STS fetch error) that must be resolved in the
+    // current language too, never baked in as prose at check time.
+    const args = (iss.textArgs || []).map(a =>
+      (a && typeof a === 'object' && a.key)
+        ? ((a.args && a.args.length) ? td(a.key, ...a.args) : ts(a.key))
+        : a);
     let resolvedText = iss.textKey
-      ? (iss.textArgs ? td(iss.textKey, ...iss.textArgs) : ts(iss.textKey))
+      ? (iss.textArgs ? td(iss.textKey, ...args) : ts(iss.textKey))
       : iss.text;
     if (iss._caList) resolvedText += iss._caList.join(', ');
     const span = el('span', null, resolvedText);
@@ -6567,7 +7096,7 @@ function addExplanation(body, markupText) {
 
 function setTabLoading(name) {
   const dot = document.querySelector('[data-tab="' + name + '"] .tab-dot');
-  if (dot) { dot.className = 'tab-dot'; dot.title = ''; }
+  if (dot) { dot.className = 'tab-dot'; dot.title = ''; dot.removeAttribute('aria-label'); dot.removeAttribute('role'); }
 
   const panel = document.getElementById('panel-' + name);
   const header = panel && panel.querySelector('.panel-header');
@@ -6585,7 +7114,15 @@ function setTabLoading(name) {
 
 function setTabResult(name, rating, buildFn) {
   const dot = document.querySelector('[data-tab="' + name + '"] .tab-dot');
-  if (dot) dot.className = 'tab-dot dot-' + rating;
+  if (dot) {
+    dot.className = 'tab-dot dot-' + rating;
+    // The colour is the only visual signal; give it a name so the tab reads
+    // as e.g. "DNSSEC, excellent" to assistive tech and on hover.
+    const label = ts('RATING_' + String(rating).toUpperCase());
+    dot.title = label;
+    dot.setAttribute('role', 'img');
+    dot.setAttribute('aria-label', label);
+  }
 
   const panel = document.getElementById('panel-' + name);
   const header = panel && panel.querySelector('.panel-header');
@@ -6822,14 +7359,19 @@ function renderDANE(result) {
         row.appendChild(line1);
 
         let statusText, statusRating;
+        const validRecs = (h.records || []).filter(r => !r.invalidReason);
         if (h.error) {
           statusText = ts('ERR_CHECK_FAILED'); statusRating = 'fail';
         } else if (h.records.length === 0) {
           statusText = ts('DANE_NO_TLSA'); statusRating = 'fail';
+        } else if (validRecs.length === 0) {
+          statusText = td('DANE_TLSA_INVALID', h.invalid); statusRating = 'fail';
         } else if (!h.ad) {
           statusText = ts('DANE_TLSA_UNVAL'); statusRating = 'warning';
+        } else if (h.usable === 0) {
+          statusText = ts('DANE_PKIX_USAGE'); statusRating = 'warning';
         } else {
-          const best = h.records.reduce((b, r) => RATINGS.indexOf(rateTLSA(r)) < RATINGS.indexOf(rateTLSA(b)) ? r : b);
+          const best = validRecs.reduce((b, r) => RATINGS.indexOf(rateTLSA(r)) < RATINGS.indexOf(rateTLSA(b)) ? r : b);
           const usage    = TLSA_USAGE[best.usage]       || ('usage '    + best.usage);
           const matching = TLSA_MATCHING[best.matching] || ('matching ' + best.matching);
           statusText = '\u2713 DANE \u00b7 ' + usage + ' \u00b7 ' + matching;
@@ -6843,6 +7385,12 @@ function renderDANE(result) {
           const note = el('div', null);
           note.style.cssText = 'font-size:0.75rem;color:var(--text-muted)';
           note.textContent = td('TLSA_RECORDS_COUNT', h.records.length);
+          row.appendChild(note);
+        }
+        if (!h.error && h.invalid > 0 && validRecs.length > 0) {
+          const note = el('div', null);
+          note.style.cssText = 'font-size:0.75rem;color:var(--warning)';
+          note.textContent = td('DANE_TLSA_INVALID', h.invalid);
           row.appendChild(note);
         }
         listEl.appendChild(row);
@@ -6981,6 +7529,13 @@ function renderDKIM(result) {
           td('DKIM_SELECTORS_TESTED', testedCount),
         ].filter(Boolean);
         body.appendChild(el('div', 'card-summary', sumParts.join(', ')));
+        if (d.messageKey) {
+          const note = el('p', 'card-summary');
+          const strong = document.createElement('strong');
+          strong.textContent = msgText(d);
+          note.appendChild(strong);
+          body.appendChild(note);
+        }
 
         // Found selectors section
         const foundSection = el('div', 'panel-section');
@@ -7556,7 +8111,7 @@ function renderConnection(result) {
     isec.appendChild(makeIssueList([{ rating: ipRating, text: ts(ipKey) }]));
 
     const ROA_RATING = { valid: 'excellent', invalid: 'fail', unknown: 'warning', not_routed: 'warning' };
-    const ROA_LABEL  = { valid: 'valid', invalid: 'invalid', unknown: 'no ROA', not_routed: 'not routed' };
+    const ROA_LABEL  = { valid: ts('CONN_ROA_VALID'), invalid: ts('CONN_ROA_INVALID'), unknown: ts('CONN_ROA_NONE'), not_routed: ts('CONN_ROA_NOT_ROUTED') };
     function addIPLine(familyLabel, ip, info) {
       const line = el('div');
       line.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;font-size:0.78rem;padding:0.15rem 0 0 0.2rem';
@@ -7912,7 +8467,7 @@ function renderIPv6(result) {
 }
 
 function renderSecurityTxt(result) {
-  const d = result.status === 'fulfilled' ? result.value : { rating: 'warning', found: false, messageKey: 'ERR_CHECK_FAILED' };
+  const d = result.status === 'fulfilled' ? result.value : { rating: 'fail', error: true, found: false, messageKey: 'ERR_CHECK_FAILED' };
   if (d.skipped) { setTabResult('security-txt', 'skip', body => { body.appendChild(el('div', 'card-summary', ts('CHECK_SKIPPED'))); }); return; }
   setTabResult('security-txt', d.rating, body => {
     if (!d.found) {
@@ -7972,12 +8527,14 @@ function renderSecurityTxt(result) {
 }
 
 function renderWHOIS(result) {
-  const d = result.status === 'fulfilled' ? result.value : { rating: 'warning', found: false, messageKey: 'ERR_CHECK_FAILED' };
+  const d = result.status === 'fulfilled' ? result.value : { rating: 'fail', error: true, found: false, messageKey: 'ERR_CHECK_FAILED' };
   setTabResult('whois', d.rating, body => {
+    const na = ts('WHOIS_NA');
     function fmtDate(iso) {
-      if (!iso) return 'N/A';
+      if (!iso) return na;
       try {
-        return new Date(iso).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' });
+        const locale = currentLang === 'no' ? 'nb-NO' : currentLang;
+        return new Date(iso).toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' });
       } catch (_) { return iso; }
     }
 
@@ -7986,16 +8543,27 @@ function renderWHOIS(result) {
     } else {
       const sum = el('div', 'card-summary');
       sum.appendChild(el('b', null, ts('WHOIS_RDAP_OK')));
+      if (d.queriedDomain) {
+        sum.appendChild(document.createTextNode(' '));
+        sum.appendChild(el('span', null, td('WHOIS_QUERIED_PARENT', d.queriedDomain)));
+      }
       body.appendChild(sum);
+
+      // Lock / hold verdict — the registrar-side part of domain security.
+      const lockIssues = [];
+      if (d.holdStatuses && d.holdStatuses.length) lockIssues.push({ rating: 'warning', textKey: 'WHOIS_HOLD', textArgs: [d.holdStatuses.join(', ')] });
+      if (d.lockStatuses && d.lockStatuses.length) lockIssues.push({ rating: 'excellent', textKey: 'WHOIS_LOCKED', textArgs: [d.lockStatuses.length] });
+      else if (d.lockStatuses) lockIssues.push({ rating: 'warning', textKey: 'WHOIS_UNLOCKED' });
+      if (lockIssues.length) body.appendChild(makeIssueList(lockIssues));
 
       // Key-value table
       const table = el('table', 'kv-table');
       const rows = [
-        [ts('WHOIS_ROW_REGISTRAR'), d.registrar || 'N/A'],
+        [ts('WHOIS_ROW_REGISTRAR'), d.registrar || na],
         [ts('WHOIS_ROW_CREATED'),   fmtDate(d.created)],
         [ts('WHOIS_ROW_UPDATED'),   fmtDate(d.updated)],
         [ts('WHOIS_ROW_EXPIRES'),   fmtDate(d.expires)],
-        [ts('WHOIS_ROW_HANDLE'),    d.handle || 'N/A'],
+        [ts('WHOIS_ROW_HANDLE'),    d.handle || na],
       ];
       for (const [k, v] of rows) {
         const tr = document.createElement('tr');
@@ -8051,29 +8619,52 @@ function renderWHOIS(result) {
   });
 }
 
+// The scoring table, in one place. renderSummary (grade + bars),
+// renderRecommendations (Fixes rows) and buildScoringModal (the explanation)
+// all read it, so the three can never disagree. `key` is the lastResults
+// field, `tabId` the panel; BAR_ORDER is the display order of the Overview
+// bars (pipeline order rather than weight order).
+const CHECK_WEIGHTS = [
+  { key: 'dkim',        tabId: 'dkim',         label: 'DKIM',         weight: 20 },
+  { key: 'spf',         tabId: 'spf',          label: 'SPF',          weight: 15 },
+  { key: 'dmarc',       tabId: 'dmarc',        label: 'DMARC',        weight: 15 },
+  { key: 'mtasts',      tabId: 'mtasts',       label: 'MTA-STS',      weight: 15 },
+  { key: 'dnssec',      tabId: 'dnssec',       label: 'DNSSEC',       weight: 10 },
+  { key: 'mx',          tabId: 'mx',           label: 'MX',           weight: 10 },
+  { key: 'dane',        tabId: 'dane',         label: 'DANE',         weight: 10 },
+  { key: 'tlsrpt',      tabId: 'tlsrpt',       label: 'TLS-RPT',      weight:  3 },
+  { key: 'caa',         tabId: 'caa',          label: 'CAA',          weight:  2 },
+];
+const INFO_CHECKS = [
+  { key: 'ptr',         tabId: 'ptr',          label: 'PTR' },
+  { key: 'bimi',        tabId: 'bimi',         label: 'BIMI' },
+  { key: 'rpki',        tabId: 'rpki',         label: 'RPKI' },
+  { key: 'aspa',        tabId: 'aspa',         label: 'ASPA' },
+  { key: 'ipv6',        tabId: 'ipv6',         label: 'IPv6' },
+  { key: 'securityTxt', tabId: 'security-txt', label: 'Security.txt', barLabel: 'Sec.txt' },
+  { key: 'whois',       tabId: 'whois',        label: 'WHOIS' },
+];
+const BAR_ORDER = ['dnssec', 'mx', 'dane', 'spf', 'dkim', 'dmarc', 'mtasts', 'tlsrpt', 'caa'];
+
+// One fallback for a check whose promise rejected, shared by every consumer
+// so the tab dot, the Overview bar and the Fixes row agree.
+const REJECTED_RESULT = { rating: 'fail', error: true, issues: [] };
+function settledValue(res) {
+  return res && res.status === 'fulfilled' ? res.value : REJECTED_RESULT;
+}
+
 function renderRecommendations(r) {
-  const g = res => (res && res.status === 'fulfilled' ? res.value : { rating: 'fail', issues: [] });
+  const g = settledValue;
 
-  const SCORED = [
-    { tabId: 'dkim',        label: 'DKIM',        weight: 20, result: g(r.dkim)        },
-    { tabId: 'spf',         label: 'SPF',         weight: 15, result: g(r.spf)         },
-    { tabId: 'dmarc',       label: 'DMARC',       weight: 15, result: g(r.dmarc)       },
-    { tabId: 'mtasts',      label: 'MTA-STS',     weight: 15, result: g(r.mtasts)      },
-    { tabId: 'dnssec',      label: 'DNSSEC',      weight: 10, result: g(r.dnssec)      },
-    { tabId: 'mx',          label: 'MX',          weight: 10, result: g(r.mx)          },
-    { tabId: 'dane',        label: 'DANE',        weight: 10, result: g(r.dane)        },
-    { tabId: 'tlsrpt',      label: 'TLS-RPT',     weight:  3, result: g(r.tlsrpt)      },
-    { tabId: 'caa',         label: 'CAA',         weight:  2, result: g(r.caa)         },
-  ].filter(c => !c.result.skipped);
+  const SCORED = CHECK_WEIGHTS
+    .map(c => ({ tabId: c.tabId, label: c.label, weight: c.weight, result: g(r[c.key]) }))
+    .filter(c => !c.result.skipped);
 
-  const INFO = [
-    { tabId: 'ptr',          label: 'PTR',          weight: 0, result: g(r.ptr)         },
-    { tabId: 'rpki',         label: 'RPKI',         weight: 0, result: g(r.rpki)        },
-    { tabId: 'aspa',         label: 'ASPA',         weight: 0, result: { rating: getASPARating(r.rpki), issues: [] } },
-    { tabId: 'ipv6',         label: 'IPv6',         weight: 0, result: g(r.ipv6)        },
-    { tabId: 'security-txt', label: 'Security.txt', weight: 0, result: g(r.securityTxt) },
-    { tabId: 'whois',        label: 'WHOIS',        weight: 0, result: g(r.whois)       },
-  ].filter(c => !c.result.skipped);
+  const INFO = INFO_CHECKS
+    .filter(c => c.key !== 'bimi')   // handled as NEUTRAL below
+    .map(c => ({ tabId: c.tabId, label: c.label, weight: 0,
+      result: c.key === 'aspa' ? { rating: getASPARating(r.rpki), issues: [] } : g(r[c.key]) }))
+    .filter(c => !c.result.skipped);
 
   // BIMI is reported but never graded, so it belongs in neither the fix list nor
   // the passing list — a 'none' rating is not 'excellent' and would otherwise sit
@@ -8096,8 +8687,10 @@ function renderRecommendations(r) {
       const nameBtn = el('button', 'rec-check-name', label);
       nameBtn.type = 'button';
       nameBtn.addEventListener('click', () => {
+        // Move focus with the tab: the panel holding this button is about to
+        // become display:none, which would drop keyboard focus to <body>.
         const btn = document.querySelector('[data-tab="' + tabId + '"]');
-        if (btn) btn.click();
+        if (btn) activateTab(btn, true);
       });
       header.appendChild(nameBtn);
 
@@ -8300,27 +8893,23 @@ function detectEmailProviders(r) {
   return [...providers];
 }
 
-function renderSummary({ dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois }) {
-  const gv = r => (r && r.status === 'fulfilled' ? r.value : { rating: 'fail' });
-  const g  = r => gv(r).rating;
-  const skipped = r => gv(r).skipped === true;
-  const dr = g(dnssec), mr = g(mx), nr = g(dane), sr = g(spf), kr = g(dkim);
-  const dmr = g(dmarc), tr = g(tlsrpt), pr = g(mtasts), cr = g(caa);
-  const ptr_r = g(ptr), rpki_r = g(rpki), aspa_r = getASPARating(rpki), ipv6_r = g(ipv6), stxt_r = g(securityTxt), whois_r = g(whois);
-  // BIMI is reported but never graded — see BIMI_RATING.
-  const bimi_r = BIMI_RATING;
-  const mtastsSkipped = skipped(mtasts);
+function renderSummary(r) {
+  const { mx, spf, dkim, rpki } = r;
+  const g = key => settledValue(r[key]).rating;
 
-  // Weights: DKIM 20%, SPF 15%, DMARC 15%, MTA-STS 15%, DNSSEC 10%, MX 10%, DANE 10%, TLS-RPT 3%, CAA 2%
-  // PTR, BIMI, RPKI, Security.txt, WHOIS are informational — shown but do not affect grade.
-  // If MTA-STS is skipped, its 15% weight is excluded and the score is normalised to 100.
-  const rawScore = ratingScore(dr) * 0.10 + ratingScore(mr) * 0.10
-                 + ratingScore(nr) * 0.10 + ratingScore(sr) * 0.15
-                 + ratingScore(kr) * 0.20 + ratingScore(dmr) * 0.15
-                 + ratingScore(tr) * 0.03
-                 + (mtastsSkipped ? 0 : ratingScore(pr) * 0.15)
-                 + ratingScore(cr) * 0.02;
-  const score = mtastsSkipped ? rawScore / 0.85 : rawScore;
+  // Weighted score from CHECK_WEIGHTS. A skipped check (the CORS checkbox)
+  // drops out of both numerator and denominator, so the remaining weights are
+  // renormalised to 100.
+  let rawScore = 0, totalWeight = 0;
+  const ratings = {};
+  for (const c of CHECK_WEIGHTS) {
+    const res = settledValue(r[c.key]);
+    ratings[c.key] = res.skipped ? 'skip' : res.rating;
+    if (res.skipped) continue;
+    rawScore += ratingScore(res.rating) * c.weight;
+    totalWeight += c.weight;
+  }
+  const score = totalWeight > 0 ? rawScore / totalWeight : 0;
 
   let grade, gradeClass, descKey;
   if (score >= 85)      { grade = 'A'; gradeClass = 'grade-A'; descKey = 'GRADE_A_DESC'; }
@@ -8351,15 +8940,16 @@ function renderSummary({ dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, 
     fill.style.opacity = neutral ? '0.4' : '';
     track.appendChild(fill);
     row.appendChild(track);
-    const rlbl = el('span', null, neutral ? ts('RATING_' + rating.toUpperCase()) : rating);
+    const rlbl = el('span', null, ts('RATING_' + rating.toUpperCase()));
     rlbl.style.cssText = 'color:var(--text-muted);font-size:0.75rem;width:70px;text-align:end' + (neutral ? '' : ';color:' + ratingColor(rating));
     row.appendChild(rlbl);
     barsEl.appendChild(row);
   }
 
-  [['DNSSEC', dr], ['MX', mr], ['DANE', nr], ['SPF', sr], ['DKIM', kr],
-   ['DMARC', dmr], ['MTA-STS', mtastsSkipped ? 'skip' : pr], ['TLS-RPT', tr], ['CAA', cr]
-  ].forEach(([label, rating]) => addBar(label, rating));
+  for (const key of BAR_ORDER) {
+    const c = CHECK_WEIGHTS.find(w => w.key === key);
+    addBar(c.label, ratings[key]);
+  }
 
   // Separator for informational tabs
   const sep = el('div', null);
@@ -8370,9 +8960,12 @@ function renderSummary({ dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, 
   // BIMI carries the neutral 'none' rating rather than its own excellent/good/
   // warning/fail: it is reported, never judged. Same value the tab dot uses, so
   // the bar and the tab can never disagree.
-  [['PTR', ptr_r], ['BIMI', bimi_r], ['RPKI', rpki_r], ['ASPA', aspa_r], ['IPv6', ipv6_r],
-   ['Sec.txt', stxt_r], ['WHOIS', whois_r]
-  ].forEach(([label, rating]) => addBar(label, rating));
+  for (const c of INFO_CHECKS) {
+    const rating = c.key === 'bimi' ? BIMI_RATING
+                 : c.key === 'aspa' ? getASPARating(rpki)
+                 : (settledValue(r[c.key]).skipped ? 'skip' : g(c.key));
+    addBar(c.barLabel || c.label, rating);
+  }
 
   document.getElementById('overview-placeholder').style.display = 'none';
   document.getElementById('overview-content').style.display = '';
@@ -8403,6 +8996,12 @@ function renderSummary({ dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, 
 let currentDomain = '';
 let lastResults = null;
 let scanStats = null;
+// Scan bookkeeping. `scanning` is true from the moment a scan passes the
+// NXDOMAIN gate until it has rendered; `scanGeneration` lets a scan that was
+// superseded (Back pressed to the start page mid-run) discard its results
+// instead of painting them over whatever replaced it.
+let scanning = false;
+let scanGeneration = 0;
 
 function timed(name, promise) {
   const t0 = performance.now();
@@ -8449,8 +9048,10 @@ async function runChecks(domain, customSelectors, opts = {}) {
     return false;
   }
 
+  const gen = ++scanGeneration;
+  scanning = true;
   currentDomain = domain;
-  scanStats = { startMs: Date.now(), totalMs: 0, checks: {}, dohRequests: 0, dohCacheHits: 0, ripeStatRequests: 0, ripeStatCacheHits: 0, httpRequests: 0 };
+  scanStats = { startMs: Date.now(), totalMs: 0, checks: {}, dohRequests: 0, dohCacheHits: 0, dohFallbacks: 0, ripeStatRequests: 0, ripeStatCacheHits: 0, httpRequests: 0 };
 
   document.getElementById('tab-bar').classList.add('visible');
 
@@ -8467,6 +9068,7 @@ async function runChecks(domain, customSelectors, opts = {}) {
   loadRow.appendChild(document.createTextNode(ts('RUNNING_CHECKS')));
   ph.appendChild(loadRow);
   document.getElementById('overview-content').style.display = 'none';
+  announce(ts('RUNNING_CHECKS'));
 
   const tabsToLoad = ['recs','dnssec','mx','ptr','dane','spf','dkim','dmarc','bimi','tlsrpt','caa','rpki','aspa','ipv6','whois','connection'];
   if (!skipMTASTS) tabsToLoad.push('mtasts');
@@ -8492,10 +9094,25 @@ async function runChecks(domain, customSelectors, opts = {}) {
     timed('bgp',     checkBGPSafety()),
     timed('conn',    checkConnection()),
   ]);
+  if (gen !== scanGeneration) return;   // superseded — see scanGeneration
   if (scanStats) scanStats.totalMs = Date.now() - scanStats.startMs;
 
   lastResults = { dnssec, mx, ptr, dane, spf, dkim, dmarc, bimi, tlsrpt, mtasts, caa, rpki, ipv6, securityTxt, whois, bgp, conn };
+  scanning = false;
   rerenderAll(lastResults);
+  announce(td('SCAN_DONE', domain, document.getElementById('summary-grade').textContent));
+}
+
+// Screen-reader announcements: a visually hidden polite live region. Results
+// appear in panels that are not focused, so without this a scan starting or
+// finishing is silent to assistive tech.
+function announce(text) {
+  const region = document.getElementById('scan-status');
+  if (!region) return;
+  region.textContent = '';
+  // Re-setting the text in a separate task makes repeated identical
+  // announcements fire again.
+  setTimeout(() => { region.textContent = text; }, 50);
 }
 
 // ── Input handling ────────────────────────────────────────────────────────────
@@ -8520,8 +9137,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const copyLinkBtn   = document.getElementById('copy-link-btn');
 
   // Restore persisted skip preference (URL params will override below if present)
-  skipCorsCb.checked = localStorage.getItem('mailcheck-skip-cors') === '1';
-  skipCorsCb.addEventListener('change', () => localStorage.setItem('mailcheck-skip-cors', skipCorsCb.checked ? '1' : '0'));
+  skipCorsCb.checked = storageGet('mailcheck-skip-cors') === '1';
+  skipCorsCb.addEventListener('change', () => storageSet('mailcheck-skip-cors', skipCorsCb.checked ? '1' : '0'));
 
   // Copy link button. navigator.clipboard is undefined outside a secure context
   // (plain http://, and file:// in some browsers), which is exactly how this
@@ -8536,7 +9153,15 @@ document.addEventListener('DOMContentLoaded', () => {
     navigator.clipboard.writeText(window.location.href).then(() => done(true), () => done(false));
   });
 
-  async function doCheck() {
+  // `push` is false for scans triggered by the URL itself (initial load,
+  // Back/Forward): the address bar already shows the right thing, and pushing
+  // again would wipe the forward history or stack a duplicate entry.
+  let scanBusy = false;
+  async function doCheck({ push = true } = {}) {
+    // Only the button was disabled before; Enter and popstate could start a
+    // second scan on top of a running one, and the two then fought over the
+    // caches, scanStats, currentDomain and lastResults.
+    if (scanBusy) return;
     const domain = normalizeDomain(domainInput.value);
     if (!DOMAIN_RE.test(domain)) {
       errorEl.textContent = td('DOMAIN_INVALID', domain);
@@ -8544,6 +9169,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     errorEl.textContent = '';
     const customSelectors = parseCustomSelectors(selectorInput.value);
+    scanBusy = true;
     checkBtn.disabled = true;
     checkBtn.textContent = ts('BTN_CHECKING');
     try {
@@ -8554,7 +9180,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const params = new URLSearchParams({ domain });
         if (customSelectors.length) params.set('selectors', customSelectors.join(','));
         if (skipCorsCb.checked) params.set('skip', 'cors');
-        history.pushState(null, '', '?' + params.toString());
+        if (push) history.pushState(null, '', '?' + params.toString());
         shareRow.style.display = '';
         copyLinkBtn.textContent = ts('BTN_COPY_LINK');
       }
@@ -8569,12 +9195,14 @@ document.addEventListener('DOMContentLoaded', () => {
       ph.style.display = '';
       ph.appendChild(el('div', 'error-state', ts('ERR_SCAN_FAILED')));
     } finally {
+      scanBusy = false;
+      scanning = false;
       checkBtn.disabled = false;
       checkBtn.textContent = ts('BTN_CHECK');
     }
   }
 
-  checkBtn.addEventListener('click', doCheck);
+  checkBtn.addEventListener('click', () => doCheck());
   domainInput.addEventListener('keydown',   e => { if (e.key === 'Enter') doCheck(); });
   selectorInput.addEventListener('keydown', e => { if (e.key === 'Enter') doCheck(); });
 
@@ -8586,6 +9214,7 @@ document.addEventListener('DOMContentLoaded', () => {
     e.stopPropagation();
     const opening = !selectorHelpPopover.classList.contains('visible');
     selectorHelpPopover.classList.toggle('visible', opening);
+    selectorHelpBtn.setAttribute('aria-expanded', String(opening));
     if (opening) {
       clearNode(selectorHelpPopover);
       safeMarkup(selectorHelpPopover, tx('SELECTOR_HELP'));
@@ -8605,16 +9234,18 @@ document.addEventListener('DOMContentLoaded', () => {
     return true;
   }
 
-  // Auto-run if URL contains ?domain=
-  if (applyUrlParams(window.location.search)) doCheck();
+  // Auto-run if URL contains ?domain= (no push: the URL is already right)
+  if (applyUrlParams(window.location.search)) doCheck({ push: false });
 
   // doCheck() pushes a history entry per scan, so Back has to mean something.
   // Without this the URL rewinds while the page keeps showing the newer results.
   window.addEventListener('popstate', () => {
     if (applyUrlParams(window.location.search)) {
-      doCheck();
+      doCheck({ push: false });
     } else {
-      // Back to the entry point: clear the form and hide the stale results.
+      // Back to the entry point: clear the form and hide the stale results. A
+      // scan still in flight is told to drop its results on arrival.
+      scanGeneration++;
       domainInput.value = '';
       selectorInput.value = '';
       lastResults = null;
@@ -8648,11 +9279,16 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => {
       if (btn.dataset.lang === currentLang) return;
       currentLang = btn.dataset.lang;
-      try { localStorage.setItem('mailcheck-lang', currentLang); } catch (_) {}
+      storageSet('mailcheck-lang', currentLang);
       markActiveLang();
       applyI18n();
       applyTheme();
       selectorHelpPopover.classList.remove('visible');
+      // Mid-scan: applyI18n has just reset the disabled button's label, and the
+      // stored results belong to the *previous* scan — repainting them over the
+      // spinners would show old data under the new domain. The running scan
+      // re-renders everything in the new language when it finishes.
+      if (scanning) { checkBtn.textContent = ts('BTN_CHECKING'); return; }
       if (lastResults) rerenderAll(lastResults);
     });
   }
@@ -8672,32 +9308,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function applyTheme() {
     document.documentElement.classList.toggle('light', isLight);
-    settingsBtn.title = isLight ? ts('THEME_TO_DARK') : ts('THEME_TO_LIGHT');
+    settingsBtn.title = ts('SETTINGS_OPEN');
     themeOption.textContent = ts('SETTINGS_THEME') + ': ' + (isLight ? ts('THEME_LIGHT') : ts('THEME_DARK'));
     scoringOption.textContent = ts('SETTINGS_SCORING');
   }
   applyTheme();
 
+  function setDropdown(open) {
+    settingsDropdown.hidden = !open;
+    settingsBtn.setAttribute('aria-expanded', String(open));
+  }
   settingsBtn.addEventListener('click', e => {
     e.stopPropagation();
-    settingsDropdown.hidden = !settingsDropdown.hidden;
+    setDropdown(settingsDropdown.hidden);
   });
 
   themeOption.addEventListener('click', () => {
     isLight = !isLight;
-    try { localStorage.setItem('mailcheck-theme', isLight ? 'light' : 'dark'); } catch (_) {}
+    storageSet('mailcheck-theme', isLight ? 'light' : 'dark');
     applyTheme();
-    settingsDropdown.hidden = true;
+    setDropdown(false);
   });
 
+  // Dialog focus: into the close button on open, back to the settings button
+  // on close, as a modal is expected to behave.
+  function closeScoring() {
+    if (!scoringBackdrop.classList.contains('visible')) return;
+    scoringBackdrop.classList.remove('visible');
+    settingsBtn.focus();
+  }
   scoringOption.addEventListener('click', () => {
-    settingsDropdown.hidden = true;
+    setDropdown(false);
     buildScoringModal();
     scoringBackdrop.classList.add('visible');
+    const close = document.getElementById('scoring-close-btn');
+    if (close) close.focus();
   });
 
   scoringBackdrop.addEventListener('click', e => {
-    if (e.target === scoringBackdrop) scoringBackdrop.classList.remove('visible');
+    if (e.target === scoringBackdrop) closeScoring();
   });
 
   // NXDOMAIN modal (shown by runChecks via showNXDomainModal). Closing hands
@@ -8715,7 +9364,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('click', e => {
     if (!settingsBtn.closest('#settings-menu').contains(e.target)) {
-      settingsDropdown.hidden = true;
+      setDropdown(false);
     }
     if (!selectorHelpBtn.closest('.selector-group').contains(e.target)) {
       selectorHelpPopover.classList.remove('visible');
@@ -8724,8 +9373,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-      settingsDropdown.hidden = true;
-      scoringBackdrop.classList.remove('visible');
+      setDropdown(false);
+      closeScoring();
       selectorHelpPopover.classList.remove('visible');
       closeNXModal();
     }
@@ -8734,7 +9383,9 @@ document.addEventListener('DOMContentLoaded', () => {
   function buildScoringModal() {
     clearNode(scoringModalEl);
 
-    scoringModalEl.appendChild(el('h3', null, ts('SCORING_TITLE')));
+    const h = el('h3', null, ts('SCORING_TITLE'));
+    h.id = 'scoring-title';
+    scoringModalEl.appendChild(h);
 
     function addSection(titleKey, rows) {
       const sec = el('div', 'scoring-section');
@@ -8748,27 +9399,10 @@ document.addEventListener('DOMContentLoaded', () => {
       scoringModalEl.appendChild(sec);
     }
 
-    addSection('SCORING_SCORED', [
-      ['DKIM',    '20%'],
-      ['SPF',     '15%'],
-      ['DMARC',   '15%'],
-      ['MTA-STS', '15%'],
-      ['DNSSEC',  '10%'],
-      ['MX',      '10%'],
-      ['DANE',    '10%'],
-      ['TLS-RPT',  '3%'],
-      ['CAA',      '2%'],
-    ]);
+    addSection('SCORING_SCORED', CHECK_WEIGHTS.map(c => [c.label, c.weight + '%']));
+    scoringModalEl.appendChild(el('p', 'scoring-note', ts('SCORING_SKIP_NOTE')));
 
-    addSection('SCORING_INFO', [
-      ['PTR',          '\u2014'],
-      ['BIMI',         '\u2014'],
-      ['RPKI',         '\u2014'],
-      ['ASPA',         '\u2014'],
-      ['IPv6',         '\u2014'],
-      ['Security.txt', '\u2014'],
-      ['WHOIS',        '\u2014'],
-    ]);
+    addSection('SCORING_INFO', INFO_CHECKS.map(c => [c.label, '\u2014']));
 
     addSection('SCORING_RATINGS', [
       [ts('RATING_EXCELLENT'), '100'],
@@ -8786,7 +9420,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const closeBtn = el('button', null, ts('SCORING_CLOSE'));
     closeBtn.id = 'scoring-close-btn';
-    closeBtn.addEventListener('click', () => { scoringBackdrop.classList.remove('visible'); });
+    closeBtn.addEventListener('click', closeScoring);
     scoringModalEl.appendChild(closeBtn);
   }
 

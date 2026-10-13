@@ -8,7 +8,7 @@ Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-August-31-2**
+Current version: **2026-October-13-1**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -28,7 +28,11 @@ Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**
   wrap. All of it goes through `activateTab(btn, focus)` — including `runChecks`'s jump back to
   Overview — so the ARIA state can never drift from the `.active` classes. Adding a tab means
   adding the id pair (`tab-<name>` / `panel-<name>`); nothing else needs touching.
-- Tab dots (`.tab-dot`) colored per rating after each check completes.
+- Tab dots (`.tab-dot`) colored per rating after each check completes; `setTabResult` also sets
+  `title`, `role="img"` and `aria-label` to the translated rating so the colour is not the only signal.
+- `applyI18n()` handles `data-i18n`, `data-i18n-placeholder` and `data-i18n-aria` (→ `aria-label`).
+  The Overview/Connection/Fixes tab labels are `<span data-i18n>` inside the button so the dot span
+  survives the text swap. `#scan-status` (`.sr-only`, `role="status"`) is the live region.
 - Each panel: `.panel-header` (icon + name + badge) + `.panel-body` (summary, issues, details, explanation).
 - Overview panel contains `#summary-grade`, `#summary-title`, `#summary-desc`, `#score-bars`.
 - No modal popups — DKIM probed-selectors list is a `<details>` block in the DKIM panel.
@@ -36,7 +40,10 @@ Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**
   `:root` is the dark palette and `.light` overrides it — deciding in `DOMContentLoaded` painted
   the page dark and then flipped it. Stored `mailcheck-theme` wins, else `prefers-color-scheme`.
   The DOMContentLoaded code reads the class back rather than re-deciding.
-- `#settings-menu` (fixed top-right): `#settings-btn` (⚙ gear icon) opens `#settings-dropdown`. Dropdown has two `.settings-item` buttons: `#theme-option` (toggles light/dark) and `#scoring-option` (opens `#scoring-modal-backdrop` with the scoring system explanation). Backdrop click or Escape closes the modal. `buildScoringModal()` builds the modal content dynamically using `el()` and `clearNode()`. `applyTheme()` updates the dropdown item text labels (i18n-aware).
+- `#settings-menu` (fixed top-right): `#settings-btn` (⚙ gear icon, `aria-haspopup="menu"`,
+  `aria-expanded` kept in sync by `setDropdown()`, label via `data-i18n-aria="SETTINGS_OPEN"`) opens
+  `#settings-dropdown`. `#scoring-modal` is `role="dialog" aria-modal` labelled by its `h3#scoring-title`;
+  opening focuses the close button, `closeScoring()` returns focus to the gear. Dropdown has two `.settings-item` buttons: `#theme-option` (toggles light/dark) and `#scoring-option` (opens `#scoring-modal-backdrop` with the scoring system explanation). Backdrop click or Escape closes the modal. `buildScoringModal()` builds the modal content dynamically using `el()` and `clearNode()`. `applyTheme()` updates the dropdown item text labels (i18n-aware).
 - **DKIM selector help popover**: a `.help-btn` (`?` circle) sits inline with the "Extra DKIM Selectors" label. Click toggles `.help-popover` (positioned below the input, `z-index: 200`). Content built lazily via `safeMarkup(popover, tx('SELECTOR_HELP'))` on each open — always uses current language. Closes on click-outside (document click handler), Escape, or language change. `SELECTOR_HELP` is an `x`-namespace key in all 4 languages.
 - `#lang-row` inline language buttons (below input row): English / Norsk / Español / Français. Each is a `.lang-btn` carrying `data-lang`; `.lang-sep` spans (`aria-hidden`) render the separator dots so they stay outside each button's hover/active background. Active state is `aria-pressed="true"`, which both announces the selection and drives the highlight through a CSS attribute selector — there is no separate active class to keep in sync. Persisted in `localStorage('mailcheck-lang')`.
 - Single skip checkbox (`#skip-cors-cb`) on the same row as the language selector. Persisted in `localStorage('mailcheck-skip-cors')`. When checked, `runChecks` receives `opts.skipMTASTS`/`opts.skipSecTxt` and passes a pre-resolved `{ skipped: true, rating: 'skip' }` result instead of calling the check. Skipped tabs show a grey dot + "Skipped" badge. MTA-STS weight (15%) is excluded from the score and the remaining 85% normalised to 100. Skipped checks are filtered from `renderRecommendations`.
@@ -47,14 +54,25 @@ Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**
 Every outbound request goes through `fetchJSON()`, which applies a deadline via `timeoutSignal()`
 (`TIMEOUT_DOH` 8 s for DNS, `TIMEOUT_HTTP` 10 s for RIPE Stat / RDAP / policy files) and
 normalises failures through `describeFetchError()` into a translated `ERR_NETWORK` /
-`ERR_TIMEOUT`. **Never add a bare `fetch()`** — see critical bug 9.
+`ERR_TIMEOUT` / `ERR_BAD_JSON` (network failures are matched on `instanceof TypeError`, never on the
+browser-specific message text — Firefox and Safari word it differently from Chrome).
+**Never add a bare `fetch()`** — see critical bug 9.
 
-Every fan-out is bounded by `parallelLimit()`: `DKIM_CONCURRENCY` 10, `RIPE_CONCURRENCY` 4,
+**DNS status handling.** `dohStatusProblem(resp)` returns an error-shaped result
+(`{ error, rating:'fail', messageKey:'DNS_SERVFAIL', messageArgs:[rcode] }`) for any RCODE other
+than 0 and 3. Every check calls it right after its first `dohQuery` and returns it; SERVFAIL is a
+*validation failure*, the most urgent finding there is, and must never fall through to a
+"no record" / "not signed" branch (critical bug 15). `msgText()` resolves `messageArgs` through `td()`.
+
+Every fan-out is bounded by `parallelLimit()`: `DKIM_CONCURRENCY` 10, `RIPE_CONCURRENCY` 16,
 `SPF_CONCURRENCY` 6, `DNS_CONCURRENCY` 12 (host A/AAAA resolution, 2 queries per host).
 
 ### DNS layer
 - `dohQuery(name, type)` — fetches `https://cloudflare-dns.com/dns-query?name=…&type=…`
-  with `Accept: application/dns-json`. Returns raw JSON.
+  with `Accept: application/dns-json`. Returns raw JSON. **Resolver fallback:** a `network` or
+  `http` failure (`err.kind`, set by `fetchJSON`) is retried once through `dohQueryGoogle`, which
+  returns the same JSON shape with the same AD semantics (names carry a trailing dot — strip it
+  where a name is compared). Timeouts are not retried. Counted in `scanStats.dohFallbacks`.
 - **Per-scan cache.** `dohQuery` memoises on `name|type` in `dohCache`, storing the in-flight
   promise so concurrent callers share one request; `checkDNSSEC` memoises on hostname in
   `dnssecCache`. Both are cleared by `clearDNSCaches()` at the top of `runChecks`, so a re-run
@@ -81,16 +99,16 @@ Every fan-out is bounded by `parallelLimit()`: `DKIM_CONCURRENCY` 10, `RIPE_CONC
 | Check | DNS name / endpoint queried | Key detail |
 |-------|----------------------------|------------|
 | DNSSEC | `<domain>` DNSKEY + SOA | Falls back to zone apex via SOA Authority section for non-apex hostnames; rated on the **weakest** algorithm published (see below) |
-| MX | `<domain>` MX, then DNSSEC per host | Detects null MX (RFC 7505); `nullMX: true` flag |
+| MX | `<domain>` MX via `getMXHosts()`, then DNSSEC per host | Detects null MX (RFC 7505); `nullMX: true` flag |
 | PTR | A+AAAA per MX host → PTR per IP | FCrDNS: checks if PTR value matches MX hostname; does not affect grade |
-| DANE | `_25._tcp.<mx-hostname>` TLSA | Checks per-MX-host; requires DNSSEC validation (AD flag) |
+| DANE | `_25._tcp.<mx-hostname>` TLSA | Per MX host via `getMXHosts()`; null MX → good/`DANE_NULL_MX`; PKIX usages 0/1 → warning (RFC 7672 §3.1.3); `tlsaInvalidReason()` flags bad fields / digest length; excellent also needs the MX RRset AD flag |
 | SPF | `<domain>` TXT | Follows `redirect=` to target domain; returns `allQualifier` |
 | DKIM | `<selector>._domainkey.<domain>` TXT | ~92 auto selectors + custom; capped at 10 parallel |
-| DMARC | `_dmarc.<domain>` TXT | RFC 7489 + RFC 9989 (DMARCbis); parses p=, sp=, pct=, rua=, ruf=, adkim=, aspf=; DNSSEC checked for rua/ruf endpoint domains; DMARCbis sub-analysis attached as `dmarcbis` |
+| DMARC | `_dmarc.<domain>` TXT | RFC 7489 + RFC 9989 (DMARCbis); parses p=, sp=, pct=, rua=, ruf=, adkim=, aspf= with `parseDMARCTagList` (whitespace around `=` allowed); a subdomain with no record is **graded on the inherited organizational policy** found by the tree walk (`inheritedFrom`, `appliedTag`); DNSSEC checked for rua/ruf endpoint domains; DMARCbis sub-analysis attached as `dmarcbis` |
 | BIMI | `default._bimi.<domain>` TXT | Parses l= (logo URL) and a= (authority/VMC); does not affect grade |
 | TLS-RPT | `_smtp._tls.<domain>` TXT | RFC 8460; DNSSEC checked for rua= endpoint domains |
 | MTA-STS | `_mta-sts.<domain>` TXT + HTTPS policy fetch | RFC 8461; collects all `mx:` lines as array; cross-checks against actual MX hosts |
-| CAA | `<domain>` CAA (type 257) | Hex format parsed by `parseCAAData()`; DNSSEC checked for each CA domain; values linkified |
+| CAA | `<domain>` CAA (type 257), climbing to parents when empty | Hex format parsed by `parseCAAData()`; RFC 8659 §3 parent inheritance (`climbedTo`); excellent = issue restriction **and** iodef, iodef alone = warning; `issuemail` reported separately (S/MIME, RFC 9495); DNSSEC checked for each CA domain; values linkified |
 | RPKI | RIPE Stat `network-info` + `rpki-validation` + `as-overview` + `aspa` | Checks NS+MX host IPs; includes ASPA section |
 | ISP BGP safety | isbgpsafeyet.com `cdn-cgi/trace` + valid/invalid RPKI beacons | Tests the **visitor's** connection, not the domain; renders in the Connection tab; cached per page session; never scored |
 | Connection | `sigok`/`sigfail.ippacket.stream` (no-cors probes) + `ipv4`/`ipv6.icanhazip.com` + RIPE Stat per visitor IP | Tests the **visitor's** connection: resolver DNSSEC validation, public IPv4/IPv6 egress addresses with ASN/prefix/ROA; cached per page session; never scored |
@@ -102,23 +120,36 @@ Every fan-out is bounded by `parallelLimit()`: `DKIM_CONCURRENCY` 10, `RIPE_CONC
 
 ```
 STRINGS             i18n string tables — see i18n section below
-currentLang         module-level language state ('en' | 'no')
+currentLang         module-level language state ('en' | 'no' | 'es' | 'fr')
 t() / ts() / td() / tx()   i18n lookup helpers
 applyI18n()         updates all data-i18n / data-i18n-placeholder elements in the DOM
 uriHostname(uri)    extracts hostname from mailto: or https: URI (for endpoint DNSSEC checks)
 dohQuery()          DoH fetch
+dohStatusProblem()  error-shaped result for RCODE ≠ 0/3 (SERVFAIL etc.) — every check returns it
+getMXHosts()        the one MX parser: { hosts:[{priority,hostname}], nullMX, ad, status, problem }
+getMXHostnames()    deduped lowercase MX hostnames; getNSHosts() likewise for NS
+settledValue(res)   Promise.allSettled result → value, or REJECTED_RESULT ({rating:'fail',error:true})
+CHECK_WEIGHTS       the scoring table (key, tabId, label, weight) — the only copy; INFO_CHECKS and
+                      BAR_ORDER alongside. renderSummary, renderRecommendations and
+                      buildScoringModal all read these.
 parseTxtData()      TXT segment joining
 ALG_NAME_TO_NUM     Cloudflare returns algorithm as TEXT (e.g. "ED25519", "ECDSAP256SHA256"),
 resolveAlgNum()       never numeric — must map through this table
 checkDNSSEC()       memoising wrapper over checkDNSSECUncached (per-scan dnssecCache)
 checkDNSSECUncached() DNSKEY + SOA; zone-apex fallback for non-apex hostnames; returns
                       weakestAlg — the algorithm that set the rating
-checkMX()           detects null MX (RFC 7505); returns nullMX:true for MX 0 .
+checkMX()           via getMXHosts; null MX → nullMX:true, rating good
 parseTLSAData()     RFC 3597 hex or presentation format
 rateTLSA()
-checkDANE()
+tlsaInvalidReason() usage/selector/matching ranges + digest length per matching type
+checkDANE()         via getMXHosts; one rating decision for the whole set (no per-host override loop)
 analyzeSPF()        parses SPF record; tracks redirectDomain; skips SPF_MISSING_ALL when redirect present
-checkSPF()          follows redirect= to target domain; returns redirectDomain + redirectRecord in result
+isSPFRecord()       /^v=spf1(\s|$)/i — bare startsWith would accept v=spf10
+finishSPFAnalysis() DNSSEC per mechanism + recursive lookup count + propagation check — the ONE
+                      copy shared by the redirect and non-redirect paths of checkSPF
+checkSPF()          follows redirect= (only when analyzeSPF set redirectDomain, i.e. no `all`);
+                      target fetch failure → SPF_REDIRECT_ERROR (fail); returns redirectDomain +
+                      redirectRecord; original record's mechanisms/findings are merged in
 dsRotationSelectors(monthsBack, monthsAhead)
                     generates Domeneshop's dsYYYYMM window from the current date (default 16 back,
                       1 ahead = 18 selectors). Never hardcode this range — see critical bug 8.
@@ -129,15 +160,22 @@ getRSAKeyBits()     DER/SPKI parser — see critical note below
 parseDKIMRecord()
 probeDKIMSelector() returns { selector, ...analysis, ad }
 checkDKIM()         returns {rating, found[], testedCount, message}
-checkDMARC()        _dmarc.<domain> TXT; parses p=, sp=, pct=, rua=, ruf=, adkim=, aspf=;
-                      runs checkDNSSEC for all unique hostnames in rua= and ruf= URIs;
-                      returns endpointDnssec map + dmarcbis (see DMARCbis section)
+checkDMARC()        _dmarc.<domain> TXT; no own record → grades the inherited policy from the
+                      tree walk (analyzeDMARCRecord with inheritedFrom/appliedTag); otherwise
+                      analyzeDMARCRecord on the own record with dmarcbis computed in parallel
+analyzeDMARCRecord() RFC 7489 analysis of one record (own or inherited): policy from appliedTag,
+                      pct validation, rua/ruf, sp= penalty (organizational domains only, decided by
+                      the tree walk), adkim/aspf, endpoint DNSSEC + Google propagation + DMARCbis
+                      in ONE Promise.all; returns endpointDnssec, dmarcbis, inheritedFrom, appliedTag
+isDMARCRecord()     /^v\s*=\s*DMARC1(\s*;|\s*$)/i
 parseDMARCTagList() order-preserving tag list (v= must be first, duplicates detected)
 dmarcTagValue()     single lowercased tag value from a record string
 dmarcTreeWalkQuery()one tree-walk step: query _dmarc.<name>, discard non-v=DMARC1 and multi-record sets
 dmarcTreeWalk()     RFC 9989 §4.10 DNS Tree Walk; max 8 queries; returns steps[], orgDomain,
                       orgRule, policyDomain, policyRecord, inherited, isOrgDomain
-dmarcDomainExists() NXDOMAIN test (RFC 9989 §3.2.13) deciding sp= vs np= for inherited policy
+dmarcDomainExists() NXDOMAIN test (RFC 9989 §3.2.13) deciding sp= vs np= for inherited policy;
+                      reads the cached SOA answer (zero extra queries). Always true for the scanned
+                      domain since the NXDOMAIN gate — the np= path is only reachable in a harness
 checkReportAuthorization()
                     RFC 9990 §4 / RFC 9991 §5; queries <policyDomain>._report._dmarc.<host>;
                       status: internal|authorized|override|override-bad|missing|too-long|unparsable|error
@@ -224,13 +262,22 @@ renderRecommendations(r)
                       Passing checks: collapsed <details> "All checks passing".
                       Check name buttons navigate directly to the relevant tab.
                       Tab dot color = worst rating across all scored checks.
-renderSummary()     Weighted grade: DKIM 20%, SPF 15%, DMARC 15%, MTA-STS 15%, DNSSEC 10%,
-                      MX 10%, DANE 10%, TLS-RPT 3%, CAA 2%
+renderSummary()     Weighted grade from CHECK_WEIGHTS: DKIM 20%, SPF 15%, DMARC 15%, MTA-STS 15%,
+                      DNSSEC 10%, MX 10%, DANE 10%, TLS-RPT 3%, CAA 2%; skipped checks drop out of
+                      numerator and denominator. Bar rating labels go through ts('RATING_…')
                       Shows 16 bars: 9 scored bars first, then a labeled separator
                       "Informational (not scored)", then PTR, BIMI, RPKI, ASPA, IPv6, Security.txt,
                       WHOIS bars (weight=0). Overview, Connection and Fixes have no bar —
                       Connection is about the visitor, not the domain. Grade calculation unchanged.
 currentDomain       module-level domain state (set in runChecks)
+scanning            true from the NXDOMAIN gate passing until rerenderAll; the language-switch
+                      handler checks it and only re-applies static strings mid-scan
+scanGeneration      bumped per scan and by the Back-to-start popstate branch; runChecks drops its
+                      results if superseded. doCheck has its own `scanBusy` re-entry guard and a
+                      `{ push }` option — false for URL-driven scans (initial load, popstate) so the
+                      forward history is never wiped by a pushState
+announce(text)      visually hidden `#scan-status` live region (RUNNING_CHECKS / SCAN_DONE)
+storageGet/Set      guarded localStorage — the only way to touch it (critical bug 18)
 lastResults         stores last Promise.allSettled results for language-switch re-render
 scanStats           module-level stats object (null before first scan); reset at top of runChecks();
                       fields: startMs, totalMs, checks{}, dohRequests, ripeStatRequests,
@@ -274,12 +321,12 @@ const resolvedText = iss.textKey
 
 **Adding a new language**: add a new key (e.g. `fr`) to `STRINGS` with all three sub-objects (`s`, `d`, `x`), then add a `<span class="lang-sep" aria-hidden="true">&middot;</span>` + `<button type="button" class="lang-btn" data-lang="fr" lang="fr">Français</button>` pair to `#lang-row`. No other changes needed — the click handler is bound to all `.lang-btn` elements.
 
-**Contributor workflow**: external translators submit only `translations/<lang>.js` (copied from `translations/TEMPLATE.js`). The maintainer pastes it into the `STRINGS` block in `index.html` and adds the `<option>` tag on merge. See `translations/CONTRIBUTING.md`.
+**Contributor workflow**: external translators submit only `translations/<lang>.js` (copied from `translations/TEMPLATE.js`). The maintainer pastes it into the `STRINGS` block in `index.html` and adds the `.lang-btn` button on merge. See `translations/CONTRIBUTING.md`.
 
 **Current languages**: `en` (English, default), `es` (Spanish), `fr` (French), `no` (Norwegian Bokmål).
 All four are **complete** — no language relies on the English fallback. When adding a key, add it to every language, and mirror it into `translations/<lang>.js` **and `translations/TEMPLATE.js`** so the contributor files stay in sync. TEMPLATE.js is easy to forget because nothing in the app reads it — it had silently drifted 37 keys behind (the entire IPv6 block, plus `SELECTOR_HELP`, the SPF recursive-lookup counts and the RPKI nameserver-diversity keys) before being backfilled on 2026-08-13. A contributor starting from a stale template simply never sees those strings.
 
-To check for drift, parse the `STRINGS` block out of `index.html` and diff the key sets — the three namespaces should total **406 keys** (s=306, d=80, x=20). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
+To check for drift, run `node tests/static.js` — it parses the `STRINGS` block out of `index.html`, diffs the key sets across the four languages and the four `translations/*.js` files, and compares `d`-function *outputs* (not source text, which differs in whitespace between files). The three namespaces currently total **444 keys** (s=329, d=95, x=20). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
 
 There are now four contributor files — `es.js`, `fr.js`, `no.js` and `TEMPLATE.js` — and all four
 carry the full key set with no value drift from `index.html`.
@@ -340,7 +387,8 @@ rollover.
 ### SPF redirect details
 - `analyzeSPF()` tracks `redirectDomain` when it encounters `redirect=<val>`. Does NOT push the old `SPF_REDIRECT` warning.
 - When `redirectDomain` is set and there is no `all` mechanism, `SPF_MISSING_ALL` is NOT pushed (RFC 7208: redirect replaces `all`).
-- `checkSPF()` checks `analysis.redirectDomain` after calling `analyzeSPF`. If present, it fetches the TXT record at the redirect target, calls `analyzeSPF` on it, runs DNSSEC checks on the redirect target's mechanisms, and returns a combined result with `redirectDomain` + `redirectRecord`. The redirect analysis rating/issues/mechanisms/allQualifier are used as the effective policy.
+- `analyzeSPF()` only sets `redirectDomain` when the record has **no** `all` mechanism (RFC 7208 §6.1); with both present it pushes `SPF_REDIRECT_IGNORED`, uncounts the lookup and drops the redirect from `dnsNames`.
+- `checkSPF()` follows `redirectDomain` when set: fetches the target TXT, calls `analyzeSPF` on it, and builds the effective policy as the original record's mechanisms (minus the redirect) + the target's, carrying the original record's own findings (ptr, broad ip4, legacy type 99). A target that cannot be fetched, returns SERVFAIL, has no SPF or several → `fail` with `SPF_REDIRECT_ERROR` / `SPF_REDIRECT_NO_RECORD` / `SPF_REDIRECT_MULTI`. `finishSPFAnalysis()` then does DNSSEC + total lookup count + propagation for both paths.
 - `renderSPF()` shows two labeled records when `d.redirectDomain` is set: "Original SPF record" and "Effective policy (redirect → target)" before the issue list.
 - Error cases: redirect target has no SPF (`SPF_REDIRECT_NO_RECORD`), multiple SPF (`SPF_REDIRECT_MULTI`), fetch failure (`SPF_REDIRECT_ERROR`).
 - Test domain: `dmarcadvisor.com` → `v=spf1 redirect=spf.dmarcadvisor.com.eu-2o4fmqie.e1.dspf.app`
@@ -410,8 +458,13 @@ rollover.
 ### RPKI/ASPA details
 - `checkRPKI` resolves A+AAAA for all NS and MX hosts, caps at 4 IPs per host.
 - Per IP: `rpkiLookupIP` calls RIPE Stat `network-info` (→ ASN + prefix) then `rpki-validation` (→ status + ROAs). Two sequential fetches per IP.
-- After host results: fetches `as-overview` for all unique ASNs to get holder names (`asnInfo`).
-- Then fetches `aspa` endpoint for each unique ASN (`aspaData`). Normalises provider list from objects or plain numbers.
+- The three session caches (`rpkiIpCache`, `aspaAsnCache`, `asnInfoCache`) store the in-flight
+  **promise** via `cachedRipe()`, like `dohCache`; a rejection is evicted. `checkRPKI` looks each
+  distinct IP up once (`uniqueIPs` → `byIP`) and maps back to hosts. `rpkiLookupIP` validates every
+  origin AS of a multi-origin prefix (max 3) and reports the worst (`validations`, `asns`).
+- After host results: holder names (`as-overview`) and ASPA records (`aspa`) for all unique ASNs are
+  fetched in **one** `parallelLimit` stage (`asnInfo`, `aspaData`); only provider-ASN holders wait
+  on the ASPA answers. An `error` IP result caps the rating at `good`.
 - Finally fetches `as-overview` for any provider ASNs from ASPA records not already in `asnInfo`.
 - RPKI status values: `valid` (excellent), `invalid` (fail), `unknown`/`not_routed` (warning).
 - ASPA status: `published` (excellent badge), absent (warning badge "NO ASPA"), error (warning badge "UNAVAILABLE").
@@ -497,13 +550,19 @@ still reports an inherited parent policy when the author domain has no record of
 - **Tag registry** (`DMARCBIS_ACTIVE_TAGS` / `DMARCBIS_HISTORIC_TAGS`) mirrors RFC 9989 §9.3.
   Active: adkim, aspf, fo, np, p, psd, rua, ruf, sp, t, v. Historic: pct, rf, ri.
 - **DNS Tree Walk** (`dmarcTreeWalk`, §4.10): starts at the parent of the queried domain (the author
-  lookup is passed in from `checkDMARC`, never repeated), walks toward the root one label at a time,
-  and stops on a record carrying `psd=y` or `psd=n`. Domains with ≥8 labels jump straight to their
+  lookup is passed in from `checkDMARC`, never repeated), computes all candidate names up front and
+  queries them **in parallel** (one round trip instead of up to seven), then consumes the answers in
+  order and stops on a record carrying `psd=y` or `psd=n` — surplus answers are discarded, so the
+  reported `steps` are identical to a sequential walk. Domains with ≥8 labels jump straight to their
   seven right-most labels so the total never exceeds `DMARCBIS_TW_MAX_QUERIES` (8).
   Organizational-domain selection follows §4.10.2: psd=n wins, else a non-start psd=y (org = one label
   below), else the shortest name carrying a record, else the queried domain (`orgRule` records which).
 - **Policy discovery** (§4.10.1): the author domain's own record wins; otherwise the nearest ancestor.
   For an inherited policy, `dmarcDomainExists()` decides whether `np=` (NXDOMAIN) or `sp=` applies.
+  **Since 2026-October-13-1 the inherited policy also drives the graded RFC 7489 rating**: `checkDMARC`
+  hands `treeWalk.policyRecord` + `appliedTag` to `analyzeDMARCRecord`, which pushes `DMARC_INHERITED`
+  and grades `sp=`/`np=`/`p=` accordingly. `mail.cloudflare.com` therefore rates on cloudflare.com's
+  `sp=`. The DMARCbis *section* itself remains informational.
 - **External reporting authorization** (RFC 9990 §4, RFC 9991 §5): for each `rua=`/`ruf=` URI whose host
   is not under `orgDomain`, queries `<policyDomain>._report._dmarc.<host>` TXT. A wildcard at
   `*._report._dmarc.<host>` answers the same query, so `authorized` covers both cases. A `rua=`/`ruf=`
@@ -626,6 +685,40 @@ neither. Pick one record (preferring a `v=DKIM1` one). The record filter also te
 rather than any of `[pkvt]=`, so the wildcard `v=spf1` TXT that ~15 zones publish under
 `_domainkey` is not mistaken for a key.
 
+### 13. A revoked DKIM key must not rate
+`p=` empty is the RFC 6376 §3.6.1 way to retire a selector. `checkDKIM` folds only `!revoked`
+selectors into the rating; revoked ones stay in `found` with the pill. Only-revoked → `warning`
+with `DKIM_ONLY_REVOKED`. Folding them in gave gmail.com-style domains DKIM = fail for good hygiene.
+
+### 14. Null MX must go through `getMXHosts()`
+Six hand-copied MX parsers disagreed on `MX 0 .`: checkMX knew it, checkDANE queried
+`_25._tcp.` and rated fail. Never parse the MX RRset inline — use `getMXHosts()` / `getMXHostnames()`.
+
+### 15. SERVFAIL is not "no record"
+Only `Status === 3` used to be special-cased, so a DNSSEC validation failure (RCODE 2) read as
+"not signed" / "no SPF" / "no TLSA". Call `dohStatusProblem(resp)` first in every check. For
+`Promise.allSettled` inputs, a rejected lookup is an error too — never substitute `{ Answer: [] }`.
+
+### 16. `Promise.allSettled` never throws — a `catch` around it is dead
+`checkSPF`'s redirect branch had `try { await Promise.allSettled(...) } catch` and fell through to
+the non-redirect path on a rejected target, rating `v=spf1 redirect=x` excellent. Check each
+settled result's `status` explicitly.
+
+### 17. No English prose in `textArgs` or `messageArgs`
+MTA-STS passed `'Policy file returned HTTP 404'` as a textArg, so three languages showed English.
+Pass `{ key, args }` (resolved by `makeIssueList`) or a `messageKey` + `messageArgs` (resolved by
+`msgText`). The static check does not catch this — grep new `textArgs` for string literals.
+
+### 18. `localStorage` only through `storageGet`/`storageSet`
+A bare `localStorage.getItem` at script top level (the language preference) threw a SecurityError
+where storage is blocked and took the entire application down before DOMContentLoaded. The two
+helpers swallow the exception; the head theme script has its own try/catch.
+
+### 19. Session caches store promises, not values
+`rpkiIpCache`/`aspaAsnCache`/`asnInfoCache` cached the *result*, so concurrent lookups of the
+same key (anycast NS+MX, Connection tab alongside RPKI) all missed and all fetched, and a failed
+holder lookup was cached as `null` for the session. Use `cachedRipe()`; never `cache.set(key, value)`.
+
 ### 12. Propagation checks compare sets, not `[0]`
 A DNS RRset is unordered and segment joins can differ in whitespace, so comparing Cloudflare's
 first record to Google's first record verbatim flagged perfectly matching domains as
@@ -659,21 +752,27 @@ Two pseudo-ratings sit outside that list and deliberately have `RATINGS.indexOf(
 
 ## Testing notes
 
-There is no test runner in the repo, but `index.html` is loadable in Node: split the two
-`<script>` blocks out, stub `document`/`localStorage`/`fetch`, and the check functions can be
-driven against canned DNS answers. `const` and `let` at script top level are lexical bindings
-rather than properties of `globalThis`, so a harness has to re-export the names it wants.
-Worth rebuilding for any change to the check logic — it caught the RPKI restructure's
-concurrency behaviour and confirmed the DNSSEC rating change leaves single-algorithm zones alone.
+`tests/` (added 2026-October-13-1) — no dependencies, plain Node ≥ 18:
+- `tests/harness.js` — `load({ live })` splits the two `<script>` blocks out of `index.html`, stubs
+  `document`/`localStorage`/`window`/`history`/`fetch`, and returns every module-level function and
+  `let` (as getters/setters, since top-level `const`/`let` are not on `globalThis`). `app.dns` is a
+  Map of `"name|TYPE"` → DoH JSON (default NXDOMAIN; a value may be an Error to reject, a Promise,
+  or a function); `app.http` maps URLs for non-DoH fetches; `app.txt()`/`app.rr()` are shorthands;
+  `app.resetScan()` clears caches and `scanStats`. `live: true` passes `fetch` through to the network.
+- `node tests/run.js` — regression tests, one per fixed bug (A1–A13, B5, B10, B11, B8, B9, C3, C9 in
+  the 2026-10-13 audit). Add one for every check-logic fix; they run in well under a second.
+- `node tests/static.js` — the static checks: key parity + `d` arity across languages and
+  `translations/*.js` (value drift compared by *output*), referenced-key existence, CSS classes,
+  dangerous sinks, tab/panel order, version string across the three files, legacy `text:` issues,
+  `fetch` without a signal. Exit code 1 on any problem.
+- `node tests/live.js [domain …]` — runs every check for real and then every renderer in `en` and
+  `no` against the stubbed DOM, so a thrown exception in either surfaces. rdap.org answers Node's
+  user agent with 403, so WHOIS is always `warning` here; that is not a bug.
 
-Static checks worth re-running after any edit: key-set parity across the four languages and the
-four `translations/*.js` files (all must total 385), `d`-function arity, every CSS class
-referenced from JS existing in `<style>`, no `innerHTML`/`eval`, tab-button and panel lists
-matching in order, no `{ rating, text: … }` issues left in check functions, and the version
-string agreeing across `index.html`, `CLAUDE.md` and `README.md`.
-
-- `gmail.com` — SPF `~all`, DMARC p=none. Note: it publishes **no** discoverable DKIM selector —
-  its `20230601`-style selectors are all revoked (`p=` empty), so 0 found is the correct result here
+- `gmail.com` — SPF `~all`, DMARC p=none. Note: it publishes **no** discoverable DKIM selector with
+  the default list; its `20230601`-style selectors exist but are revoked (`p=` empty). Entering
+  `20230601` as a custom selector must show it with the revoked pill and rate `warning`
+  (`DKIM_ONLY_REVOKED`), never `fail` — critical bug 13
 - `cloudflare.com` — DNSSEC alg 13 only, so it is the **control case for the weakest-algorithm
   change**: its DNSSEC and MX bars must not move. Also good CAA + RPKI coverage; DMARC p=reject.
   Also the best DKIM test domain: finds `k1`, `mandrill`, `s1`, `smtpapi`, `m1`, `m2`, `krs`
@@ -685,6 +784,9 @@ string agreeing across `index.html`, `CLAUDE.md` and `README.md`.
   its rollover, re-find one with `DNSKEY` sets spanning two rating tiers rather than deleting
   the test
 - `dmarcadvisor.com` — SPF redirect= only (no mechanisms, no all); tests redirect following
+- `mail.cloudflare.com` — no `_dmarc` record of its own; must grade DMARC on cloudflare.com's
+  inherited policy (`DMARC_INHERITED`), and CAA on cloudflare.com's records (`CAA_INHERITED`);
+  WHOIS must query `cloudflare.com` (`WHOIS_QUERIED_PARENT`)
 - `apple.com` — has BIMI record; tests BIMI tab
 - `fastmail.com` — MTA-STS enforce mode with multiple mx: lines; tests MX match check
 - DMARC: `p=reject` → excellent, `p=quarantine` → good, `p=none` → warning, no record → fail

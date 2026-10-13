@@ -405,6 +405,30 @@ const LANG_TEMPLATE = {
     CONN_IP_BADGE_ERROR:    '',  // "Unknown"
     CONN_IP_NONE:           '',  // "no address detected"
     OVERVIEW_PROVIDERS:     '',  // Overview heading "Detected email infrastructure"
+    // Added 2026-October-13-1
+    ERR_BAD_JSON:           '',  // Unexpected response (not JSON)
+    DANE_NULL_MX:           '',  // Null MX (RFC 7505) \u2014 this domain receives no mail, so DANE is not applicable.
+    DANE_PKIX_USAGE:        '',  // Only PKIX usages (0/1) published \u2014 SMTP clients do not use them (RFC 7672 \u00a73.1.3); publish DANE-EE (3) or DANE-TA (2)
+    DKIM_ONLY_REVOKED:      '',  // Every selector found is revoked (empty p=) \u2014 no working DKIM key was discovered.
+    MTASTS_ERR_TIMEOUT:     '',  // Policy file fetch timed out
+    MTASTS_ERR_CORS:        '',  // Policy file not accessible (CORS, redirect or network error)
+    MTASTS_NO_MAX_AGE:      '',  // max_age missing or not a plain number \u2014 required by RFC 8461 \u00a73.2
+    CAA_NO_RESTRICTION:     '',  // No issue/issuewild record \u2014 every CA may still issue certificates; iodef alone restricts nothing
+    BIMI_OPT_OUT:           '',  // l= is empty \u2014 an explicit BIMI opt-out for this selector (valid)
+    STXT_MULTI_EXPIRES:     '',  // More than one Expires field \u2014 RFC 9116 allows exactly one
+    WHOIS_NA:               '',  // N/A
+    WHOIS_UNLOCKED:         '',  // No registrar/registry lock (transfer/delete/update prohibited) \u2014 enable it to resist domain hijacking
+    WHOIS_NOT_FOUND:        '',  // No RDAP record found for this domain.
+    PTR_NULL_MX:            '',  // Null MX \u2014 the domain receives no mail; nothing to check.
+    SCORING_SKIP_NOTE:      '',  // When a check is skipped (the CORS checkbox), its weight is left out and the remaining weights are scaled to 100.
+    PANEL_OVERVIEW:         '',  // Overview
+    SETTINGS_OPEN:          '',  // Settings
+    TABLIST_LABEL:          '',  // Check results
+    SELECTOR_HELP_LABEL:    '',  // What is a DKIM selector?
+    CONN_ROA_VALID:         '',  // valid
+    CONN_ROA_INVALID:       '',  // invalid
+    CONN_ROA_NONE:          '',  // no ROA
+    CONN_ROA_NOT_ROUTED:    '',  // not routed
   },
 
   // ── d: dynamic strings (arrow functions) ───────────────────────────────────
@@ -504,6 +528,22 @@ const LANG_TEMPLATE = {
     SPF_FOUND_LOOKUPS_TOTAL:  (direct, total) => '',  // "SPF record found. 3 direct + 8 total DNS lookups (recursive)."
     RPKI_NS_SINGLE_ASN:       (asn, holder) => '',    // "All nameservers on a single ASN (AS13335 — Cloudflare) — single point of failure for DNS routing"
     RPKI_NS_MULTI_ASN:        n => '',   // "Nameservers span 3 different ASNs — good routing resilience"
+    // Added 2026-October-13-1
+    DNS_SERVFAIL:         s => '', // 'DNS lookup failed (RCODE ' + s + (s === 2 ? ', SERVFAIL \u2014 often a DNSSEC validation failure' : '') + ')'
+    DANE_TLSA_INVALID:    n => '', // n + ' malformed TLSA record(s) \u2014 invalid field value or digest length'
+    SPF_REDIRECT_IGNORED: t => '', // 'redirect=' + t + ' is ignored because the record has an "all" mechanism (RFC 7208 \u00a76.1)'
+    DMARC_INHERITED:      (d, tag) => '', // 'No record of its own \u2014 policy inherited from ' + d + ' (the ' + tag + '= tag applies)'
+    DMARC_PCT_INVALID:    v => '', // 'pct=' + v + ' is not an integer 0\u2013100 \u2014 receivers ignore it (treated as 100)'
+    MTASTS_ERR_HTTP:      s => '', // 'Policy file returned HTTP ' + s
+    MTASTS_NOT_A_POLICY:  url => '', // 'The file at ' + url + ' is not an MTA-STS policy (first line must be "version: STSv1")'
+    MTASTS_MAX_AGE_HIGH:  a => '', // 'max_age=' + a + ' exceeds the one-year maximum (31557600)'
+    CAA_INHERITED:        p => '', // 'No CAA at this name \u2014 the records of ' + p + ' apply (RFC 8659 \u00a73)'
+    BIMI_MULTI_RECORDS:   n => '', // n + ' BIMI records at this selector \u2014 treated as none'
+    BIMI_NOT_HTTPS:       u => '', // 'URL is not https: \u2014 ' + u
+    WHOIS_QUERIED_PARENT: d => '', // '(data for the registrable domain ' + d + ')'
+    WHOIS_HOLD:           s => '', // 'Domain status: ' + s + ' \u2014 the domain is on hold or being deleted'
+    WHOIS_LOCKED:         n => '', // 'Registrar/registry lock active (' + n + ' prohibited-status flag(s)) \u2014 protected against unauthorised transfer, deletion or update'
+    SCAN_DONE:            (d, g) => '', // "Scan of <domain> complete. Overall grade <grade>."
   },
 
   // ── x: explanation strings (HTML) ──────────────────────────────────────────

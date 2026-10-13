@@ -96,17 +96,31 @@ Missing keys fall back to English automatically, so partial translations are wel
 
 ---
 
+## Tests
+
+There is no build step, but the check logic can be driven in Node without a browser:
+
+```
+node tests/run.js      # regression tests against canned DNS/HTTP answers
+node tests/static.js   # i18n key parity and arity, translation-file drift, CSS classes, sinks, tab order, version string
+node tests/live.js     # every check + every renderer against real DNS for a set of known domains
+```
+
+`tests/harness.js` loads the two `<script>` blocks of `index.html` with stubbed `document`/`localStorage`/`fetch` and exposes the module-level functions.
+
 ## Adding a new release
 
 1. Do the work in `index.html`
 2. Update the footer `<summary>` version string and add a new `.cl-entry` block at the top of `#changelog-content`
 3. Update `Current version` in `CLAUDE.md`
 4. Add a row at the top of the version history table in `README.md`
+5. Run `node tests/static.js` and `node tests/run.js`
 
 ## Version history
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2026-October-13-1 | 2026-10-13 | **Grades can move.** Audit fixes across the check logic: revoked DKIM keys no longer fail the check; null MX is not a DANE failure, PKIX-only and malformed TLSA records are flagged, partial DANE coverage rates good; SPF `redirect=` fetch failures are errors (not excellent) and `redirect=` is ignored next to `all`; subdomains without a `_dmarc` record are graded on the inherited organizational policy, DMARC tags tolerate whitespace, `sp=none` lowers the rating; SERVFAIL is reported as a DNS failure everywhere instead of "no record"; TLS-RPT, CAA (parent inheritance, iodef-only no longer excellent, issuemail separated), MTA-STS (no redirects, policy format and `max_age` validated, translated errors), BIMI (opt-out, http URLs), security.txt (`text/plain` required, `__proto__` crash, aligned ratings) and WHOIS (registrar locks, hold statuses, registrable domain) all corrected; Overview bar labels translated; one shared scoring table. New `tests/` directory with a Node harness, static checks and a live smoke run. One scan at a time (Enter/Back/Forward could start a second scan over a running one); language switch mid-scan no longer repaints stale results; Back/Forward no longer push duplicate history entries; DoH falls back to dns.google when cloudflare-dns.com is unreachable; RIPE Stat caches share in-flight lookups, one lookup per address, holder+ASPA in one stage, every origin AS validated; DMARCbis tree walk in parallel; accessibility: scan announcements, tab-dot rating text, labelled settings menu, scoring dialog focus, Fixes-tab focus, translated tab/ARIA/ROA labels and WHOIS dates; blocked localStorage no longer breaks the page; WARP detected positively |
 | 2026-August-31-2 | 2026-08-31 | The "Is your ISP BGP-safe?" section now offers a "Report this result by email" link when the verdict is unsafe: a `mailto:` link prefilled with the verdict, ASN, ISP name, UTC date and tool version (always English), opened in the visitor's own mail client — nothing is sent automatically |
 | 2026-August-31-1 | 2026-08-31 | New **Connection** tab testing the visitor's own connection, not the scanned domain: DNSSEC validation by the browser's DNS resolver (no-cors probes of `sigok`/`sigfail.ippacket.stream` — method and domains from Matthäus Wander's DNSSEC Resolver Test), public IPv4/IPv6 egress addresses via `ipv4`/`ipv6.icanhazip.com` enriched with ASN, holder, prefix and RPKI ROA status from RIPE Stat, and the "Is your ISP BGP-safe?" test moved here from the RPKI tab (the RPKI explanation now just points at Connection). Session-cached like the BGP test, inconclusive results retried on the next scan; structurally invisible to the grade, score bars and Fixes tab |
 | 2026-August-19-1 | 2026-08-19 | A nonexistent domain (NXDOMAIN) no longer triggers a scan: a single SOA lookup gates the run and a "Domain does not exist. Try another one." modal is shown instead, dismissed with OK, Escape or a click outside. Previous results stay untouched and the dead domain is not pushed into the shareable URL |
