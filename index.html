@@ -759,8 +759,16 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-October-13-4 &mdash; click for changelog</summary>
+      <summary>Version 2026-October-13-5 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-October-13-5</span>
+          <ul class="cl-changes">
+            <li><b>MX hygiene.</b> The MX tab now checks what the MX set actually points at: an MX target that is a CNAME (RFC 5321 &sect;5.1) or an IP address, a host with no A/AAAA record, duplicate hosts, a single host (no fallback), and &mdash; from the RPKI data &mdash; every MX host sitting in one AS. A domain whose MX hosts cannot all be used rates warning; none usable rates fail.</li>
+            <li><b>HELO/EHLO SPF.</b> Each MX host&rsquo;s own SPF record (RFC 7208 &sect;2.3) is probed and listed in a sub-table in the SPF tab. Informational.</li>
+            <li><b>SPF depth.</b> Permerror conditions a receiver would hit are now reported as fail: an unknown mechanism or an unparsable term, a duplicate <code>redirect=</code>/<code>exp=</code>, an <code>include:</code> whose target has no SPF record or several, an <code>mx:</code> with more than ten hosts, and more than two void lookups (NXDOMAIN or empty answers) across the include tree (RFC 7208 &sect;4.6.4). A record over ~450 bytes is flagged (&sect;3.4). Grades can move for records that are silently broken today.</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-October-13-4</span>
           <ul class="cl-changes">
@@ -1557,6 +1565,15 @@ const STRINGS = {
       COH_TLSRPT_NO_POLICY: 'TLS-RPT is published but neither an MTA-STS policy nor DANE is in place \u2014 there is nothing for receivers to report on',
       COH_MTASTS_TESTING_BLIND: 'MTA-STS is in testing mode but no TLS-RPT record exists \u2014 failures in testing mode are reported nowhere, so testing can never tell you anything',
       COH_BELT_AND_BRACES: 'Both DANE and an enforcing MTA-STS policy protect inbound TLS \u2014 belt and braces',
+      MX_SINGLE_HOST:      'Only one MX host \u2014 no fallback if it is unreachable (informational)',
+      MX_NONE_USABLE:      'No MX host resolves to an address \u2014 compliant senders cannot deliver mail to this domain',
+      MX_PILL_LITERAL:     'IP literal',
+      MX_PILL_UNRESOLVABLE: 'unresolvable',
+      SPF_HELO_TITLE:      'HELO/EHLO identity \u2014 SPF on the MX hosts',
+      SPF_HELO_NOTE:       'RFC 7208 \u00a72.3 recommends an SPF record for every hostname an MTA announces in HELO/EHLO; the MX hosts are the usual candidates. Informational \u2014 not scored.',
+      SPF_HELO_PRESENT:    'SPF record',
+      SPF_HELO_ABSENT:     'no SPF record',
+      SPF_HELO_MULTI:      'several SPF records (permerror)',
     },
     // ── d: dynamic strings (arrow functions) ─────────────────────────────────
     // Each value is an arrow function.  Write the translated sentence as the
@@ -1688,6 +1705,19 @@ const STRINGS = {
       COH_DMARC_NO_SPF:      p => 'DMARC enforces p=' + p + ' but the domain has no SPF record \u2014 alignment rests entirely on DKIM; any unsigned mail from this domain is already being ' + (p === 'reject' ? 'rejected' : 'quarantined'),
       COH_RUA_UNDELIVERABLE: h => 'Report destination ' + h + ' has no MX and no address record \u2014 DMARC/TLS-RPT reports sent there are undeliverable',
       COH_RUA_DELIVERABLE:   n => n + ' report destination' + (n !== 1 ? 's' : '') + ' (rua/ruf) accept' + (n !== 1 ? '' : 's') + ' mail (MX or address record present)',
+      MX_CNAME_TARGET:       h => h + ' is a CNAME \u2014 an MX target must be a canonical hostname (RFC 5321 \u00a75.1, RFC 2181 \u00a710.3); some senders reject it',
+      MX_IP_LITERAL:         h => 'MX target ' + h + ' is an IP address \u2014 MX must name a host (RFC 5321 \u00a75.1); compliant senders ignore it',
+      MX_UNRESOLVABLE:       h => h + ' has no A or AAAA record \u2014 mail routed to this MX host cannot be delivered',
+      MX_DUPLICATE_HOST:     h => h + ' is listed more than once in the MX set',
+      MX_SINGLE_ASN:         (asn, holder) => 'All MX hosts sit in a single AS (AS' + asn + (holder ? ' \u2014 ' + holder : '') + ') \u2014 one routing incident takes every inbound path down (informational)',
+      SPF_UNKNOWN_MECH:      term => 'Unknown mechanism "' + term + '" \u2014 permerror: receivers treat the whole record as invalid (RFC 7208 \u00a74.6.1)',
+      SPF_SYNTAX:            term => 'Unparsable term "' + term + '" \u2014 permerror: receivers treat the whole record as invalid',
+      SPF_DUPLICATE_MODIFIER: m => 'The ' + m + '= modifier appears more than once \u2014 permerror (RFC 7208 \u00a76)',
+      SPF_RECORD_LONG:       n => 'Record is ' + n + ' bytes \u2014 over ~450 it no longer fits a 512-byte UDP answer and may be truncated by old resolvers (RFC 7208 \u00a73.4)',
+      SPF_INCLUDE_NO_RECORD: t => 'include:' + t + ' \u2014 the target has no SPF record \u2014 permerror (RFC 7208 \u00a75.2)',
+      SPF_INCLUDE_MULTI:     t => 'include:' + t + ' \u2014 the target publishes several SPF records \u2014 permerror',
+      SPF_MX_TOO_MANY:       (t, n) => 'mx:' + t + ' has ' + n + ' MX hosts \u2014 more than 10 is a permerror (RFC 7208 \u00a74.6.4)',
+      SPF_VOID_LOOKUPS:      n => n + ' void lookups (NXDOMAIN or empty answers) across the include tree \u2014 more than 2 is a permerror (RFC 7208 \u00a74.6.4)',
     },
     // ── x: explanation strings (HTML) ────────────────────────────────────────
     // Each value is an HTML string rendered in the expandable "What is this?"
@@ -2349,6 +2379,15 @@ const STRINGS = {
       COH_TLSRPT_NO_POLICY: 'TLS-RPT er publisert, men verken en MTA-STS-policy eller DANE er p\u00e5 plass \u2014 mottakerne har ingenting \u00e5 rapportere om',
       COH_MTASTS_TESTING_BLIND: 'MTA-STS er i testmodus, men det finnes ingen TLS-RPT-post \u2014 feil i testmodus rapporteres ingen steder, s\u00e5 testingen kan aldri fortelle deg noe',
       COH_BELT_AND_BRACES: 'B\u00e5de DANE og en h\u00e5ndhevende MTA-STS-policy beskytter innkommende TLS \u2014 belte og bukseseler',
+      MX_SINGLE_HOST:      'Bare \u00e9n MX-vert \u2014 ingen reserve hvis den er utilgjengelig (informasjon)',
+      MX_NONE_USABLE:      'Ingen MX-vert peker til en adresse \u2014 standardtro avsendere kan ikke levere e-post til dette domenet',
+      MX_PILL_LITERAL:     'IP-adresse',
+      MX_PILL_UNRESOLVABLE: 'kan ikke sl\u00e5s opp',
+      SPF_HELO_TITLE:      'HELO/EHLO-identitet \u2014 SPF p\u00e5 MX-vertene',
+      SPF_HELO_NOTE:       'RFC 7208 \u00a72.3 anbefaler en SPF-post for hvert vertsnavn en MTA oppgir i HELO/EHLO; MX-vertene er de vanlige kandidatene. Informasjon \u2014 ikke poengsatt.',
+      SPF_HELO_PRESENT:    'SPF-post',
+      SPF_HELO_ABSENT:     'ingen SPF-post',
+      SPF_HELO_MULTI:      'flere SPF-poster (permerror)',
     },
     // ── d: dynamic strings (arrow functions) ─────────────────────────────────
     d: {
@@ -2476,6 +2515,19 @@ const STRINGS = {
       COH_DMARC_NO_SPF:      p => 'DMARC h\u00e5ndhever p=' + p + ', men domenet har ingen SPF-post \u2014 justeringen hviler helt p\u00e5 DKIM; usignert e-post fra dette domenet blir allerede ' + (p === 'reject' ? 'avvist' : 'satt i karantene'),
       COH_RUA_UNDELIVERABLE: h => 'Rapportmottakeren ' + h + ' har verken MX eller adressepost \u2014 DMARC/TLS-RPT-rapporter dit kan ikke leveres',
       COH_RUA_DELIVERABLE:   n => n + ' rapportmottaker' + (n !== 1 ? 'e' : '') + ' (rua/ruf) tar imot e-post (MX eller adressepost finnes)',
+      MX_CNAME_TARGET:       h => h + ' er et CNAME \u2014 et MX-m\u00e5l m\u00e5 v\u00e6re et kanonisk vertsnavn (RFC 5321 \u00a75.1, RFC 2181 \u00a710.3); noen avsendere avviser det',
+      MX_IP_LITERAL:         h => 'MX-m\u00e5let ' + h + ' er en IP-adresse \u2014 MX m\u00e5 navngi en vert (RFC 5321 \u00a75.1); standardtro avsendere ignorerer det',
+      MX_UNRESOLVABLE:       h => h + ' har ingen A- eller AAAA-post \u2014 e-post rutet til denne MX-verten kan ikke leveres',
+      MX_DUPLICATE_HOST:     h => h + ' er oppf\u00f8rt mer enn \u00e9n gang i MX-settet',
+      MX_SINGLE_ASN:         (asn, holder) => 'Alle MX-vertene ligger i ett enkelt AS (AS' + asn + (holder ? ' \u2014 ' + holder : '') + ') \u2014 \u00e9n rutingshendelse tar ned alle innkommende veier (informasjon)',
+      SPF_UNKNOWN_MECH:      term => 'Ukjent mekanisme \u00ab' + term + '\u00bb \u2014 permerror: mottakere behandler hele posten som ugyldig (RFC 7208 \u00a74.6.1)',
+      SPF_SYNTAX:            term => 'Uleselig ledd \u00ab' + term + '\u00bb \u2014 permerror: mottakere behandler hele posten som ugyldig',
+      SPF_DUPLICATE_MODIFIER: m => 'Modifikatoren ' + m + '= forekommer mer enn \u00e9n gang \u2014 permerror (RFC 7208 \u00a76)',
+      SPF_RECORD_LONG:       n => 'Posten er ' + n + ' byte \u2014 over ca. 450 f\u00e5r den ikke plass i et UDP-svar p\u00e5 512 byte og kan bli avkortet av gamle resolvere (RFC 7208 \u00a73.4)',
+      SPF_INCLUDE_NO_RECORD: t => 'include:' + t + ' \u2014 m\u00e5let har ingen SPF-post \u2014 permerror (RFC 7208 \u00a75.2)',
+      SPF_INCLUDE_MULTI:     t => 'include:' + t + ' \u2014 m\u00e5let publiserer flere SPF-poster \u2014 permerror',
+      SPF_MX_TOO_MANY:       (t, n) => 'mx:' + t + ' har ' + n + ' MX-verter \u2014 mer enn 10 er en permerror (RFC 7208 \u00a74.6.4)',
+      SPF_VOID_LOOKUPS:      n => n + ' tomme oppslag (NXDOMAIN eller tomme svar) i include-treet \u2014 mer enn 2 er en permerror (RFC 7208 \u00a74.6.4)',
     },
     // ── x: explanation strings (HTML) ────────────────────────────────────────
     x: {
@@ -3104,6 +3156,15 @@ const STRINGS = {
       COH_TLSRPT_NO_POLICY: 'TLS-RPT est\u00e1 publicado pero no hay ni pol\u00edtica MTA-STS ni DANE \u2014 los receptores no tienen nada sobre lo que informar',
       COH_MTASTS_TESTING_BLIND: 'MTA-STS est\u00e1 en modo de prueba pero no existe registro TLS-RPT \u2014 los fallos en modo de prueba no se informan a ning\u00fan sitio, as\u00ed que la prueba nunca te dir\u00e1 nada',
       COH_BELT_AND_BRACES: 'Tanto DANE como una pol\u00edtica MTA-STS en modo enforce protegen el TLS entrante \u2014 doble seguridad',
+      MX_SINGLE_HOST:      'Solo un servidor MX \u2014 sin alternativa si no est\u00e1 disponible (informativo)',
+      MX_NONE_USABLE:      'Ning\u00fan servidor MX resuelve a una direcci\u00f3n \u2014 los remitentes conformes no pueden entregar correo a este dominio',
+      MX_PILL_LITERAL:     'direcci\u00f3n IP',
+      MX_PILL_UNRESOLVABLE: 'no resoluble',
+      SPF_HELO_TITLE:      'Identidad HELO/EHLO \u2014 SPF en los servidores MX',
+      SPF_HELO_NOTE:       'RFC 7208 \u00a72.3 recomienda un registro SPF para cada nombre de host que un MTA anuncia en HELO/EHLO; los servidores MX son los candidatos habituales. Informativo \u2014 no puntuado.',
+      SPF_HELO_PRESENT:    'registro SPF',
+      SPF_HELO_ABSENT:     'sin registro SPF',
+      SPF_HELO_MULTI:      'varios registros SPF (permerror)',
     },
     d: {
       MX_HOSTS_FOUND:        n => n + ' servidor' + (n !== 1 ? 'es' : '') + ' MX encontrado' + (n !== 1 ? 's' : '') + '.',
@@ -3230,6 +3291,19 @@ const STRINGS = {
       COH_DMARC_NO_SPF:      p => 'DMARC aplica p=' + p + ' pero el dominio no tiene registro SPF \u2014 la alineaci\u00f3n depende por completo de DKIM; el correo sin firmar de este dominio ya est\u00e1 siendo ' + (p === 'reject' ? 'rechazado' : 'puesto en cuarentena'),
       COH_RUA_UNDELIVERABLE: h => 'El destino de informes ' + h + ' no tiene MX ni registro de direcci\u00f3n \u2014 los informes DMARC/TLS-RPT enviados all\u00ed no se pueden entregar',
       COH_RUA_DELIVERABLE:   n => n + ' destino' + (n !== 1 ? 's' : '') + ' de informes (rua/ruf) acepta' + (n !== 1 ? 'n' : '') + ' correo (hay MX o registro de direcci\u00f3n)',
+      MX_CNAME_TARGET:       h => h + ' es un CNAME \u2014 el destino de un MX debe ser un nombre de host can\u00f3nico (RFC 5321 \u00a75.1, RFC 2181 \u00a710.3); algunos remitentes lo rechazan',
+      MX_IP_LITERAL:         h => 'El destino MX ' + h + ' es una direcci\u00f3n IP \u2014 MX debe nombrar un host (RFC 5321 \u00a75.1); los remitentes conformes lo ignoran',
+      MX_UNRESOLVABLE:       h => h + ' no tiene registro A ni AAAA \u2014 el correo dirigido a este servidor MX no se puede entregar',
+      MX_DUPLICATE_HOST:     h => h + ' aparece m\u00e1s de una vez en el conjunto MX',
+      MX_SINGLE_ASN:         (asn, holder) => 'Todos los servidores MX est\u00e1n en un \u00fanico AS (AS' + asn + (holder ? ' \u2014 ' + holder : '') + ') \u2014 un solo incidente de enrutamiento deja sin servicio todas las rutas entrantes (informativo)',
+      SPF_UNKNOWN_MECH:      term => 'Mecanismo desconocido "' + term + '" \u2014 permerror: los receptores tratan todo el registro como inv\u00e1lido (RFC 7208 \u00a74.6.1)',
+      SPF_SYNTAX:            term => 'T\u00e9rmino no analizable "' + term + '" \u2014 permerror: los receptores tratan todo el registro como inv\u00e1lido',
+      SPF_DUPLICATE_MODIFIER: m => 'El modificador ' + m + '= aparece m\u00e1s de una vez \u2014 permerror (RFC 7208 \u00a76)',
+      SPF_RECORD_LONG:       n => 'El registro tiene ' + n + ' bytes \u2014 por encima de ~450 ya no cabe en una respuesta UDP de 512 bytes y puede ser truncado por resolvers antiguos (RFC 7208 \u00a73.4)',
+      SPF_INCLUDE_NO_RECORD: t => 'include:' + t + ' \u2014 el destino no tiene registro SPF \u2014 permerror (RFC 7208 \u00a75.2)',
+      SPF_INCLUDE_MULTI:     t => 'include:' + t + ' \u2014 el destino publica varios registros SPF \u2014 permerror',
+      SPF_MX_TOO_MANY:       (t, n) => 'mx:' + t + ' tiene ' + n + ' servidores MX \u2014 m\u00e1s de 10 es un permerror (RFC 7208 \u00a74.6.4)',
+      SPF_VOID_LOOKUPS:      n => n + ' consultas vac\u00edas (NXDOMAIN o respuestas vac\u00edas) en el \u00e1rbol de include \u2014 m\u00e1s de 2 es un permerror (RFC 7208 \u00a74.6.4)',
     },
     x: {
       DMARC:
@@ -3881,6 +3955,15 @@ const STRINGS = {
       COH_TLSRPT_NO_POLICY: 'TLS-RPT est publi\u00e9 mais ni politique MTA-STS ni DANE ne sont en place \u2014 les destinataires n\u2019ont rien \u00e0 signaler',
       COH_MTASTS_TESTING_BLIND: 'MTA-STS est en mode test mais aucun enregistrement TLS-RPT n\u2019existe \u2014 les \u00e9checs en mode test ne sont signal\u00e9s nulle part, le test ne vous apprendra donc jamais rien',
       COH_BELT_AND_BRACES: 'DANE et une politique MTA-STS en mode enforce prot\u00e8gent tous deux le TLS entrant \u2014 ceinture et bretelles',
+      MX_SINGLE_HOST:      'Un seul h\u00f4te MX \u2014 aucun repli s\u2019il est injoignable (informatif)',
+      MX_NONE_USABLE:      'Aucun h\u00f4te MX ne r\u00e9sout vers une adresse \u2014 les exp\u00e9diteurs conformes ne peuvent pas livrer de courrier \u00e0 ce domaine',
+      MX_PILL_LITERAL:     'adresse IP',
+      MX_PILL_UNRESOLVABLE: 'non r\u00e9solvable',
+      SPF_HELO_TITLE:      'Identit\u00e9 HELO/EHLO \u2014 SPF sur les h\u00f4tes MX',
+      SPF_HELO_NOTE:       'La RFC 7208 \u00a72.3 recommande un enregistrement SPF pour chaque nom d\u2019h\u00f4te qu\u2019un MTA annonce en HELO/EHLO\u00a0; les h\u00f4tes MX en sont les candidats habituels. Informatif \u2014 non not\u00e9.',
+      SPF_HELO_PRESENT:    'enregistrement SPF',
+      SPF_HELO_ABSENT:     'aucun enregistrement SPF',
+      SPF_HELO_MULTI:      'plusieurs enregistrements SPF (permerror)',
     },
 
     // ── d: chaînes dynamiques (fonctions fléchées) ────────────────────────────
@@ -4009,6 +4092,19 @@ const STRINGS = {
       COH_DMARC_NO_SPF:      p => 'DMARC applique p=' + p + ' mais le domaine n\u2019a pas d\u2019enregistrement SPF \u2014 l\u2019alignement repose enti\u00e8rement sur DKIM\u00a0; le courrier non sign\u00e9 de ce domaine est d\u00e9j\u00e0 ' + (p === 'reject' ? 'rejet\u00e9' : 'mis en quarantaine'),
       COH_RUA_UNDELIVERABLE: h => 'La destination des rapports ' + h + ' n\u2019a ni MX ni enregistrement d\u2019adresse \u2014 les rapports DMARC/TLS-RPT qui y sont envoy\u00e9s ne peuvent pas \u00eatre remis',
       COH_RUA_DELIVERABLE:   n => n + ' destination' + (n !== 1 ? 's' : '') + ' de rapports (rua/ruf) accepte' + (n !== 1 ? 'nt' : '') + ' le courrier (MX ou enregistrement d\u2019adresse pr\u00e9sent)',
+      MX_CNAME_TARGET:       h => h + ' est un CNAME \u2014 la cible d\u2019un MX doit \u00eatre un nom d\u2019h\u00f4te canonique (RFC 5321 \u00a75.1, RFC 2181 \u00a710.3)\u00a0; certains exp\u00e9diteurs la rejettent',
+      MX_IP_LITERAL:         h => 'La cible MX ' + h + ' est une adresse IP \u2014 un MX doit nommer un h\u00f4te (RFC 5321 \u00a75.1)\u00a0; les exp\u00e9diteurs conformes l\u2019ignorent',
+      MX_UNRESOLVABLE:       h => h + ' n\u2019a ni enregistrement A ni AAAA \u2014 le courrier dirig\u00e9 vers cet h\u00f4te MX ne peut pas \u00eatre livr\u00e9',
+      MX_DUPLICATE_HOST:     h => h + ' figure plusieurs fois dans l\u2019ensemble MX',
+      MX_SINGLE_ASN:         (asn, holder) => 'Tous les h\u00f4tes MX sont dans un seul AS (AS' + asn + (holder ? ' \u2014 ' + holder : '') + ') \u2014 un seul incident de routage coupe tous les chemins entrants (informatif)',
+      SPF_UNKNOWN_MECH:      term => 'M\u00e9canisme inconnu \u00ab\u00a0' + term + '\u00a0\u00bb \u2014 permerror\u00a0: les destinataires consid\u00e8rent tout l\u2019enregistrement comme invalide (RFC 7208 \u00a74.6.1)',
+      SPF_SYNTAX:            term => 'Terme illisible \u00ab\u00a0' + term + '\u00a0\u00bb \u2014 permerror\u00a0: les destinataires consid\u00e8rent tout l\u2019enregistrement comme invalide',
+      SPF_DUPLICATE_MODIFIER: m => 'Le modificateur ' + m + '= appara\u00eet plus d\u2019une fois \u2014 permerror (RFC 7208 \u00a76)',
+      SPF_RECORD_LONG:       n => 'L\u2019enregistrement fait ' + n + ' octets \u2014 au-del\u00e0 de ~450 il ne tient plus dans une r\u00e9ponse UDP de 512 octets et peut \u00eatre tronqu\u00e9 par d\u2019anciens r\u00e9solveurs (RFC 7208 \u00a73.4)',
+      SPF_INCLUDE_NO_RECORD: t => 'include:' + t + ' \u2014 la cible n\u2019a pas d\u2019enregistrement SPF \u2014 permerror (RFC 7208 \u00a75.2)',
+      SPF_INCLUDE_MULTI:     t => 'include:' + t + ' \u2014 la cible publie plusieurs enregistrements SPF \u2014 permerror',
+      SPF_MX_TOO_MANY:       (t, n) => 'mx:' + t + ' a ' + n + ' h\u00f4tes MX \u2014 plus de 10 est un permerror (RFC 7208 \u00a74.6.4)',
+      SPF_VOID_LOOKUPS:      n => n + ' requ\u00eates vides (NXDOMAIN ou r\u00e9ponses vides) dans l\u2019arbre des include \u2014 plus de 2 est un permerror (RFC 7208 \u00a74.6.4)',
     },
 
     // ── x: textes d'explication (HTML) ────────────────────────────────────────
@@ -4901,17 +4997,67 @@ async function checkMX(domain) {
     if (mx.hosts.length === 0) return { rating: 'fail', adMX, hosts: [], messageKey: 'MX_NO_RECORDS' };
 
     // checkDNSSEC never rejects (it returns an error-shaped result), so a plain
-    // Promise.all is enough here.
-    const dnssecResults = await Promise.all(mx.hosts.map(h => checkDNSSEC(h.hostname)));
-    const hosts = mx.hosts.map((h, i) => ({ ...h, dnssec: dnssecResults[i] }));
+    // Promise.all is enough here. The hygiene probe per host (A/AAAA for
+    // resolvability and CNAME detection, TXT for the HELO/EHLO SPF record)
+    // runs alongside; A/AAAA are shared with the IPv6/PTR/RPKI checks via dohCache.
+    const [dnssecResults, hygiene] = await Promise.all([
+      Promise.all(mx.hosts.map(h => checkDNSSEC(h.hostname))),
+      parallelLimit(mx.hosts.map(h => () => probeMXHost(h.hostname)), DNS_CONCURRENCY),
+    ]);
+    const hosts = mx.hosts.map((h, i) => ({ ...h, dnssec: dnssecResults[i],
+      ...(hygiene[i].status === 'fulfilled' ? hygiene[i].value : { probeError: true, ips: [], cname: false, ipLiteral: false, helo: null }) }));
 
     let rating = adMX ? 'excellent' : 'warning';
     for (const h of hosts) rating = worstRating(rating, h.dnssec.rating);
 
-    return { rating, adMX, hosts, message: null };
+    // ── MX hygiene (RFC 5321 §5.1, RFC 2181 §10.3) ──
+    const issues = [];
+    const seen = new Set();
+    for (const h of hosts) {
+      if (seen.has(h.hostname)) { issues.push({ rating: 'warning', textKey: 'MX_DUPLICATE_HOST', textArgs: [h.hostname] }); rating = worstRating(rating, 'warning'); }
+      seen.add(h.hostname);
+      if (h.ipLiteral) { issues.push({ rating: 'fail', textKey: 'MX_IP_LITERAL', textArgs: [h.hostname] }); }
+      else if (h.cname) { issues.push({ rating: 'warning', textKey: 'MX_CNAME_TARGET', textArgs: [h.hostname] }); rating = worstRating(rating, 'warning'); }
+      else if (!h.probeError && h.ips.length === 0) { issues.push({ rating: 'fail', textKey: 'MX_UNRESOLVABLE', textArgs: [h.hostname] }); }
+    }
+    // A host that is an IP literal or resolves to nothing cannot take mail from a
+    // compliant MTA. All of them unusable → the domain receives no mail (fail);
+    // some → degraded (warning).
+    const usable = hosts.filter(h => !h.ipLiteral && (h.probeError || h.ips.length > 0));
+    if (usable.length === 0) { issues.push({ rating: 'fail', textKey: 'MX_NONE_USABLE' }); rating = worstRating(rating, 'fail'); }
+    else if (usable.length < hosts.length) rating = worstRating(rating, 'warning');
+    if (seen.size === 1) issues.push({ rating: 'good', textKey: 'MX_SINGLE_HOST' });   // informational, not folded
+
+    return { rating, adMX, hosts, issues, message: null };
   } catch (e) {
     return { error: true, rating: 'fail', message: describeFetchError(e) };
   }
+}
+
+// Per-MX-host hygiene probe: address records (and whether the name is a CNAME,
+// which RFC 5321 §5.1 forbids for an MX target), IP-literal detection, and the
+// TXT lookup for an SPF record on the host itself — the HELO/EHLO identity
+// check RFC 7208 §2.3 recommends. The result is informational except for the
+// resolvability and literal findings, which checkMX folds into its rating.
+async function probeMXHost(hostname) {
+  const ipLiteral = /^\[?\d{1,3}(\.\d{1,3}){3}\]?$/.test(hostname) || /^\[?[0-9a-f:]*:[0-9a-f:]*\]?$/i.test(hostname);
+  if (ipLiteral) return { ips: [], cname: false, ipLiteral: true, helo: null };
+  const [aRes, aaaaRes, txtRes] = await Promise.allSettled([
+    dohQuery(hostname, 'A'), dohQuery(hostname, 'AAAA'), dohQuery(hostname, 'TXT'),
+  ]);
+  const answers = res => res.status === 'fulfilled' && res.value && res.value.Status === 0 ? (res.value.Answer || []) : [];
+  const ips = [...answers(aRes).filter(r => r.type === 1), ...answers(aaaaRes).filter(r => r.type === 28)].map(r => r.data.trim());
+  const cname = [...answers(aRes), ...answers(aaaaRes)].some(r => r.type === 5 && r.name.replace(/\.$/, '').toLowerCase() === hostname);
+  let helo = null;
+  if (txtRes.status === 'fulfilled' && txtRes.value && txtRes.value.Status === 0) {
+    const spf = answers(txtRes).filter(r => r.type === 16).map(r => parseTxtData(r.data)).filter(isSPFRecord);
+    if (spf.length === 1) {
+      const all = spf[0].split(/\s+/).slice(1).map(parseSPFTerm).filter(Boolean).find(x => x.mech === 'all');
+      helo = { record: spf[0], allQualifier: all ? (all.qual || '+') : null };
+    } else if (spf.length > 1) helo = { record: spf[0], multi: true, allQualifier: null };
+  }
+  const probeError = aRes.status === 'rejected' && aaaaRes.status === 'rejected';
+  return { ips, cname, ipLiteral: false, helo, probeError };
 }
 
 // ── DANE / TLSA (RFC 7672) ────────────────────────────────────────────────────
@@ -5043,9 +5189,9 @@ function parseSPFTerm(term) {
   const m = term.toLowerCase().match(/^([+\-~?]?)([a-z0-9]+)(.*)$/);
   if (!m) return null;
   const [, qual, mech, rest] = m;
-  let val = null, cidr = null;
+  let val = null, cidr = null, sep = null;
   if (rest.startsWith(':') || rest.startsWith('=')) {
-    val = rest.slice(1);
+    val = rest.slice(1); sep = rest[0];
   } else if (rest.startsWith('/')) {
     cidr = rest;             // e.g. "a/24" — dual-cidr with no domain-spec
   } else if (rest) {
@@ -5056,40 +5202,70 @@ function parseSPFTerm(term) {
     const c = val.match(SPF_DUAL_CIDR);
     if (c) { cidr = c[0]; val = val.slice(0, -c[0].length); }
   }
-  return { qual, mech, val: val || null, cidr };
+  return { qual, mech, val: val || null, cidr, sep };
 }
 
+const SPF_MECHANISMS = new Set(['all', 'include', 'a', 'mx', 'ptr', 'ip4', 'ip6', 'exists']);
+
+// Walks the include:/redirect= tree and returns { count, voids, issues }:
+// the total DNS-lookup count (RFC 7208 §4.6.4 limit 10), the number of "void
+// lookups" — queries that return NXDOMAIN or no records — (limit 2, same
+// section; `a`/`mx` with nothing behind them count too), and the permerror
+// conditions a receiver would hit on the way: an include: whose target has no
+// SPF record or several, and an mx: mechanism whose target has more than ten
+// MX hosts. Each issue names the target it was found at.
 async function countSPFLookupsFull(record, domain, depth, visited) {
   if (depth === undefined) depth = 0;
   if (visited === undefined) visited = new Set();
-  if (depth > 5 || visited.has(domain)) return 0;
+  const none = { count: 0, voids: 0, issues: [] };
+  if (depth > 5 || visited.has(domain)) return none;
   visited.add(domain);
   const terms = record.split(/\s+/).slice(1).map(parseSPFTerm).filter(Boolean);
   // RFC 7208 §6.1: redirect= is ignored when the record has an "all" mechanism.
   const hasAll = terms.some(t => t.mech === 'all');
-  let count = 0;
-  const subTargets = [];
+  let count = 0, voids = 0;
+  const issues = [];
+  const tasks = [];
+  const answers = resp => resp && resp.Status === 0 ? (resp.Answer || []) : [];
   for (const { mech, val } of terms) {
     if (['a', 'mx', 'ptr', 'exists', 'include'].includes(mech)) count++;
     // A macro-bearing target expands per message; querying it literally is a
     // wasted request that can never answer.
-    if (mech === 'include' && val && !val.includes('%')) subTargets.push(val);
-    if (mech === 'redirect' && val && !hasAll) { count++; if (!val.includes('%')) subTargets.push(val); }
+    const target = val && !val.includes('%') ? val : null;
+    if (mech === 'include' && target) tasks.push({ kind: 'include', target });
+    if (mech === 'redirect' && val && !hasAll) { count++; if (target) tasks.push({ kind: 'redirect', target }); }
+    if ((mech === 'a' || mech === 'mx') && !(val && val.includes('%'))) tasks.push({ kind: mech, target: val || domain });
   }
   // Bounded: a deep include: chain branches at every level, so an unbounded
   // Promise.allSettled here can put a large burst of DoH queries in flight.
-  const subResults = await parallelLimit(subTargets.map(target => async () => {
-    try {
+  const subResults = await parallelLimit(tasks.map(({ kind, target }) => async () => {
+    if (kind === 'include' || kind === 'redirect') {
       const resp = await dohQuery(target, 'TXT');
-      const spfRecs = (resp.Answer || []).filter(r => r.type === 16)
-        .map(r => parseTxtData(r.data)).filter(isSPFRecord);
-      if (spfRecs.length === 1)
-        return countSPFLookupsFull(spfRecs[0], target, depth + 1, new Set(visited));
-    } catch (_) {}
-    return 0;
+      const recs = answers(resp);
+      const spfRecs = recs.filter(r => r.type === 16).map(r => parseTxtData(r.data)).filter(isSPFRecord);
+      const isVoid = resp.Status === 3 || recs.length === 0;
+      if (spfRecs.length === 1) return { ...(await countSPFLookupsFull(spfRecs[0], target, depth + 1, new Set(visited))), voidHere: isVoid ? 1 : 0 };
+      if (resp.Status !== 0 && resp.Status !== 3) return none;          // SERVFAIL etc.: unknown, not void
+      const key = spfRecs.length > 1 ? 'SPF_INCLUDE_MULTI' : 'SPF_INCLUDE_NO_RECORD';
+      return { count: 0, voids: isVoid ? 1 : 0, issues: kind === 'include' ? [{ rating: 'fail', textKey: key, textArgs: [target] }] : [] };
+    }
+    if (kind === 'mx') {
+      const resp = await dohQuery(target, 'MX');
+      const hosts = answers(resp).filter(r => r.type === 15);
+      const res = { count: 0, voids: (resp.Status === 3 || hosts.length === 0) ? 1 : 0, issues: [] };
+      if (hosts.length > 10) res.issues.push({ rating: 'fail', textKey: 'SPF_MX_TOO_MANY', textArgs: [target, hosts.length] });
+      return res;
+    }
+    // kind === 'a'
+    const [a4, a6] = await Promise.allSettled([dohQuery(target, 'A'), dohQuery(target, 'AAAA')]);
+    const got = r => r.status === 'fulfilled' && answers(r.value).some(x => x.type === 1 || x.type === 28);
+    return { count: 0, voids: got(a4) || got(a6) ? 0 : 1, issues: [] };
   }), SPF_CONCURRENCY);
-  for (const r of subResults) if (r.status === 'fulfilled') count += r.value;
-  return count;
+  for (const r of subResults) {
+    if (r.status !== 'fulfilled') continue;
+    count += r.value.count; voids += r.value.voids + (r.value.voidHere || 0); issues.push(...r.value.issues);
+  }
+  return { count, voids, issues };
 }
 
 // "v=spf1" followed by whitespace or end of string — a bare startsWith would
@@ -5105,10 +5281,31 @@ function analyzeSPF(record, domain) {
   let lookupCount = 0, hasAll = false, allQualifier = null, redirectTarget = null;
   const ipAddresses = [], ipPrefixes = [], dnsNames = [];
 
+  const modifiersSeen = new Set();
   for (const term of terms) {
+    if (!term) continue;
     const parsed = parseSPFTerm(term);
-    if (!parsed) continue;
+    // RFC 7208 §4.6.1 / §6: an unparsable term or an unknown *mechanism* is a
+    // permerror — the whole record evaluates to permerror and gives no
+    // protection at all. An unknown modifier (name=value) is simply ignored.
+    if (!parsed) {
+      issues.push({ rating: 'fail', textKey: 'SPF_SYNTAX', textArgs: [term] });
+      rating = worstRating(rating, 'fail');
+      continue;
+    }
     const { qual, mech, val } = parsed;
+    if (!SPF_MECHANISMS.has(mech) && parsed.sep !== '=') {
+      issues.push({ rating: 'fail', textKey: 'SPF_UNKNOWN_MECH', textArgs: [term] });
+      rating = worstRating(rating, 'fail');
+      continue;
+    }
+    if (parsed.sep === '=' && (mech === 'redirect' || mech === 'exp')) {
+      if (modifiersSeen.has(mech)) {
+        issues.push({ rating: 'fail', textKey: 'SPF_DUPLICATE_MODIFIER', textArgs: [mech] });
+        rating = worstRating(rating, 'fail');
+      }
+      modifiersSeen.add(mech);
+    }
 
     if (mech === 'all') { hasAll = true; allQualifier = qual || '+'; }
     if (mech === 'ptr') {
@@ -5165,6 +5362,13 @@ function analyzeSPF(record, domain) {
     redirectDomain = redirectTarget;
   }
 
+  // RFC 7208 §3.4: a record over ~450 bytes no longer fits a 512-byte UDP
+  // answer with its headers and can be truncated or dropped by old resolvers.
+  if (record.length > 450) {
+    issues.push({ rating: 'warning', textKey: 'SPF_RECORD_LONG', textArgs: [record.length] });
+    rating = worstRating(rating, 'warning');
+  }
+
   if (lookupCount > 10) {
     issues.push({ rating: 'fail', textKey: 'SPF_LOOKUP_EXCEED', textArgs: [lookupCount] });
     rating = worstRating(rating, 'fail');
@@ -5210,7 +5414,16 @@ async function finishSPFAnalysis(analysis, originalRecords, domain, totalCountP,
   ]);
   dnsNames.forEach((m, i) => { m.dnssec = dnssecResults[i]; });
 
-  const totalLookupCount = totalCountRes === null ? analysis.lookupCount : totalCountRes;
+  const totalLookupCount = totalCountRes === null ? analysis.lookupCount : totalCountRes.count;
+  if (totalCountRes !== null) {
+    // Permerrors found inside the include tree, and the void-lookup limit.
+    for (const i of totalCountRes.issues) { analysis.issues.push(i); analysis.rating = worstRating(analysis.rating, i.rating); }
+    if (totalCountRes.voids > 2) {
+      analysis.issues.push({ rating: 'fail', textKey: 'SPF_VOID_LOOKUPS', textArgs: [totalCountRes.voids] });
+      analysis.rating = worstRating(analysis.rating, 'fail');
+    }
+    analysis.voidLookups = totalCountRes.voids;
+  }
   if (totalLookupCount > analysis.lookupCount) {
     analysis.issues = analysis.issues.filter(i => !SPF_LOOKUP_KEYS.has(i.textKey));
     if (totalLookupCount > 10) {
@@ -5333,7 +5546,7 @@ async function checkSPF(domain) {
     return {
       rating: effective.rating, records: spfRecords,
       redirectDomain, redirectRecord,
-      issues: effective.issues, lookupCount: effective.lookupCount, totalLookupCount: effective.totalLookupCount,
+      issues: effective.issues, lookupCount: effective.lookupCount, totalLookupCount: effective.totalLookupCount, voidLookups: effective.voidLookups,
       mechanisms: effective.mechanisms, allQualifier: effective.allQualifier, message: null,
     };
   } catch (e) {
@@ -7757,6 +7970,9 @@ function renderMX(result) {
         const line1 = el('div', 'mx-host-line');
         line1.appendChild(el('span', 'mx-priority', String(h.priority)));
         line1.appendChild(el('span', 'mx-hostname', h.hostname));
+        if (h.cname) line1.appendChild(el('span', 'tag-pill tag-pill-warn', 'CNAME'));
+        if (h.ipLiteral) line1.appendChild(el('span', 'tag-pill tag-pill-fail', ts('MX_PILL_LITERAL')));
+        else if (!h.probeError && h.ips && h.ips.length === 0) line1.appendChild(el('span', 'tag-pill tag-pill-fail', ts('MX_PILL_UNRESOLVABLE')));
         row.appendChild(line1);
         row.appendChild(dnssecBadge(h.dnssec));
         if (ipv6Val && !ipv6Val.error) {
@@ -7771,6 +7987,20 @@ function renderMX(result) {
         listEl.appendChild(row);
       }
       body.appendChild(makeDetails(ts('MX_HOST_DETAILS'), listEl));
+
+      // Hygiene findings (checkMX) plus the render-time AS-diversity note from
+      // the RPKI data: every MX host behind one origin AS is a single point of
+      // failure for inbound mail routing — informational, like the NS note.
+      const hyg = Array.isArray(d.issues) ? [...d.issues] : [];
+      const rpkiVal = lastResults && lastResults.rpki && lastResults.rpki.status === 'fulfilled' ? lastResults.rpki.value : null;
+      if (rpkiVal && !rpkiVal.error && Array.isArray(rpkiVal.hosts) && d.hosts.length > 1) {
+        const asns = new Set(rpkiVal.hosts.filter(h => h.isMX).flatMap(h => (h.ipResults || []).map(r => r.asn)).filter(Boolean));
+        if (asns.size === 1) {
+          const asn = [...asns][0];
+          hyg.push({ rating: 'good', textKey: 'MX_SINGLE_ASN', textArgs: [asn, (rpkiVal.asnInfo && rpkiVal.asnInfo[asn]) || ''] });
+        }
+      }
+      if (hyg.length) body.appendChild(makeIssueList(hyg));
     }
 
     addExplanation(body, tx('MX'));
@@ -7970,6 +8200,33 @@ function renderSPF(result) {
         });
 
         body.appendChild(makeDetails(ts('SPF_MECHANISMS'), listEl));
+      }
+
+      // HELO/EHLO identity (RFC 7208 §2.3): the SPF record of each MX host,
+      // probed by checkMX. Informational — never scored.
+      const mxVal = lastResults && lastResults.mx && lastResults.mx.status === 'fulfilled' ? lastResults.mx.value : null;
+      if (mxVal && !mxVal.error && Array.isArray(mxVal.hosts) && mxVal.hosts.some(h => h.helo !== undefined)) {
+        const sec = el('div', 'panel-section');
+        sec.appendChild(el('div', 'panel-section-title', ts('SPF_HELO_TITLE')));
+        const list = el('div', 'mx-host-list');
+        for (const h of mxVal.hosts) {
+          const row = el('div', 'mx-host-row');
+          const line = el('div', 'mx-host-line');
+          line.appendChild(el('span', 'mx-hostname', h.hostname));
+          const b = makeBadge(h.helo ? (h.helo.multi ? 'warning' : (h.helo.allQualifier === '-' ? 'excellent' : 'good')) : 'warning');
+          b.textContent = h.helo ? (h.helo.multi ? ts('SPF_HELO_MULTI') : ts('SPF_HELO_PRESENT') + (h.helo.allQualifier ? ' \u00b7 ' + h.helo.allQualifier + 'all' : '')) : ts('SPF_HELO_ABSENT');
+          line.appendChild(b);
+          row.appendChild(line);
+          if (h.helo && h.helo.record) {
+            const code = el('code', 'mono', h.helo.record);
+            code.style.cssText = 'display:block;margin-top:0.3rem;font-size:0.72rem;word-break:break-all';
+            row.appendChild(code);
+          }
+          list.appendChild(row);
+        }
+        sec.appendChild(list);
+        sec.appendChild(el('div', 'card-summary', ts('SPF_HELO_NOTE')));
+        body.appendChild(sec);
       }
 
       // Note if IPv6-capable MX/NS hosts exist but no ip6: mechanisms in SPF

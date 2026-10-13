@@ -8,7 +8,7 @@ Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-October-13-4**
+Current version: **2026-October-13-5**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -100,10 +100,10 @@ Every fan-out is bounded by `parallelLimit()`: `DKIM_CONCURRENCY` 10, `RIPE_CONC
 | Check | DNS name / endpoint queried | Key detail |
 |-------|----------------------------|------------|
 | DNSSEC | `<domain>` DNSKEY + SOA; then for the zone apex: DS, DNSKEY+SOA with `do=true` (RRSIGs), NSEC3PARAM, RDAP `secureDNS` | Falls back to zone apex via SOA Authority section for non-apex hostnames; rated on the **weakest** algorithm published (see below); `checkDNSSECFull` adds the chain-of-trust depth analysis for the scanned domain only |
-| MX | `<domain>` MX via `getMXHosts()`, then DNSSEC per host | Detects null MX (RFC 7505); `nullMX: true` flag |
+| MX | `<domain>` MX via `getMXHosts()`, then DNSSEC + `probeMXHost()` (A/AAAA/TXT) per host | Detects null MX (RFC 7505); `nullMX: true` flag; hygiene: CNAME target, IP literal, unresolvable, duplicate, single host; HELO SPF per host in `hosts[].helo` |
 | PTR | A+AAAA per MX host → PTR per IP | FCrDNS: checks if PTR value matches MX hostname; does not affect grade |
 | DANE | `_25._tcp.<mx-hostname>` TLSA | Per MX host via `getMXHosts()`; null MX → good/`DANE_NULL_MX`; PKIX usages 0/1 → warning (RFC 7672 §3.1.3); `tlsaInvalidReason()` flags bad fields / digest length; excellent also needs the MX RRset AD flag |
-| SPF | `<domain>` TXT | Follows `redirect=` to target domain; returns `allQualifier` |
+| SPF | `<domain>` TXT, then the include tree (TXT per include/redirect, MX/A per mx/a mechanism) | Follows `redirect=` to target domain; returns `allQualifier`; permerrors (unknown mechanism, syntax, duplicate modifier, include without/with several SPF, >10 MX hosts, >2 void lookups) rate fail |
 | DKIM | `<selector>._domainkey.<domain>` TXT | ~92 auto selectors + custom + one random control selector (wildcard detection); capped at 10 parallel; `_domainkey` / `_adsp._domainkey` legacy policy records reported |
 | DMARC | `_dmarc.<domain>` TXT | RFC 7489 + RFC 9989 (DMARCbis); parses p=, sp=, pct=, rua=, ruf=, adkim=, aspf= with `parseDMARCTagList` (whitespace around `=` allowed); a subdomain with no record is **graded on the inherited organizational policy** found by the tree walk (`inheritedFrom`, `appliedTag`); DNSSEC checked for rua/ruf endpoint domains; DMARCbis sub-analysis attached as `dmarcbis` |
 | BIMI | `default._bimi.<domain>` TXT | Parses l= (logo URL) and a= (authority/VMC); does not affect grade |
@@ -150,12 +150,18 @@ dnskeyKeyTag()      RFC 4034 Appendix B key tag; dnskeyRSABits() RFC 3110 modulu
 parseDS() / parseRRSIG()  presentation-format parsers (RRSIG times: epoch seconds or YYYYMMDDHHmmSS)
 rdapLookup(name)    per-scan promise cache for rdap.org documents (rdapCache, cleared by
                       clearDNSCaches); shared by checkDNSSECDepth and checkWHOIS
-checkMX()           via getMXHosts; null MX → nullMX:true, rating good
+checkMX()           via getMXHosts; null MX → nullMX:true, rating good; hygiene issues (see MX hygiene)
+probeMXHost()       A/AAAA (+ CNAME detection), IP-literal test, TXT → HELO/EHLO SPF record per MX host
 parseTLSAData()     RFC 3597 hex or presentation format
 rateTLSA()
 tlsaInvalidReason() usage/selector/matching ranges + digest length per matching type
 checkDANE()         via getMXHosts; one rating decision for the whole set (no per-host override loop)
-analyzeSPF()        parses SPF record; tracks redirectDomain; skips SPF_MISSING_ALL when redirect present
+analyzeSPF()        parses SPF record; tracks redirectDomain; skips SPF_MISSING_ALL when redirect present;
+                      permerrors: SPF_SYNTAX, SPF_UNKNOWN_MECH (sep ':' or none on a non-mechanism),
+                      SPF_DUPLICATE_MODIFIER; SPF_RECORD_LONG > 450 bytes
+countSPFLookupsFull() returns { count, voids, issues } — recursive lookup count, void lookups
+                      (NXDOMAIN/empty for include/redirect/a/mx targets), include permerrors,
+                      mx: host-count permerror; consumed by finishSPFAnalysis (SPF_VOID_LOOKUPS > 2)
 isSPFRecord()       /^v=spf1(\s|$)/i — bare startsWith would accept v=spf10
 finishSPFAnalysis() DNSSEC per mechanism + recursive lookup count + propagation check — the ONE
                       copy shared by the redirect and non-redirect paths of checkSPF
@@ -344,7 +350,7 @@ const resolvedText = iss.textKey
 **Current languages**: `en` (English, default), `es` (Spanish), `fr` (French), `no` (Norwegian Bokmål).
 All four are **complete** — no language relies on the English fallback. When adding a key, add it to every language, and mirror it into `translations/<lang>.js` **and `translations/TEMPLATE.js`** so the contributor files stay in sync. TEMPLATE.js is easy to forget because nothing in the app reads it — it had silently drifted 37 keys behind (the entire IPv6 block, plus `SELECTOR_HELP`, the SPF recursive-lookup counts and the RPKI nameserver-diversity keys) before being backfilled on 2026-08-13. A contributor starting from a stale template simply never sees those strings.
 
-To check for drift, run `node tests/static.js` — it parses the `STRINGS` block out of `index.html`, diffs the key sets across the four languages and the four `translations/*.js` files, and compares `d`-function *outputs* (not source text, which differs in whitespace between files). The three namespaces currently total **486 keys** (s=349, d=117, x=20). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
+To check for drift, run `node tests/static.js` — it parses the `STRINGS` block out of `index.html`, diffs the key sets across the four languages and the four `translations/*.js` files, and compares `d`-function *outputs* (not source text, which differs in whitespace between files). The three namespaces currently total **505 keys** (s=358, d=130, x=20). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
 
 There are now four contributor files — `es.js`, `fr.js`, `no.js` and `TEMPLATE.js` — and all four
 carry the full key set with no value drift from `index.html`.
@@ -437,6 +443,17 @@ rollover.
   (10%). Single-algorithm zones are unaffected — best and worst coincide.
 - Known and deliberately unchanged: MX is effectively a second DNSSEC score, because any domain
   whose MX host lives in an unsigned zone scores 0 on MX regardless of its MX configuration.
+
+### MX hygiene and HELO SPF — 2026-October-13-5
+`probeMXHost(hostname)` runs per MX host inside `checkMX` (bounded by `DNS_CONCURRENCY`): A + AAAA
+(shared with IPv6/PTR/RPKI through `dohCache`), CNAME detection (a type-5 answer whose owner is the
+host), IP-literal test, and TXT for the host's own SPF record (`helo: { record, allQualifier,
+multi }`, RFC 7208 §2.3 HELO/EHLO identity). `checkMX` folds: a host that is an IP literal or
+resolves to nothing is *unusable* — none usable → `MX_NONE_USABLE` (fail), some → warning; a CNAME
+target → warning (`MX_CNAME_TARGET`); duplicates → warning. `MX_SINGLE_HOST` is informational (not
+folded). `renderMX` adds `MX_SINGLE_ASN` at render time from `lastResults.rpki` (all MX hosts'
+`ipResults[].asn` identical) — informational. `renderSPF` renders the HELO table from
+`lastResults.mx.hosts[].helo`; it never touches the SPF rating.
 
 ### SPF redirect details
 - `analyzeSPF()` tracks `redirectDomain` when it encounters `redirect=<val>`. Does NOT push the old `SPF_REDIRECT` warning.
@@ -855,7 +872,7 @@ Two pseudo-ratings sit outside that list and deliberately have `RATINGS.indexOf(
   or a function); `app.http` maps URLs for non-DoH fetches; `app.txt()`/`app.rr()` are shorthands;
   `app.resetScan()` clears caches and `scanStats`. `live: true` passes `fetch` through to the network.
 - `node tests/run.js` — regression tests, one per fixed bug (A1–A13, B5, B10, B11, B8, B9, C3, C9 in
-  the 2026-10-13 audit) plus D2 (DKIM wildcard control probe) and D1 (DNSSEC depth) and D5 (cross-protocol coherence). Add one for every check-logic fix; they run in well under a second.
+  the 2026-10-13 audit) plus D2 (DKIM wildcard control probe) and D1 (DNSSEC depth), D5 (cross-protocol coherence) and D3+D4 (MX hygiene, HELO SPF, SPF depth). Add one for every check-logic fix; they run in well under a second.
 - `node tests/static.js` — the static checks: key parity + `d` arity across languages and
   `translations/*.js` (value drift compared by *output*), referenced-key existence, CSS classes,
   dangerous sinks, tab/panel order, version string across the three files, legacy `text:` issues,

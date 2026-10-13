@@ -476,6 +476,66 @@ test('D5 cross-protocol coherence', async () => {
   lacks(c.issues, 'COH_TLSRPT_NO_POLICY');
 });
 
+test('D3 MX hygiene and HELO SPF', async () => {
+  let app = load();
+  app.rr('example.com', 'MX', 15, ['10 mx1.example.com.', '20 alias.example.com.', '30 192.0.2.9', '40 ghost.example.com.', '10 mx1.example.com.'], { AD: true });
+  app.rr('mx1.example.com', 'A', 1, ['192.0.2.1']);
+  app.txt('mx1.example.com', 'v=spf1 a -all');
+  app.dns.set('alias.example.com|A', { Status: 0, Answer: [{ name: 'alias.example.com', type: 5, data: 'mx1.example.com.' }, { name: 'mx1.example.com', type: 1, data: '192.0.2.1' }] });
+  app.dns.set('ghost.example.com|A', { Status: 0, Answer: [] });
+  app.dns.set('ghost.example.com|AAAA', { Status: 0, Answer: [] });
+  let r = await app.checkMX('example.com');
+  const keys = r.issues.map(i => i.textKey);
+  for (const k of ['MX_DUPLICATE_HOST', 'MX_CNAME_TARGET', 'MX_IP_LITERAL', 'MX_UNRESOLVABLE']) has(r.issues, k);
+  lacks(r.issues, 'MX_NONE_USABLE'); lacks(r.issues, 'MX_SINGLE_HOST');
+  const H = n => r.hosts.find(h => h.hostname === n);
+  eq(H('mx1.example.com').helo.allQualifier, '-', 'HELO SPF on mx1'); eq(H('alias.example.com').cname, true); eq(H('192.0.2.9').ipLiteral, true); eq(H('ghost.example.com').ips.length, 0);
+  eq(keys.indexOf('MX_NONE_USABLE'), -1);
+  // all unusable → fail
+  app = load();
+  app.rr('dead.example', 'MX', 15, ['10 ghost.dead.example.'], { AD: true });
+  app.dns.set('ghost.dead.example|A', { Status: 0, Answer: [] }); app.dns.set('ghost.dead.example|AAAA', { Status: 0, Answer: [] });
+  r = await app.checkMX('dead.example');
+  eq(r.rating, 'fail'); has(r.issues, 'MX_NONE_USABLE'); has(r.issues, 'MX_SINGLE_HOST');
+  // a clean single host: only the informational note, rating unchanged by hygiene
+  app = load();
+  app.rr('ok.example', 'MX', 15, ['10 mx.ok.example.'], { AD: false });
+  app.rr('mx.ok.example', 'A', 1, ['192.0.2.1']);
+  r = await app.checkMX('ok.example');
+  eq(r.issues.map(i => i.textKey), ['MX_SINGLE_HOST']); eq(r.hosts[0].helo, null);
+});
+
+test('D4 SPF depth: permerrors, void lookups, mx host count, record length', async () => {
+  let app = load();
+  const a = app.analyzeSPF('v=spf1 inlcude:_spf.example.com ip4:192.0.2.0/24 foo=bar redirect=a.example redirect=b.example ?all', 'example.com');
+  has(a.issues, 'SPF_UNKNOWN_MECH'); has(a.issues, 'SPF_DUPLICATE_MODIFIER'); eq(a.rating, 'fail');
+  lacks(a.issues, 'SPF_SYNTAX');
+  eq(app.analyzeSPF('v=spf1 ip4:192.0.2.0/24 -all', 'example.com').issues.some(i => i.rating === 'fail'), false, 'clean record has no permerror');
+  has(app.analyzeSPF('v=spf1 ~~all -all', 'example.com').issues, 'SPF_SYNTAX');
+  const long = 'v=spf1 ' + Array.from({ length: 40 }, (_, i) => 'ip4:198.51.' + i + '.0/24').join(' ') + ' -all';
+  has(app.analyzeSPF(long, 'example.com').issues, 'SPF_RECORD_LONG');
+  // include tree: no SPF at target, several at another, void lookups, too many MX hosts
+  app = load();
+  app.txt('example.com', 'v=spf1 include:none.example include:multi.example include:void1.example include:void2.example mx:big.example a:ghost.example -all');
+  app.txt('none.example', 'something else');
+  app.txt('multi.example', 'v=spf1 -all', 'v=spf1 ~all');
+  // void1/void2 are NXDOMAIN by default; ghost has no A/AAAA
+  app.dns.set('ghost.example|A', { Status: 0, Answer: [] }); app.dns.set('ghost.example|AAAA', { Status: 0, Answer: [] });
+  app.rr('big.example', 'MX', 15, Array.from({ length: 11 }, (_, i) => (i + 1) + ' mx' + i + '.big.example.'));
+  const r = await app.checkSPF('example.com');
+  eq(r.rating, 'fail');
+  for (const k of ['SPF_INCLUDE_NO_RECORD', 'SPF_INCLUDE_MULTI', 'SPF_MX_TOO_MANY', 'SPF_VOID_LOOKUPS']) has(r.issues, k);
+  eq(r.voidLookups >= 3, true, 'void1 + void2 + ghost (+ none.example counts as a record, not void)');
+  eq(r.issues.find(i => i.textKey === 'SPF_INCLUDE_NO_RECORD').textArgs[0], 'none.example');
+  // a healthy include tree stays clean
+  app = load();
+  app.txt('example.com', 'v=spf1 include:_spf.example.com -all');
+  app.txt('_spf.example.com', 'v=spf1 ip4:192.0.2.0/24 ~all');
+  const ok = await app.checkSPF('example.com');
+  eq(ok.rating, 'excellent'); eq(ok.voidLookups, 0); eq(ok.totalLookupCount, 1);
+  for (const lang of ['en', 'no', 'es', 'fr']) { app.currentLang = lang; for (const i of r.issues) { const s = i.textArgs ? app.td(i.textKey, ...i.textArgs) : app.ts(i.textKey); if (s === i.textKey) throw new Error('unresolved ' + i.textKey + ' in ' + lang); } }
+});
+
 (async () => {
   for (const t of tests) {
     try { await t.fn(); pass++; console.log('PASS', t.name); }
