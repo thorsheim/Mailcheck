@@ -13,12 +13,12 @@ Created by [Per Thorsheim](https://thorsheim.net) · [PasswordsCon](https://pass
 | Tab | Standard | What is tested |
 |-----|----------|----------------|
 | Overview | — | Weighted grade (A–F) across all scored checks |
-| DNSSEC | RFC 4033 | DNSKEY presence, algorithm strength, AD flag from Cloudflare resolver |
-| MX | RFC 5321 | MX records, DNSSEC per host, null MX (RFC 7505) |
+| DNSSEC | RFC 4033, RFC 4034, RFC 9276 | DNSKEY presence, weakest published algorithm, AD flag from the resolver; chain of trust for the zone apex: DS records matched against the DNSKEY set, registry DS data from RDAP, RRSIG lifetimes, NSEC3 parameters, RSA key sizes |
+| MX | RFC 5321 | MX records, DNSSEC per host, null MX (RFC 7505); hygiene: CNAME or IP-literal targets, unresolvable or duplicate hosts, single host, single AS |
 | PTR | — | Forward-confirmed reverse DNS (FCrDNS) per MX IP |
 | DANE | RFC 7672 | TLSA records per MX host, DNSSEC requirement |
-| SPF | RFC 7208 | Record syntax, qualifiers, redirect= following, lookup count |
-| DKIM | RFC 6376 | ~85 auto-probed selectors + custom; key type, size, hash algorithms (`h=`), service type (`s=`), flags (`t=`), notes (`n=`), raw record |
+| SPF | RFC 7208 | Record syntax, qualifiers, redirect= following, recursive lookup count, void lookups, permerrors (unknown mechanism, duplicate modifiers, include without SPF), record size; HELO/EHLO SPF per MX host |
+| DKIM | RFC 6376, RFC 8463 | ~92 auto-probed selectors + custom, plus a random control selector that detects wildcard `_domainkey` zones; key type, size, revoked keys, hash algorithms (`h=`), service type (`s=`), flags (`t=`), notes (`n=`), raw record; obsolete DomainKeys/ADSP policy records |
 | DMARC | RFC 7489, RFC 9989 | Policy, alignment, pct, rua/ruf endpoints with DNSSEC; **DMARCbis section** — DNS tree walk policy discovery, tag registry conformance, external reporting authorization (RFC 9990/9991), suggested conformant record |
 | BIMI | — | Logo URL, VMC authority record |
 | TLS-RPT | RFC 8460 | Reporting record, rua= endpoint DNSSEC |
@@ -29,10 +29,10 @@ Created by [Per Thorsheim](https://thorsheim.net) · [PasswordsCon](https://pass
 | IPv6 | — | AAAA presence for the domain, NS and MX hosts; government mandate table |
 | Zone | RFC 1912, RFC 2181 | DNS zone hygiene: SOA timers, nameserver count and AS diversity, CNAME at the apex, apex TXT size and verification tokens, wildcard records |
 | Security.txt | RFC 9116 | Required/optional fields, expiry |
-| WHOIS | RFC 7480 | RDAP lookup via rdap.org |
+| WHOIS | RFC 7480 | RDAP lookup via rdap.org: registrar, dates, expiry, registrar vs registry (EPP) locks, hold and pending-transfer statuses, registry DNSSEC flag cross-checked against DNS |
 | Autoconfig | RFC 6186, RFC 8314, RFC 8620 | Mail client autoconfiguration: SRV records, Microsoft Autodiscover, Mozilla autoconfig host and Thunderbird ISPDB |
 | Connection | — | The **visitor's** connection, not the domain: resolver DNSSEC validation, public IPv4/IPv6 addresses with ASN/prefix/ROA, ISP BGP route filtering (isbgpsafeyet.com method) |
-| Fixes | — | Prioritised action list with weights |
+| Fixes | — | Cross-protocol coherence findings (TLS-RPT without MTA-STS/DANE, BIMI vs DMARC enforcement, undeliverable report destinations, …), then a prioritised action list with weights |
 
 ## Scoring
 
@@ -56,7 +56,7 @@ PTR, BIMI, RPKI, ASPA, IPv6, Zone, Security.txt, WHOIS and Autoconfig are inform
 
 - **No dependencies** — single `index.html`, works offline after first load
 - **DMARCbis conformance** — checks the DMARC record against RFC 9989 / 9990 / 9991 (May 2026): DNS tree walk policy discovery, tag registry status, external reporting authorization, and a generated conformant record. Informational only — the grade is unaffected
-- **DNS over HTTPS** via Cloudflare (`cloudflare-dns.com/dns-query`)
+- **DNS over HTTPS** via Cloudflare (`cloudflare-dns.com/dns-query`), falling back to `dns.google` when Cloudflare is unreachable; one lookup per name and type per scan, bounded fan-out, every request with a deadline
 - **RPKI/ASPA** via RIPE Stat API
 - **WHOIS/RDAP** via rdap.org
 - **4 UI languages** — English, Norwegian (Bokmål), Spanish, French — picked from an inline button row, persisted in `localStorage`
@@ -70,7 +70,7 @@ PTR, BIMI, RPKI, ASPA, IPv6, Zone, Security.txt, WHOIS and Autoconfig are inform
 
 ## DKIM selector coverage
 
-~85 selectors probed automatically, covering:
+~92 selectors probed automatically (74 fixed plus an 18-month Domeneshop `dsYYYYMM` window generated from the current date), covering:
 
 Google Workspace, Microsoft 365, Apple iCloud, Mailchimp/Mandrill, SendGrid, Amazon SES, Postmark, Zoho Mail, Proton Mail, Tuta, Fastmail, HubSpot, Brevo/Sendinblue, Mimecast, Proofpoint, Klaviyo, SparkPost/Bird, Mailgun, Constant Contact, Marketo, Salesforce Pardot, ActiveCampaign, Intercom, Customer.io, Iterable, Sailthru, MailerLite, Infomaniak, OVH, Hetzner, Domeneshop (ds+YYYYMM rotation), and generic/legacy selectors.
 
@@ -81,7 +81,7 @@ Custom selectors can be entered in the "Extra DKIM Selectors" field on the start
 - All DNS/external data rendered via `textContent` or `createTextNode` — never `innerHTML`
 - Explanation sections use `safeMarkup()` — a whitelist parser allowing only `<b>`, `<code>`, `<br>`, and `<a href="https://...">` tags
 - Links validated to `https?:` or `mailto:` schemes before use as `href`
-- No data is sent to any server other than Cloudflare DoH, RIPE Stat, and rdap.org
+- The scanned domain is sent to Cloudflare DoH (or `dns.google` as fallback), RIPE Stat, rdap.org and the Thunderbird ISPDB (`autoconfig.thunderbird.net`), and its own web server is fetched for the MTA-STS policy and security.txt. The Connection tab additionally contacts `isbgpsafeyet.com`, `icanhazip.com` and `ippacket.stream`, and sends the visitor's public IP address to RIPE Stat — all disclosed in the tab's explanation
 
 ## Contributing a translation
 
@@ -114,9 +114,10 @@ node tests/live.js     # every check + every renderer against real DNS for a set
 
 1. Do the work in `index.html`
 2. Update the footer `<summary>` version string and add a new `.cl-entry` block at the top of `#changelog-content`
-3. Update `Current version` in `CLAUDE.md`
+3. Update `Current version` in `CLAUDE.md`, and its architecture notes if a check, tab or key function changed
 4. Add a row at the top of the version history table in `README.md`
-5. Run `node tests/static.js` and `node tests/run.js`
+5. Run `node tests/static.js` and `node tests/run.js`; run `node tests/live.js` when check logic changed
+6. When a renderer changed, load the page in a real or headless browser (`chromium --headless --dump-dom` against a local `python3 -m http.server`) and scan a domain — the Node DOM stub does not catch everything a browser rejects
 
 ## Version history
 

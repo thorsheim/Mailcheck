@@ -13,7 +13,7 @@ Current version: **2026-October-13-8**
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
 Each release gets a `.cl-entry` div containing a `.cl-version` span and a `.cl-changes` `<ul>`.
-**When releasing a new version:** update the `<summary>` text, add a new `.cl-entry` block at the top of `#changelog-content`, and update the version in `CLAUDE.md` and `README.md`.
+**When releasing a new version:** update the `<summary>` text, add a new `.cl-entry` block at the top of `#changelog-content`, update the version in `CLAUDE.md` and `README.md` (plus a row in the README version-history table), run `node tests/static.js` (it checks the three version strings agree) and `node tests/run.js`, then commit and push. When a renderer changed, also run the headless-Chromium smoke test (critical bug 21).
 The changelog is hardcoded HTML in the footer — not part of the i18n system.
 
 ## Architecture
@@ -317,7 +317,7 @@ renderSummary()     Weighted grade from CHECK_WEIGHTS: DKIM 20%, SPF 15%, DMARC 
                       numerator and denominator. Bar rating labels go through ts('RATING_…')
                       Shows 18 bars: 9 scored bars first, then a labeled separator
                       "Informational (not scored)", then PTR, BIMI, RPKI, ASPA, IPv6, Zone, Security.txt,
-                      Zone, WHOIS, Autoconfig bars (weight=0). Overview, Connection and Fixes have no bar —
+                      WHOIS, Autoconfig bars (weight=0). Overview, Connection and Fixes have no bar —
                       Connection is about the visitor, not the domain. Grade calculation unchanged.
 currentDomain       module-level domain state (set in runChecks)
 scanning            true from the NXDOMAIN gate passing until rerenderAll; the language-switch
@@ -333,12 +333,13 @@ scanStats           module-level stats object (null before first scan); reset at
                       fields: startMs, totalMs, checks{}, dohRequests, ripeStatRequests,
                       ripeStatCacheHits, httpRequests
 timed(name, p)      wraps a promise; records elapsed ms into scanStats.checks[name] on settle
-rerenderAll(r)      re-renders all 20 panels from stored results (no DNS re-query)
+rerenderAll(r)      re-renders all 21 panels from stored results (no DNS re-query); ASPA re-reads r.rpki
 domainExists()      NXDOMAIN gate: one SOA dohQuery, false only on Status 3; fails open on error
 showNXDomainModal() shows #nxdomain-modal-backdrop and focuses the OK button
 runChecks()         orchestrator; accepts opts={skipMTASTS,skipSecTxt}; NXDOMAIN-gates the domain
                       first (returns false, no UI touched, modal shown); resets scanStats; wraps
-                      all 18 checks in timed(); saves lastResults; calls rerenderAll()
+                      all 20 stages in timed() (17 domain checks + bgp, conn, coherence); saves
+                      lastResults; calls rerenderAll()
 renderStatsPanel(dkim, rpki)
                     appends/replaces <details id="stats-panel"> to #overview-content; reads
                       scanStats for counts and check timings; called at end of renderSummary()
@@ -352,6 +353,9 @@ Three namespaces per language in the `STRINGS` object:
 - **`d` (dynamic)** — arrow functions for pluralised/interpolated strings. Access with `td('KEY', ...args)`.
 - **`x` (explanations)** — full explanation markup strings for `addExplanation()` (22 keys: DMARC, DMARCBIS, DNSSEC, MX, PTR, DANE, SPF, DKIM, DKIM2, TLSRPT, MTASTS, CAA, RPKI, ASPA, CONN, BIMI, STXT, WHOIS, IPV6, AUTOCONF, ZONE, SELECTOR_HELP). Access with `tx('KEY')`.
   `safeMarkup()` builds **text nodes**, so HTML entities are *not* decoded — write `<domain>` literally, never `&lt;domain&gt;`.
+  Its whitelist is exactly `<b>`, `<code>`, `<br>` and `<a href="https://…">`; any other angle-bracket token
+  (`<domain>`, `<sub>`, `<selector>` …) is passed through as visible text, which is what the placeholders rely on.
+  Do not use `<i>`, `<sub>`, `<ul>` etc. as markup — they would render literally.
 
 Lookup order: current language → English fallback → key name as visible fallback.
 
@@ -956,7 +960,7 @@ first record to Google's first record verbatim flagged perfectly matching domain
   there is no escaping step to forget. (`escapeHtml()` was removed in 2026-August-17-1: it had
   been dead code for a long time, and its presence in this list implied an escaping path that
   did not exist.)
-- Explanation sections built with `safeMarkup()` — whitelist parser, no innerHTML.
+- Explanation sections built with `safeMarkup()` — whitelist parser (`<b>`, `<code>`, `<br>`, `<a>` with an `https://` href only), no innerHTML.
 - `clearNode(n)` used for all DOM clearing — no `innerHTML = ''` anywhere in JS.
 - `el()` and `appendChild` used for all DOM construction.
 - Links constructed with `document.createElement('a')` + `textContent` + validated `href`
