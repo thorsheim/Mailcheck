@@ -182,7 +182,7 @@ test('A11 MTA-STS: HTML body is not a policy; max_age required; errors are keys'
 test('A13 WHOIS: excellent when locked, warning on hold/expired, subdomain uses registrable domain', async () => {
   const app = load();
   const future = new Date(Date.now() + 400 * 86400000).toISOString();
-  app.http.set('https://rdap.org/domain/example.com', { status: 200, body: JSON.stringify({ handle: 'X', status: ['client transfer prohibited', 'client delete prohibited'], events: [{ eventAction: 'expiration', eventDate: future }], entities: [], nameservers: [] }) });
+  app.http.set('https://rdap.org/domain/example.com', { status: 200, body: JSON.stringify({ handle: 'X', status: ['client transfer prohibited', 'client delete prohibited', 'client update prohibited'], events: [{ eventAction: 'expiration', eventDate: future }], entities: [], nameservers: [] }) });
   app.http.set('https://rdap.org/domain/mail.example.com', { status: 404, body: '' });
   const r = await app.checkWHOIS('mail.example.com');
   eq(r.rating, 'excellent'); eq(r.queriedDomain, 'example.com');
@@ -534,6 +534,98 @@ test('D4 SPF depth: permerrors, void lookups, mx host count, record length', asy
   const ok = await app.checkSPF('example.com');
   eq(ok.rating, 'excellent'); eq(ok.voidLookups, 0); eq(ok.totalLookupCount, 1);
   for (const lang of ['en', 'no', 'es', 'fr']) { app.currentLang = lang; for (const i of r.issues) { const s = i.textArgs ? app.td(i.textKey, ...i.textArgs) : app.ts(i.textKey); if (s === i.textKey) throw new Error('unresolved ' + i.textKey + ' in ' + lang); } }
+});
+
+test('D8 WHOIS registrar locks: partial, registry, pending transfer, unknown, registry DNSSEC flag', async () => {
+  const app = load();
+  const future = new Date(Date.now() + 400 * 86400000).toISOString();
+  const doc = (status, extra) => ({ status: 200, body: JSON.stringify({ handle: 'X', status, events: [{ eventAction: 'expiration', eventDate: future }], entities: [], nameservers: [], ...(extra || {}) }) });
+  const run = async (status, extra) => { app.resetScan(); app.http.set('https://rdap.org/domain/example.com', doc(status, extra)); return app.checkWHOIS('example.com'); };
+  let r = await run(['client transfer prohibited']);
+  eq(r.rating, 'good', 'lone transfer lock is good'); eq(r.lockLevel, 'registrar'); eq(r.locks.transfer, true); eq(r.locks.delete, false);
+  has(app.whoisLockIssues(r), 'WHOIS_LOCK_PARTIAL'); lacks(app.whoisLockIssues(r), 'WHOIS_LOCKED');
+  r = await run(['server transfer prohibited', 'server delete prohibited', 'server update prohibited']);
+  eq(r.rating, 'excellent'); eq(r.registryLock, true); eq(r.lockLevel, 'registry');
+  has(app.whoisLockIssues(r), 'WHOIS_REGISTRY_LOCK'); has(app.whoisLockIssues(r), 'WHOIS_LOCKED');
+  r = await run(['client transfer prohibited', 'client delete prohibited', 'client update prohibited', 'pending transfer']);
+  eq(r.rating, 'warning'); eq(r.pendingTransfer, true); has(app.whoisLockIssues(r), 'WHOIS_PENDING_TRANSFER');
+  r = await run([], { secureDNS: { delegationSigned: true, dsData: [{ keyTag: 1 }, { keyTag: 2 }] } });
+  eq(r.rating, 'good'); eq(r.lockLevel, 'unknown'); eq(r.secureDNS.signed, true); eq(r.secureDNS.dsCount, 2);
+  has(app.whoisLockIssues(r), 'WHOIS_LOCK_UNKNOWN'); lacks(app.whoisLockIssues(r), 'WHOIS_UNLOCKED');
+  // registry says signed but DNS has no DNSKEY → broken chain
+  app.lastResults = { dnssec: { status: 'fulfilled', value: { rating: 'fail', hasDNSKEY: false, ad: false } } };
+  has(app.whoisLockIssues(r), 'WHOIS_DNSSEC_REG_ONLY');
+  app.lastResults = { dnssec: { status: 'fulfilled', value: { rating: 'fail', error: true, messageKey: 'DNS_SERVFAIL' } } };
+  has(app.whoisLockIssues(r), 'WHOIS_DNSSEC_REG_ONLY');
+  // registry says unsigned but DNSKEY is published → island of security
+  r = await run(['ok'], { secureDNS: { delegationSigned: false } });
+  app.lastResults = { dnssec: { status: 'fulfilled', value: { rating: 'warning', hasDNSKEY: true, ad: false } } };
+  has(app.whoisLockIssues(r), 'WHOIS_DNSSEC_DNS_ONLY'); has(app.whoisLockIssues(r), 'WHOIS_UNLOCKED');
+  // a parent-domain RDAP answer (subdomain scan) never cross-checks
+  lacks(app.whoisLockIssues({ ...r, queriedDomain: 'example.com' }), 'WHOIS_DNSSEC_DNS_ONLY');
+  for (const lang of ['en', 'no', 'es', 'fr']) {
+    app.currentLang = lang;
+    for (const i of app.whoisLockIssues(r)) { const s = i.textArgs ? app.td(i.textKey, ...i.textArgs) : app.ts(i.textKey); if (s === i.textKey) throw new Error('unresolved ' + i.textKey + ' in ' + lang); }
+    app.renderWHOIS({ status: 'fulfilled', value: r });
+  }
+});
+
+test('D6 autoconfig: SRV parse, declined target, cleartext-only, targets, Autodiscover, ISPDB', async () => {
+  let app = load();
+  app.rr('example.com', 'MX', 15, ['10 mx.example.com.'], { AD: true });
+  app.rr('_imaps._tcp.example.com', 'SRV', 33, ['0 1 993 imap.example.com.'], { AD: true });
+  app.rr('_imap._tcp.example.com', 'SRV', 33, ['0 0 0 '], { AD: true });                  // Cloudflare's form of target "."
+  app.rr('_submission._tcp.example.com', 'SRV', 33, ['10 1 2587 smtp2.example.com.', '0 1 587 smtp.example.com.'], { AD: true });
+  app.rr('_pop3._tcp.example.com', 'SRV', 33, ['0 0 110 pop.example.com.']);              // not AD
+  app.rr('_pop3s._tcp.example.com', 'SRV', 33, ['0 0 0 .'], { AD: true });                // Google's form
+  app.rr('imap.example.com', 'A', 1, ['192.0.2.1']);
+  app.rr('smtp.example.com', 'A', 1, ['192.0.2.2']);
+  app.dns.set('smtp2.example.com|A', { Status: 0, Answer: [{ name: 'smtp2.example.com', type: 5, data: 'smtp.example.com.' }, { name: 'smtp.example.com', type: 1, data: '192.0.2.2' }] });
+  app.dns.set('pop.example.com|A', { Status: 0, Answer: [] }); app.dns.set('pop.example.com|AAAA', { Status: 0, Answer: [] });
+  app.rr('_autodiscover._tcp.example.com', 'SRV', 33, ['0 0 443 autodiscover.example.com.']);
+  app.dns.set('autodiscover.example.com|A', { Status: 0, Answer: [{ name: 'autodiscover.example.com', type: 5, data: 'autodiscover.outlook.com.' }, { name: 'autodiscover.outlook.com', type: 1, data: '192.0.2.50' }] });
+  app.rr('autoconfig.example.com', 'A', 1, ['192.0.2.60']);
+  app.http.set('https://autoconfig.thunderbird.net/v1.1/example.com', { status: 200, body: '<clientConfig version="1.1"><emailProvider id="example.com"><domain>example.com</domain><displayName>Example Mail</displayName><incomingServer type="imap"><hostname>imap.example.com</hostname><port>143</port><socketType>plain</socketType></incomingServer><outgoingServer type="smtp"><hostname>smtp.example.com</hostname><port>465</port><socketType>SSL</socketType></outgoingServer></emailProvider></clientConfig>' });
+  let r = await app.checkAutoconfig('example.com');
+  const S = n => r.services.find(s => s.svc === n);
+  eq(S('imaps').status, 'found'); eq(S('imaps').records[0].port, 993); eq(S('imaps').records[0].target, 'imap.example.com');
+  eq(S('imap').status, 'declined'); eq(S('pop3s').status, 'declined'); eq(S('jmap').status, 'none');
+  eq(S('submission').records.map(x => x.target).join(), 'smtp.example.com,smtp2.example.com', 'sorted by priority');
+  eq(r.issues.filter(i => i.textKey === 'AUTOCONF_PREFER_IMPLICIT').map(i => i.rating + ':' + i.textArgs[0]).sort().join(), 'good:submission,warning:pop3');
+  for (const k of ['AUTOCONF_SRV_FOUND', 'AUTOCONF_DECLINED', 'AUTOCONF_TARGET_CNAME', 'AUTOCONF_TARGET_UNRESOLVABLE', 'AUTOCONF_NONSTANDARD_PORT', 'AUTOCONF_SRV_UNSIGNED',
+    'AUTOCONF_AUTODISCOVER_SRV', 'AUTOCONF_AUTODISCOVER_HOST', 'AUTOCONF_M365', 'AUTOCONF_MOZ_HOST', 'AUTOCONF_ISPDB_YES', 'AUTOCONF_ISPDB_PLAIN']) has(r.issues, k);
+  lacks(r.issues, 'AUTOCONF_SRV_SIGNED'); lacks(r.issues, 'AUTOCONF_NO_MOZ'); lacks(r.issues, 'AUTOCONF_NO_AUTODISCOVER');
+  eq(r.targets['smtp2.example.com'].cname, true); eq(r.targets['pop.example.com'].ips.length, 0);
+  eq(r.autodiscover.m365, true); eq(r.autodiscover.srv.port, 443);
+  eq(r.ispdb.provider, 'Example Mail'); eq(r.ispdb.servers.length, 2); eq(r.ispdb.servers[1].direction, 'out');
+  eq(r.mechanisms, 4); eq(r.rating, 'warning');
+  for (const lang of ['en', 'no', 'es', 'fr']) {
+    app.currentLang = lang;
+    for (const i of r.issues) { const s = i.textArgs ? app.td(i.textKey, ...i.textArgs) : app.ts(i.textKey); if (s === i.textKey) throw new Error('unresolved ' + i.textKey + ' in ' + lang); }
+    app.renderAutoconfig({ status: 'fulfilled', value: r });
+  }
+  // clean implicit-TLS deployment, DNSSEC-validated, nothing else → excellent
+  app = load();
+  app.rr('clean.example', 'MX', 15, ['10 mx.clean.example.']);
+  app.rr('_imaps._tcp.clean.example', 'SRV', 33, ['0 1 993 imap.clean.example.'], { AD: true });
+  app.rr('_submissions._tcp.clean.example', 'SRV', 33, ['0 1 465 smtp.clean.example.'], { AD: true });
+  app.rr('imap.clean.example', 'A', 1, ['192.0.2.1']); app.rr('smtp.clean.example', 'A', 1, ['192.0.2.2']);
+  app.http.set('https://autoconfig.thunderbird.net/v1.1/clean.example', { status: 404, body: '' });
+  r = await app.checkAutoconfig('clean.example');
+  eq(r.rating, 'excellent'); has(r.issues, 'AUTOCONF_SRV_SIGNED'); has(r.issues, 'AUTOCONF_NO_AUTODISCOVER'); has(r.issues, 'AUTOCONF_NO_MOZ'); eq(r.ispdb.status, 'none');
+  // nothing published: warning when the domain receives mail, good when it does not
+  app = load();
+  app.rr('bare.example', 'MX', 15, ['10 mx.bare.example.']);
+  r = await app.checkAutoconfig('bare.example');
+  eq(r.rating, 'warning'); has(r.issues, 'AUTOCONF_NONE'); eq(r.mechanisms, 0);
+  r = await app.checkAutoconfig('nomail.example');
+  eq(r.rating, 'good'); has(r.issues, 'AUTOCONF_NO_MAIL');
+  // SERVFAIL on the first lookup is an error, not "nothing published"
+  app = load();
+  app.dns.set('_submission._tcp.sf.example|SRV', { Status: 2, Answer: [] });
+  r = await app.checkAutoconfig('sf.example');
+  eq(r.error, true); eq(r.messageKey, 'DNS_SERVFAIL');
+  app.renderAutoconfig({ status: 'fulfilled', value: r }); app.renderAutoconfig({ status: 'rejected', reason: new Error('x') });
 });
 
 (async () => {

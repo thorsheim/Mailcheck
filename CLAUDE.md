@@ -8,7 +8,7 @@ Uses RIPE Stat API for RPKI/ASPA/ASN data. Uses rdap.org for WHOIS/RDAP.
 ## Versioning
 Footer carries a version string: `Version YYYY-Month-DD-N` (e.g. `2026-March-13-1`).
 Increment the trailing counter for multiple releases on the same day.
-Current version: **2026-October-13-5**
+Current version: **2026-October-13-6**
 
 ### Changelog
 The footer version string is wrapped in a `<details id="changelog">` element. The `<summary>` shows the current version; clicking expands the full changelog.
@@ -19,8 +19,8 @@ The changelog is hardcoded HTML in the footer — not part of the i18n system.
 ## Architecture
 
 ### UI layout
-Tab-based: `#tab-bar` (19 `.tab-btn` elements) + `#tab-panels` (19 `.tab-panel` divs).
-Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**, TLS-RPT, MTA-STS, CAA, RPKI, **ASPA**, **IPv6**, Security.txt, WHOIS, **Connection**, **Fixes**.
+Tab-based: `#tab-bar` (20 `.tab-btn` elements) + `#tab-panels` (20 `.tab-panel` divs).
+Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**, TLS-RPT, MTA-STS, CAA, RPKI, **ASPA**, **IPv6**, Security.txt, WHOIS, **Autoconfig**, **Connection**, **Fixes**.
 - Tab bar hidden until first `runChecks()` call (`.visible` class).
 - **Tab semantics.** `#tab-bar` is `role="tablist"`, each button `role="tab"` with
   `aria-controls`/`aria-selected`, each panel `role="tabpanel"` with `aria-labelledby`. A roving
@@ -48,7 +48,7 @@ Tabs (in order): Overview, DNSSEC, MX, **PTR**, DANE, SPF, DKIM, DMARC, **BIMI**
 - `#lang-row` inline language buttons (below input row): English / Norsk / Español / Français. Each is a `.lang-btn` carrying `data-lang`; `.lang-sep` spans (`aria-hidden`) render the separator dots so they stay outside each button's hover/active background. Active state is `aria-pressed="true"`, which both announces the selection and drives the highlight through a CSS attribute selector — there is no separate active class to keep in sync. Persisted in `localStorage('mailcheck-lang')`.
 - Single skip checkbox (`#skip-cors-cb`) on the same row as the language selector. Persisted in `localStorage('mailcheck-skip-cors')`. When checked, `runChecks` receives `opts.skipMTASTS`/`opts.skipSecTxt` and passes a pre-resolved `{ skipped: true, rating: 'skip' }` result instead of calling the check. Skipped tabs show a grey dot + "Skipped" badge. MTA-STS weight (15%) is excluded from the score and the remaining 85% normalised to 100. Skipped checks are filtered from `renderRecommendations`.
 - `#footer` below `#tab-panels`: attribution to Per Thorsheim + links to thorsheim.net and passwordscon.org. Version string on a second line via `<br>`, wrapped in `<details id="changelog">` — clicking expands the full changelog.
-- **Mobile tab bar**: `flex-wrap: nowrap; overflow-x: auto` so all 19 tabs scroll horizontally in a single row. Scrollbar hidden (`scrollbar-width: none`). Edge fade via CSS `mask-image` gradient. `flex-shrink: 0` on `.tab-btn` prevents wrapping. Tab click handler calls `btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })` to keep the active tab visible.
+- **Mobile tab bar**: `flex-wrap: nowrap; overflow-x: auto` so all 20 tabs scroll horizontally in a single row. Scrollbar hidden (`scrollbar-width: none`). Edge fade via CSS `mask-image` gradient. `flex-shrink: 0` on `.tab-btn` prevents wrapping. Tab click handler calls `btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })` to keep the active tab visible.
 
 ### Network layer
 Every outbound request goes through `fetchJSON()`, which applies a deadline via `timeoutSignal()`
@@ -116,7 +116,8 @@ Every fan-out is bounded by `parallelLimit()`: `DKIM_CONCURRENCY` 10, `RIPE_CONC
 | Connection | `sigok`/`sigfail.ippacket.stream` (no-cors probes) + `ipv4`/`ipv6.icanhazip.com` + RIPE Stat per visitor IP | Tests the **visitor's** connection: resolver DNSSEC validation, public IPv4/IPv6 egress addresses with ASN/prefix/ROA; cached per page session; never scored |
 | IPv6 | `<domain>` A+AAAA, `<domain>` NS → AAAA per NS host, `<domain>` MX → AAAA per MX host | Informational only; does not affect grade |
 | Security.txt | `https://<domain>/.well-known/security.txt` (fallback `/security.txt`) | RFC 9116; parsed fields shown |
-| WHOIS | `https://rdap.org/domain/<domain>` | RDAP JSON; registrar, dates, nameservers, status |
+| WHOIS | `https://rdap.org/domain/<domain>` (registrable domain) | RDAP JSON; registrar, dates, nameservers, status; EPP locks (registrar `client*` vs registry `server*`, partial sets, `pendingTransfer`, registries without status codes) and the `secureDNS` flag cross-checked against the DNSSEC tab |
+| Autoconfig | `_submission/_submissions/_imap/_imaps/_pop3/_pop3s/_jmap._tcp.<domain>` SRV, `_autodiscover._tcp.<domain>` SRV, `autodiscover.<domain>` + `autoconfig.<domain>` A/AAAA, A/AAAA per SRV target, `https://autoconfig.thunderbird.net/v1.1/<domain>` | `checkAutoconfig()` — RFC 6186 / 8314 / 8620 SRV, Microsoft Autodiscover, Mozilla autoconfig + ISPDB; informational only |
 
 ### Key functions (approximate line numbers — file grows with each edit; use function names to search)
 
@@ -151,7 +152,8 @@ parseDS() / parseRRSIG()  presentation-format parsers (RRSIG times: epoch second
 rdapLookup(name)    per-scan promise cache for rdap.org documents (rdapCache, cleared by
                       clearDNSCaches); shared by checkDNSSECDepth and checkWHOIS
 checkMX()           via getMXHosts; null MX → nullMX:true, rating good; hygiene issues (see MX hygiene)
-probeMXHost()       A/AAAA (+ CNAME detection), IP-literal test, TXT → HELO/EHLO SPF record per MX host
+probeMXHost(host, opts) A/AAAA (+ CNAME detection), IP-literal test, TXT → HELO/EHLO SPF record per MX host;
+                      `{ helo: false }` skips the TXT lookup — checkAutoconfig reuses it for SRV targets
 parseTLSAData()     RFC 3597 hex or presentation format
 rateTLSA()
 tlsaInvalidReason() usage/selector/matching ranges + digest length per matching type
@@ -212,7 +214,19 @@ checkMTASTS()       collects all mx: lines as array (not last-wins); cross-check
                       policy patterns (supports *.example.com wildcards); returns mxMatch issues
 checkCAA()          also runs checkDNSSEC() for each CA domain; returns caDnssec map
 checkSecurityTxt()  fetches and parses RFC 9116 security.txt
-checkWHOIS()        RDAP lookup via rdap.org
+checkWHOIS()        RDAP lookup via rdap.org (registrable domain, max 3 label strips); returns locks
+                      {transfer,delete,update}, registryLock, lockLevel (registry|registrar|none|unknown),
+                      pendingTransfer, secureDNS {signed, dsCount}
+whoisLockIssues(d)  lock / hold / transfer verdict + registry-DNSSEC cross-check against lastResults.dnssec
+                      (only when RDAP answered for the scanned name itself); used by renderWHOIS
+AUTOCONF_SERVICES   the seven RFC 6186/8314/8620 service names with standard ports and STARTTLS→implicit twin
+parseSRV(data)      "prio weight port target"; target '' or '.' → declined (RFC 2782 "not offered")
+fetchISPDB(domain)  autoconfig.thunderbird.net/v1.1/<domain> (CORS ok); 404 → none; parses
+                      incomingServer/outgoingServer hostname/port/socketType by regex, no DOMParser
+checkAutoconfig()   SRV ×7 + Autodiscover SRV/host + autoconfig host + ISPDB, then probeMXHost per SRV
+                      target; returns { rating, issues, services[], targets{}, autodiscover, mozilla, ispdb,
+                      receivesMail, mechanisms }
+renderAutoconfig()  Autoconfig tab: summary, issue list, SRV table, Autodiscover + Mozilla/ISPDB kv tables
 checkPTR()          resolves A+AAAA per MX host; queries PTR per IP; relaxed FCrDNS match
 reverseIPv6(ip)     expands IPv6 to 32 hex nibbles, reverses, appends .ip6.arpa
 resolveHostIPs()    DoH A+AAAA resolution helper
@@ -289,9 +303,9 @@ renderRecommendations(r)
 renderSummary()     Weighted grade from CHECK_WEIGHTS: DKIM 20%, SPF 15%, DMARC 15%, MTA-STS 15%,
                       DNSSEC 10%, MX 10%, DANE 10%, TLS-RPT 3%, CAA 2%; skipped checks drop out of
                       numerator and denominator. Bar rating labels go through ts('RATING_…')
-                      Shows 16 bars: 9 scored bars first, then a labeled separator
+                      Shows 17 bars: 9 scored bars first, then a labeled separator
                       "Informational (not scored)", then PTR, BIMI, RPKI, ASPA, IPv6, Security.txt,
-                      WHOIS bars (weight=0). Overview, Connection and Fixes have no bar —
+                      WHOIS, Autoconfig bars (weight=0). Overview, Connection and Fixes have no bar —
                       Connection is about the visitor, not the domain. Grade calculation unchanged.
 currentDomain       module-level domain state (set in runChecks)
 scanning            true from the NXDOMAIN gate passing until rerenderAll; the language-switch
@@ -307,7 +321,7 @@ scanStats           module-level stats object (null before first scan); reset at
                       fields: startMs, totalMs, checks{}, dohRequests, ripeStatRequests,
                       ripeStatCacheHits, httpRequests
 timed(name, p)      wraps a promise; records elapsed ms into scanStats.checks[name] on settle
-rerenderAll(r)      re-renders all 18 panels from stored results (no DNS re-query)
+rerenderAll(r)      re-renders all 19 panels from stored results (no DNS re-query)
 domainExists()      NXDOMAIN gate: one SOA dohQuery, false only on Status 3; fails open on error
 showNXDomainModal() shows #nxdomain-modal-backdrop and focuses the OK button
 runChecks()         orchestrator; accepts opts={skipMTASTS,skipSecTxt}; NXDOMAIN-gates the domain
@@ -324,7 +338,7 @@ Three namespaces per language in the `STRINGS` object:
 
 - **`s` (static)** — plain string key→value. Access with `ts('KEY')`.
 - **`d` (dynamic)** — arrow functions for pluralised/interpolated strings. Access with `td('KEY', ...args)`.
-- **`x` (explanations)** — full explanation markup strings for `addExplanation()` (20 keys: DMARC, DMARCBIS, DNSSEC, MX, PTR, DANE, SPF, DKIM, DKIM2, TLSRPT, MTASTS, CAA, RPKI, ASPA, CONN, BIMI, STXT, WHOIS, IPV6, SELECTOR_HELP). Access with `tx('KEY')`.
+- **`x` (explanations)** — full explanation markup strings for `addExplanation()` (21 keys: DMARC, DMARCBIS, DNSSEC, MX, PTR, DANE, SPF, DKIM, DKIM2, TLSRPT, MTASTS, CAA, RPKI, ASPA, CONN, BIMI, STXT, WHOIS, IPV6, AUTOCONF, SELECTOR_HELP). Access with `tx('KEY')`.
   `safeMarkup()` builds **text nodes**, so HTML entities are *not* decoded — write `<domain>` literally, never `&lt;domain&gt;`.
 
 Lookup order: current language → English fallback → key name as visible fallback.
@@ -350,7 +364,7 @@ const resolvedText = iss.textKey
 **Current languages**: `en` (English, default), `es` (Spanish), `fr` (French), `no` (Norwegian Bokmål).
 All four are **complete** — no language relies on the English fallback. When adding a key, add it to every language, and mirror it into `translations/<lang>.js` **and `translations/TEMPLATE.js`** so the contributor files stay in sync. TEMPLATE.js is easy to forget because nothing in the app reads it — it had silently drifted 37 keys behind (the entire IPv6 block, plus `SELECTOR_HELP`, the SPF recursive-lookup counts and the RPKI nameserver-diversity keys) before being backfilled on 2026-08-13. A contributor starting from a stale template simply never sees those strings.
 
-To check for drift, run `node tests/static.js` — it parses the `STRINGS` block out of `index.html`, diffs the key sets across the four languages and the four `translations/*.js` files, and compares `d`-function *outputs* (not source text, which differs in whitespace between files). The three namespaces currently total **505 keys** (s=358, d=130, x=20). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
+To check for drift, run `node tests/static.js` — it parses the `STRINGS` block out of `index.html`, diffs the key sets across the four languages and the four `translations/*.js` files, and compares `d`-function *outputs* (not source text, which differs in whitespace between files). The three namespaces currently total **560 keys** (s=393, d=146, x=21). For `d` keys also compare the argument count: a placeholder with the wrong arity produces a broken translation that still parses. (A duplicate `PANEL_IPV6` in `en.s` was removed in 2026-August-17-2, so line counts equal unique counts again.)
 
 There are now four contributor files — `es.js`, `fr.js`, `no.js` and `TEMPLATE.js` — and all four
 carry the full key set with no value drift from `index.html`.
@@ -673,10 +687,50 @@ still reports an inherited parent policy when the author domain has no record of
   `a.b.c.d.e.f.g.h.i.j.mail.example.com` (reproduces the RFC 9989 §4.10 eight-query example exactly).
 
 ### WHOIS/RDAP details
-- Single fetch to `https://rdap.org/domain/<domain>` (bootstraps to authoritative RDAP server).
+- Single fetch to `https://rdap.org/domain/<domain>` (bootstraps to authoritative RDAP server), via the
+  shared `rdapLookup` cache; a subdomain scan strips labels on 404 (`queriedDomain`).
 - Extracts: registrar (from `entities[].vcardArray fn field`), created/updated/expires (from `events[]`), status, nameservers.
 - Shows expiry warning if domain expires within 30 days or has already expired.
-- Rating: `good` if data found, `warning` if lookup failed. Does not affect grade score.
+- **Locks (2026-October-13-6).** EPP statuses are lower-cased with spaces (`client transfer prohibited`).
+  `locks.{transfer,delete,update}` are true if *either* the `client*` (registrar) or `server*` (registry
+  lock) variant is set; `registryLock` when any `server*` is present. Rating: all three → `excellent`
+  (+ `WHOIS_REGISTRY_LOCK` note); anything less → `good` with `WHOIS_LOCK_PARTIAL` (lists the missing
+  `client*Prohibited` names) or `WHOIS_UNLOCKED`; `pending transfer` → `warning` + `WHOIS_PENDING_TRANSFER`;
+  hold / expiry as before. An **empty status list is `lockLevel: 'unknown'`** (Norid .no, DENIC .de publish
+  no EPP codes) → `WHOIS_LOCK_UNKNOWN`, never `WHOIS_UNLOCKED`. Before -6 a lone
+  `clientTransferProhibited` rated excellent.
+- **Registry DNSSEC flag.** `secureDNS.delegationSigned` / `dsData.length` → `WHOIS_ROW_DNSSEC` row.
+  `whoisLockIssues` cross-checks it at render time against `lastResults.dnssec`, only when
+  `queriedDomain` is null (the RDAP document is about the scanned name): signed at the registry but no
+  DNSKEY / SERVFAIL in DNS → `WHOIS_DNSSEC_REG_ONLY`; DNSKEY in DNS but unsigned at the registry →
+  `WHOIS_DNSSEC_DNS_ONLY`. The DNSSEC tab's `DNSSEC_RDAP_*` issues compare DS *digests*; this row is the
+  coarser registry flag.
+- Rating never affects the grade score.
+
+### Mail client autoconfiguration — `checkAutoconfig`, 2026-October-13-6
+Informational tab (`INFO_CHECKS`, weight 0). Twelve DoH lookups through `parallelLimit(DNS_CONCURRENCY)`
+plus `getMXHosts` (cached) and one HTTPS fetch of the Thunderbird ISPDB, then `probeMXHost(target,
+{ helo: false })` per distinct SRV target.
+- **SRV** (`AUTOCONF_SERVICES`): status per service `found | declined | none | error`. `declined` = every
+  record has the RFC 2782 "." target — Cloudflare's JSON drops the dot (`"0 0 0 "`), Google keeps it;
+  `parseSRV` normalises both to `target: ''`. Records sorted by priority then weight.
+- **Issues.** `AUTOCONF_PREFER_IMPLICIT` when a STARTTLS-port service is published without its implicit-TLS
+  twin — `warning` for imap/pop3, `good` for submission (587 is still mandatory-TLS in practice; gmail.com
+  publishes only `_submission`). `AUTOCONF_TARGET_CNAME` / `_LITERAL` / `_UNRESOLVABLE` (warning, RFC 2782),
+  `AUTOCONF_NONSTANDARD_PORT` (good), `AUTOCONF_SRV_SIGNED` / `_UNSIGNED` (good; RFC 6186 §6 / RFC 7817
+  certificate-identity consequence). Autodiscover: SRV, `autodiscover.<domain>` (CNAME chain containing
+  `autodiscover.outlook.com` → `AUTOCONF_M365`). Mozilla: `autoconfig.<domain>` host and the ISPDB entry
+  (`AUTOCONF_ISPDB_YES [provider]`, `AUTOCONF_ISPDB_PLAIN` warning for `socketType plain`). The
+  `AUTOCONF_NO_*` notes are `good` and only pushed when at least one mechanism exists.
+- **Rating.** No mechanism at all: `warning` (`AUTOCONF_NONE`) if the domain has MX hosts, else `good`
+  (`AUTOCONF_NO_MAIL`). Otherwise any warning issue → `warning`; SRV for a submission service *and* an
+  implicit-TLS/JMAP mailbox service → `excellent`; else `good`. A rejected or SERVFAIL first lookup returns
+  the usual error / `dohStatusProblem` shape.
+- The ISPDB fetch sends the scanned domain to Mozilla; disclosed in `tx('AUTOCONF')`. Not gated by the
+  skip-CORS checkbox (the endpoint sends `access-control-allow-origin: *`, verified 2026-10-13).
+- The HTTPS steps clients try first (`https://<domain>/autodiscover/autodiscover.xml`,
+  `/.well-known/autoconfig/mail/config-v1.1.xml`, `autoconfig.<domain>/mail/config-v1.1.xml`) are not
+  fetched — CORS and third-party hosts; the explanation says so.
 
 ### Cross-protocol coherence — `checkCoherence`, 2026-October-13-4
 Findings that only exist between checks. Inputs are the settled results of DANE, SPF, DMARC, BIMI,
@@ -701,7 +755,7 @@ Overview bars, the Fixes dot and `RECS_ALL_EXCELLENT` are unaffected.
 ### Recommendations tab details
 - `renderRecommendations(r)` reads all 14 check results from the `Promise.allSettled` result object.
 - Scored checks (with weight): DKIM 20%, SPF 15%, DMARC 15%, MTA-STS 15%, DNSSEC 10%, MX 10%, DANE 10%, TLS-RPT 3%, CAA 2%.
-- Informational checks (weight=0): PTR, BIMI, RPKI, ASPA, Security.txt, WHOIS.
+- Informational checks (weight=0): PTR, BIMI, RPKI, ASPA, IPv6, Security.txt, WHOIS, Autoconfig.
 - Tab dot color = worst rating across the 9 scored checks only (informational excluded).
 - Layout: "Cross-protocol coherence" section first (display-only, see above) → "What to fix" section (scored non-excellent) → "Informational" section (info non-excellent) → `<details>` "All checks passing" (all excellent checks, collapsed unless everything passes).
 - Each row: check name button (navigates to that tab on click) + weight badge (scored only) + rating badge + issue list from `makeIssueList()`.
@@ -872,7 +926,7 @@ Two pseudo-ratings sit outside that list and deliberately have `RATINGS.indexOf(
   or a function); `app.http` maps URLs for non-DoH fetches; `app.txt()`/`app.rr()` are shorthands;
   `app.resetScan()` clears caches and `scanStats`. `live: true` passes `fetch` through to the network.
 - `node tests/run.js` — regression tests, one per fixed bug (A1–A13, B5, B10, B11, B8, B9, C3, C9 in
-  the 2026-10-13 audit) plus D2 (DKIM wildcard control probe) and D1 (DNSSEC depth), D5 (cross-protocol coherence) and D3+D4 (MX hygiene, HELO SPF, SPF depth). Add one for every check-logic fix; they run in well under a second.
+  the 2026-10-13 audit) plus D2 (DKIM wildcard control probe) and D1 (DNSSEC depth), D5 (cross-protocol coherence), D3+D4 (MX hygiene, HELO SPF, SPF depth), D6 (autoconfig) and D8 (registrar locks). Add one for every check-logic fix; they run in well under a second.
 - `node tests/static.js` — the static checks: key parity + `d` arity across languages and
   `translations/*.js` (value drift compared by *output*), referenced-key existence, CSS classes,
   dangerous sinks, tab/panel order, version string across the three files, legacy `text:` issues,
@@ -912,6 +966,17 @@ Two pseudo-ratings sit outside that list and deliberately have `RATINGS.indexOf(
 - `cloudflare.com` — also has TLSA on all four MX hosts: DANE must be excellent (it read as warning
   under critical bug 20)
 - `apple.com` — has BIMI record; tests BIMI tab
+- Autoconfig (2026-10-13): `fastmail.com` — the textbook SRV set: `submissions`/`imaps`/`pop3s`/`jmap` found,
+  `submission`/`imap`/`pop3` explicitly declined (`.` target), Autodiscover SRV + host, autoconfig host, not
+  in the ISPDB → excellent; `posteo.de` — DNSSEC-validated SRV (`AUTOCONF_SRV_SIGNED`) and listed in the
+  ISPDB as "Posteo"; `gmail.com` — `_submission` without `_submissions` (good note), ISPDB "Google Mail";
+  `thorsheim.net` — no SRV, `autoconfig.thorsheim.net` CNAME → `autoconfig.domeneshop.no`, Autodiscover SRV
+  pointing at the same host; `microsoft.com` — `autodiscover.microsoft.com` CNAME chain → `AUTOCONF_M365`
+- WHOIS locks (2026-10-13, browser only — rdap.org 403s Node): `cloudflare.com` — all six client+server
+  locks → excellent + `WHOIS_REGISTRY_LOCK`; `bbc.co.uk` — `server*` only (Nominet) → excellent;
+  `fastmail.com` — `clientTransferProhibited` alone → good + `WHOIS_LOCK_PARTIAL`; `thorsheim.no` — no
+  status codes (Norid) → `WHOIS_LOCK_UNKNOWN`, `secureDNS.delegationSigned` true with 2 DS; `heise.de` —
+  no status and no `secureDNS` at all (no DNSSEC row)
 - `fastmail.com` — MTA-STS with a wildcard `mx: *.messagingengine.com` line; tests MX match check.
   Verified 2026-10-13: the policy is in **testing** mode (it used to be enforce) and there is no
   DANE; TLS-RPT is published, so the coherence section shows only the deliverable-rua note. In a

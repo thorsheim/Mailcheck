@@ -384,6 +384,41 @@ const LANG_ES = {
     MX_NONE_USABLE:      'Ning\u00fan servidor MX resuelve a una direcci\u00f3n \u2014 los remitentes conformes no pueden entregar correo a este dominio',
     MX_PILL_LITERAL:     'direcci\u00f3n IP',
     MX_PILL_UNRESOLVABLE: 'no resoluble',
+    PANEL_AUTOCONF:      'Autoconfiguración del cliente de correo',
+    AUTOCONF_NONE:       'Nada publicado para la autoconfiguración de clientes de correo: sin registros SRV, sin Autodiscover, sin host autoconfig y sin entrada en la ISPDB de Thunderbird — los usuarios deben escribir la configuración del servidor a mano y los clientes adivinan nombres de host',
+    AUTOCONF_NO_MAIL:    'El dominio no tiene servidores MX, así que no se espera autoconfiguración de clientes',
+    AUTOCONF_NO_SRV:     'Sin registros SRV según RFC 6186 — los clientes que los admiten recurren a adivinar nombres como imap.<domain> y smtp.<domain>',
+    AUTOCONF_NO_AUTODISCOVER: 'Sin registro SRV de Autodiscover ni host autodiscover.<domain> — Outlook aún puede encontrar https://<domain>/autodiscover/autodiscover.xml, que un navegador no puede probar',
+    AUTOCONF_NO_MOZ:     'Sin host autoconfig.<domain> ni entrada en la ISPDB — Thunderbird aún puede encontrar https://<domain>/.well-known/autoconfig/mail/config-v1.1.xml, que un navegador no puede probar',
+    AUTOCONF_SRV_SIGNED: 'Las respuestas SRV están validadas con DNSSEC — un cliente puede verificar el certificado del servidor contra el nombre de destino SRV (RFC 6186 §6, RFC 7817)',
+    AUTOCONF_SRV_UNSIGNED: 'Las respuestas SRV no están validadas con DNSSEC — un cliente que siga RFC 6186 §6 / RFC 7817 debe entonces verificar el certificado del servidor contra el propio dominio de correo, no contra el destino SRV',
+    AUTOCONF_ISPDB_NONE: 'No figura en la ISPDB de Thunderbird (autoconfig.thunderbird.net)',
+    AUTOCONF_SRV_TITLE:  'Registros de servicio SRV (RFC 6186, RFC 8314, RFC 8620)',
+    AUTOCONF_MS_TITLE:   'Microsoft Autodiscover',
+    AUTOCONF_MOZ_TITLE:  'Autoconfig de Mozilla Thunderbird',
+    AUTOCONF_ISPDB_TITLE: 'Entrada en la ISPDB de Thunderbird',
+    AUTOCONF_TH_SERVICE: 'Servicio',
+    AUTOCONF_TH_TARGET:  'Destino',
+    AUTOCONF_TH_PORT:    'Puerto',
+    AUTOCONF_TH_PRIO:    'Prioridad / peso',
+    AUTOCONF_TH_TYPE:    'Tipo',
+    AUTOCONF_TH_HOST:    'Host',
+    AUTOCONF_TH_SOCKET:  'Cifrado',
+    AUTOCONF_PILL_DECLINED: 'no ofrecido',
+    AUTOCONF_PILL_NONE:  'no publicado',
+    AUTOCONF_PILL_ERROR: 'consulta fallida',
+    AUTOCONF_ROW_SRV:    'SRV de Autodiscover',
+    AUTOCONF_ROW_HOST:   'host autodiscover',
+    AUTOCONF_ROW_MOZ_HOST: 'host autoconfig',
+    AUTOCONF_ROW_ISPDB:  'ISPDB',
+    WHOIS_REGISTRY_LOCK: 'Bloqueo de registro (server*Prohibited) — los cambios requieren verificación fuera de banda en el propio registro; la protección más fuerte disponible',
+    WHOIS_LOCK_UNKNOWN:  'El registro no publica códigos de estado EPP en RDAP, así que el estado de bloqueo no puede leerse aquí — confirma los bloqueos de transfer, delete y update con el registrador',
+    WHOIS_PENDING_TRANSFER: 'Hay una transferencia de registrador en curso (pendingTransfer) — si no la solicitaste, contacta con el registrador de inmediato',
+    WHOIS_ROW_DNSSEC:    'DNSSEC (registro)',
+    WHOIS_DNSSEC_UNSIGNED: 'sin firmar — no hay registro DS en el registro',
+    WHOIS_DNSSEC_NA:     'no publicado por el registro',
+    WHOIS_DNSSEC_REG_ONLY: 'El registro informa de que la delegación está firmada, pero no se encontró ningún DNSKEY en DNS — la cadena de confianza está rota y los resolutores validadores rechazarán el dominio',
+    WHOIS_DNSSEC_DNS_ONLY: 'Hay registros DNSKEY publicados en DNS, pero el registro informa de que la delegación no está firmada — el registro DS no se ha enviado al registrador («isla de seguridad»)',
     SPF_HELO_TITLE:      'Identidad HELO/EHLO \u2014 SPF en los servidores MX',
     SPF_HELO_NOTE:       'RFC 7208 \u00a72.3 recomienda un registro SPF para cada nombre de host que un MTA anuncia en HELO/EHLO; los servidores MX son los candidatos habituales. Informativo \u2014 no puntuado.',
     SPF_HELO_PRESENT:    'registro SPF',
@@ -525,6 +560,23 @@ const LANG_ES = {
     SPF_SYNTAX:            term => 'T\u00e9rmino no analizable "' + term + '" \u2014 permerror: los receptores tratan todo el registro como inv\u00e1lido',
     SPF_DUPLICATE_MODIFIER: m => 'El modificador ' + m + '= aparece m\u00e1s de una vez \u2014 permerror (RFC 7208 \u00a76)',
     SPF_RECORD_LONG:       n => 'El registro tiene ' + n + ' bytes \u2014 por encima de ~450 ya no cabe en una respuesta UDP de 512 bytes y puede ser truncado por resolvers antiguos (RFC 7208 \u00a73.4)',
+    AUTOCONF_SUMMARY:    (srv, mechs) => srv + ' servicio(s) SRV publicado(s), ' + mechs + ' mecanismo(s) de autoconfiguración encontrado(s)',
+    AUTOCONF_SRV_FOUND:  n => n + ' registro(s) de servicio SRV publicado(s) (RFC 6186) — los clientes que los admiten toman nombres de servidor y puertos del DNS',
+    AUTOCONF_DECLINED:   svc => '_' + svc + '._tcp declara el servicio como no ofrecido (destino «.», RFC 2782) — los clientes lo omiten en lugar de sondear',
+    AUTOCONF_PREFER_IMPLICIT: (plain, tls) => 'Solo se publica _' + plain + '._tcp — RFC 8314 §3 recomienda TLS implícito, así que publica también _' + tls + '._tcp',
+    AUTOCONF_TARGET_UNRESOLVABLE: (svc, target) => 'El destino SRV ' + target + ' de _' + svc + '._tcp no tiene registro A/AAAA — los clientes no pueden conectarse',
+    AUTOCONF_TARGET_CNAME: (svc, target) => 'El destino SRV ' + target + ' de _' + svc + '._tcp es un CNAME — RFC 2782 prohíbe un alias como destino',
+    AUTOCONF_TARGET_LITERAL: (svc, target) => 'El destino SRV ' + target + ' de _' + svc + '._tcp es una dirección IP — RFC 2782 exige un nombre de host',
+    AUTOCONF_NONSTANDARD_PORT: (svc, port, std) => '_' + svc + '._tcp usa el puerto ' + port + ' en lugar del estándar ' + std + ' — correcto para clientes con SRV, pero los que adivinan no lo encontrarán',
+    AUTOCONF_AUTODISCOVER_SRV: (target, port) => 'SRV de Autodiscover: ' + target + ':' + port + ' — Outlook encuentra el punto de Autodiscover de Exchange / Microsoft 365 mediante DNS',
+    AUTOCONF_AUTODISCOVER_HOST: (name, cname) => name + ' resuelve' + (cname ? ' (CNAME → ' + cname + ')' : '') + ' — Outlook prueba https://' + name + '/autodiscover/autodiscover.xml',
+    AUTOCONF_M365:       name => name + ' apunta a Microsoft 365 (autodiscover.outlook.com)',
+    AUTOCONF_MOZ_HOST:   (name, cname) => name + ' resuelve' + (cname ? ' (CNAME → ' + cname + ')' : '') + ' — Thunderbird obtiene /mail/config-v1.1.xml de ahí (no se descarga aquí)',
+    AUTOCONF_ISPDB_YES:  provider => 'Figura en la ISPDB de Thunderbird como «' + provider + '» — Thunderbird y K-9 Mail configuran cuentas sin ningún registro DNS',
+    AUTOCONF_ISPDB_PLAIN: (type, host) => 'La entrada de la ISPDB configura ' + type + ' en ' + host + ' sin cifrado (socketType plain)',
+    AUTOCONF_ISPDB_HTTP: s => 'La consulta a la ISPDB devolvió HTTP ' + s,
+    WHOIS_LOCK_PARTIAL:  missing => 'Bloqueo parcial — ' + missing + ' no está activado; activa los tres (transfer, delete, update) en el registrador',
+    WHOIS_DNSSEC_SIGNED: n => 'firmada — ' + n + ' registro(s) DS en el registro',
     SPF_INCLUDE_NO_RECORD: t => 'include:' + t + ' \u2014 el destino no tiene registro SPF \u2014 permerror (RFC 7208 \u00a75.2)',
     SPF_INCLUDE_MULTI:     t => 'include:' + t + ' \u2014 el destino publica varios registros SPF \u2014 permerror',
     SPF_MX_TOO_MANY:       (t, n) => 'mx:' + t + ' tiene ' + n + ' servidores MX \u2014 m\u00e1s de 10 es un permerror (RFC 7208 \u00a74.6.4)',
@@ -728,6 +780,7 @@ const LANG_ES = {
       'Usa <a href="https://securitytxt.org/">securitytxt.org</a> para generar y firmar tu archivo.',
     WHOIS:
       '<b>WHOIS / RDAP</b> proporciona datos de registro de dominio mediante el Protocolo de Acceso a Datos de Registro (<a href="https://www.rfc-editor.org/rfc/rfc7480">RFC 7480</a>).<br><br>' +
+      '<b>Bloqueos:</b> <code>clientTransferProhibited</code>, <code>clientDeleteProhibited</code> y <code>clientUpdateProhibited</code> los establece el registrador; las variantes <code>server*</code> son un bloqueo de registro, en el que cualquier cambio requiere verificación fuera de banda. <code>pendingTransfer</code> significa que hay una transferencia en curso. Algunos registros (p. ej. .no y .de) no publican ningún código de estado. La fila <b>DNSSEC (registro)</b> muestra si el registro tiene registros DS para la delegación, comparado con lo que dice el DNS.<br><br>' +
       'Los datos se obtienen del servidor RDAP autoritativo para el TLD del dominio a través de <code>rdap.org</code>.<br><br>' +
       '<b>Campos principales:</b> <b>Registrador</b> \u2014 quién gestiona el registro. ' +
       '<b>Vence</b> \u2014 cuándo debe renovarse el registro. ' +
@@ -775,6 +828,13 @@ const LANG_ES = {
       'Un destino dispuesto a aceptar informes de cualquiera puede publicar un comod\u00edn en <code>*._report._dmarc.</code><br><br>' +
       '<b>Divisi\u00f3n de los informes:</b> los informes agregados (XML) son RFC 9990; los informes de fallo por mensaje son RFC 9991, que adem\u00e1s actualiza el formato ARF de ' +
       '<a href="https://www.rfc-editor.org/rfc/rfc6591">RFC 6591</a> con un campo <code>Identity-Alignment</code> y hace obligatorio el selector DKIM en los informes.',
+    AUTOCONF:
+      '<b>La autoconfiguración del cliente de correo</b> es la forma en que un programa de correo convierte una dirección como <code>usuario@example.com</code> en nombres de servidor, puertos y ajustes de cifrado sin que el usuario los escriba. Tres mecanismos pueden verse desde el DNS y uno desde una base de datos pública:<br><br>' +
+      '<b>Registros SRV</b> (<a href="https://www.rfc-editor.org/rfc/rfc6186">RFC 6186</a>): <code>_submission._tcp</code>, <code>_imap._tcp</code>, <code>_imaps._tcp</code>, <code>_pop3._tcp</code> y <code>_pop3s._tcp</code>, más <code>_submissions._tcp</code> de <a href="https://www.rfc-editor.org/rfc/rfc8314">RFC 8314</a> y <code>_jmap._tcp</code> de <a href="https://www.rfc-editor.org/rfc/rfc8620">RFC 8620</a>. Un destino «<code>.</code>» indica explícitamente que el servicio no se ofrece (<a href="https://www.rfc-editor.org/rfc/rfc2782">RFC 2782</a>). RFC 8314 recomienda TLS implícito (<code>imaps</code> 993, <code>pop3s</code> 995, <code>submissions</code> 465) frente a STARTTLS en los puertos de texto claro. Si la respuesta SRV no está validada con DNSSEC, un cliente que siga RFC 6186 §6 / <a href="https://www.rfc-editor.org/rfc/rfc7817">RFC 7817</a> debe comprobar el certificado del servidor contra el dominio de correo, no contra el destino SRV.<br><br>' +
+      '<b>Microsoft Autodiscover</b>: Outlook consulta el SRV <code>_autodiscover._tcp.<domain></code> y <code>autodiscover.<domain></code> (un CNAME a <code>autodiscover.outlook.com</code> significa Microsoft 365), tras probar primero <code>https://<domain>/autodiscover/autodiscover.xml</code> directamente — ese paso HTTPS no puede probarse desde un navegador.<br><br>' +
+      '<b>Autoconfig de Mozilla</b>: Thunderbird obtiene <code>config-v1.1.xml</code> de <code>autoconfig.<domain></code> o de <code>https://<domain>/.well-known/autoconfig/mail/</code>, y consulta la ISPDB central en <code>autoconfig.thunderbird.net</code>, que esta pestaña consulta directamente (envía cabeceras CORS correctas, así que el nombre del dominio analizado se envía a Mozilla). Apple Mail e iOS no tienen mecanismo DNS; adivinan y usan perfiles de configuración.<br><br>' +
+      '<b>Esta comprobación</b> consulta los siete nombres SRV, el SRV y el host de Autodiscover, el host autoconfig y la ISPDB, resuelve cada destino SRV y señala los servicios solo en texto claro, los destinos no resolubles o CNAME y los puertos no estándar. ' +
+      '<b>No</b> afecta a la puntuación de seguridad general — solo informativa.',
     SELECTOR_HELP:
       '<b>\u00bfQu\u00e9 es un selector DKIM?</b> Un selector es una etiqueta corta (p. ej. <code>google</code>) que indica a los servidores receptores qu\u00e9 clave p\u00fablica usar para verificar la firma DKIM de un correo. ' +
       'Un dominio puede tener varios selectores \u2014 uno por proveedor de correo o para la rotaci\u00f3n de claves.<br><br>' +

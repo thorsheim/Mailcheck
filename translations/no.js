@@ -393,6 +393,41 @@ const LANG_NO = {
     MX_NONE_USABLE:      'Ingen MX-vert peker til en adresse \u2014 standardtro avsendere kan ikke levere e-post til dette domenet',
     MX_PILL_LITERAL:     'IP-adresse',
     MX_PILL_UNRESOLVABLE: 'kan ikke sl\u00e5s opp',
+    PANEL_AUTOCONF:      'Autokonfigurasjon av e-postklient',
+    AUTOCONF_NONE:       'Ingenting publisert for autokonfigurasjon av e-postklienter: ingen SRV-poster, ingen Autodiscover, ingen autoconfig-vert og ingen oppføring i Thunderbirds ISPDB — brukere må skrive inn serverinnstillinger manuelt, og klienter gjetter vertsnavn',
+    AUTOCONF_NO_MAIL:    'Domenet har ingen MX-verter, så ingen autokonfigurasjon av klienter er forventet',
+    AUTOCONF_NO_SRV:     'Ingen SRV-poster etter RFC 6186 — klienter som støtter dem faller tilbake til å gjette navn som imap.<domain> og smtp.<domain>',
+    AUTOCONF_NO_AUTODISCOVER: 'Ingen Autodiscover-SRV-post og ingen autodiscover.<domain>-vert — Outlook kan fortsatt finne https://<domain>/autodiscover/autodiscover.xml, som en nettleser ikke kan teste',
+    AUTOCONF_NO_MOZ:     'Ingen autoconfig.<domain>-vert og ingen ISPDB-oppføring — Thunderbird kan fortsatt finne https://<domain>/.well-known/autoconfig/mail/config-v1.1.xml, som en nettleser ikke kan teste',
+    AUTOCONF_SRV_SIGNED: 'SRV-svarene er DNSSEC-validert — en klient kan verifisere serversertifikatet mot SRV-målnavnet (RFC 6186 §6, RFC 7817)',
+    AUTOCONF_SRV_UNSIGNED: 'SRV-svarene er ikke DNSSEC-validert — en klient som følger RFC 6186 §6 / RFC 7817 må da verifisere serversertifikatet mot selve e-postdomenet, ikke SRV-målet',
+    AUTOCONF_ISPDB_NONE: 'Ikke oppført i Thunderbirds ISPDB (autoconfig.thunderbird.net)',
+    AUTOCONF_SRV_TITLE:  'SRV-tjenesteposter (RFC 6186, RFC 8314, RFC 8620)',
+    AUTOCONF_MS_TITLE:   'Microsoft Autodiscover',
+    AUTOCONF_MOZ_TITLE:  'Mozilla Thunderbird autoconfig',
+    AUTOCONF_ISPDB_TITLE: 'Oppføring i Thunderbirds ISPDB',
+    AUTOCONF_TH_SERVICE: 'Tjeneste',
+    AUTOCONF_TH_TARGET:  'Mål',
+    AUTOCONF_TH_PORT:    'Port',
+    AUTOCONF_TH_PRIO:    'Prioritet / vekt',
+    AUTOCONF_TH_TYPE:    'Type',
+    AUTOCONF_TH_HOST:    'Vert',
+    AUTOCONF_TH_SOCKET:  'Kryptering',
+    AUTOCONF_PILL_DECLINED: 'tilbys ikke',
+    AUTOCONF_PILL_NONE:  'ikke publisert',
+    AUTOCONF_PILL_ERROR: 'oppslag mislyktes',
+    AUTOCONF_ROW_SRV:    'Autodiscover-SRV',
+    AUTOCONF_ROW_HOST:   'autodiscover-vert',
+    AUTOCONF_ROW_MOZ_HOST: 'autoconfig-vert',
+    AUTOCONF_ROW_ISPDB:  'ISPDB',
+    WHOIS_REGISTRY_LOCK: 'Registerlås (server*Prohibited) — endringer krever verifisering utenom systemet hos selve registeret; den sterkeste beskyttelsen som finnes',
+    WHOIS_LOCK_UNKNOWN:  'Registeret publiserer ingen EPP-statuskoder i RDAP, så låsestatus kan ikke leses her — bekreft transfer-, delete- og update-lås hos registraren',
+    WHOIS_PENDING_TRANSFER: 'En registrarflytting pågår (pendingTransfer) — kontakt registraren umiddelbart hvis du ikke har bedt om den',
+    WHOIS_ROW_DNSSEC:    'DNSSEC (register)',
+    WHOIS_DNSSEC_UNSIGNED: 'usignert — ingen DS-post hos registeret',
+    WHOIS_DNSSEC_NA:     'ikke publisert av registeret',
+    WHOIS_DNSSEC_REG_ONLY: 'Registeret rapporterer delegeringen som signert, men ingen DNSKEY ble funnet i DNS — tillitskjeden er brutt, og validerende resolvere vil avvise domenet',
+    WHOIS_DNSSEC_DNS_ONLY: 'DNSKEY-poster er publisert i DNS, men registeret rapporterer delegeringen som usignert — DS-posten er ikke sendt inn til registraren («island of security»)',
     SPF_HELO_TITLE:      'HELO/EHLO-identitet \u2014 SPF p\u00e5 MX-vertene',
     SPF_HELO_NOTE:       'RFC 7208 \u00a72.3 anbefaler en SPF-post for hvert vertsnavn en MTA oppgir i HELO/EHLO; MX-vertene er de vanlige kandidatene. Informasjon \u2014 ikke poengsatt.',
     SPF_HELO_PRESENT:    'SPF-post',
@@ -534,6 +569,23 @@ const LANG_NO = {
     SPF_SYNTAX:            term => 'Uleselig ledd \u00ab' + term + '\u00bb \u2014 permerror: mottakere behandler hele posten som ugyldig',
     SPF_DUPLICATE_MODIFIER: m => 'Modifikatoren ' + m + '= forekommer mer enn \u00e9n gang \u2014 permerror (RFC 7208 \u00a76)',
     SPF_RECORD_LONG:       n => 'Posten er ' + n + ' byte \u2014 over ca. 450 f\u00e5r den ikke plass i et UDP-svar p\u00e5 512 byte og kan bli avkortet av gamle resolvere (RFC 7208 \u00a73.4)',
+    AUTOCONF_SUMMARY:    (srv, mechs) => srv + ' SRV-tjeneste(r) publisert, ' + mechs + ' autokonfigurasjonsmekanisme(r) funnet',
+    AUTOCONF_SRV_FOUND:  n => n + ' SRV-tjenestepost(er) publisert (RFC 6186) — klienter som støtter dem henter servernavn og porter fra DNS',
+    AUTOCONF_DECLINED:   svc => '_' + svc + '._tcp erklærer tjenesten som ikke tilbudt (mål «.», RFC 2782) — klienter hopper over den i stedet for å prøve',
+    AUTOCONF_PREFER_IMPLICIT: (plain, tls) => 'Bare _' + plain + '._tcp er publisert — RFC 8314 §3 anbefaler implisitt TLS, så publiser også _' + tls + '._tcp',
+    AUTOCONF_TARGET_UNRESOLVABLE: (svc, target) => 'SRV-målet ' + target + ' for _' + svc + '._tcp har ingen A/AAAA-post — klienter kan ikke koble til',
+    AUTOCONF_TARGET_CNAME: (svc, target) => 'SRV-målet ' + target + ' for _' + svc + '._tcp er et CNAME — RFC 2782 forbyr alias som mål',
+    AUTOCONF_TARGET_LITERAL: (svc, target) => 'SRV-målet ' + target + ' for _' + svc + '._tcp er en IP-adresse — RFC 2782 krever et vertsnavn',
+    AUTOCONF_NONSTANDARD_PORT: (svc, port, std) => '_' + svc + '._tcp bruker port ' + port + ' i stedet for standard ' + std + ' — greit for SRV-klienter, men klienter som gjetter finner den ikke',
+    AUTOCONF_AUTODISCOVER_SRV: (target, port) => 'Autodiscover-SRV: ' + target + ':' + port + ' — Outlook finner Autodiscover-endepunktet for Exchange / Microsoft 365 via DNS',
+    AUTOCONF_AUTODISCOVER_HOST: (name, cname) => name + ' løses opp' + (cname ? ' (CNAME → ' + cname + ')' : '') + ' — Outlook prøver https://' + name + '/autodiscover/autodiscover.xml',
+    AUTOCONF_M365:       name => name + ' peker på Microsoft 365 (autodiscover.outlook.com)',
+    AUTOCONF_MOZ_HOST:   (name, cname) => name + ' løses opp' + (cname ? ' (CNAME → ' + cname + ')' : '') + ' — Thunderbird henter /mail/config-v1.1.xml derfra (hentes ikke her)',
+    AUTOCONF_ISPDB_YES:  provider => 'Oppført i Thunderbirds ISPDB som «' + provider + '» — Thunderbird og K-9 Mail setter opp kontoer uten noen DNS-poster',
+    AUTOCONF_ISPDB_PLAIN: (type, host) => 'ISPDB-oppføringen setter opp ' + type + ' på ' + host + ' uten kryptering (socketType plain)',
+    AUTOCONF_ISPDB_HTTP: s => 'ISPDB-oppslaget svarte med HTTP ' + s,
+    WHOIS_LOCK_PARTIAL:  missing => 'Delvis lås — ' + missing + ' er ikke satt; aktiver alle tre (transfer, delete, update) hos registraren',
+    WHOIS_DNSSEC_SIGNED: n => 'signert — ' + n + ' DS-post(er) hos registeret',
     SPF_INCLUDE_NO_RECORD: t => 'include:' + t + ' \u2014 m\u00e5let har ingen SPF-post \u2014 permerror (RFC 7208 \u00a75.2)',
     SPF_INCLUDE_MULTI:     t => 'include:' + t + ' \u2014 m\u00e5let publiserer flere SPF-poster \u2014 permerror',
     SPF_MX_TOO_MANY:       (t, n) => 'mx:' + t + ' har ' + n + ' MX-verter \u2014 mer enn 10 er en permerror (RFC 7208 \u00a74.6.4)',
@@ -756,6 +808,7 @@ const LANG_NO = {
       'Bruk <a href="https://securitytxt.org/">securitytxt.org</a> for \u00e5 generere og signere filen din.',
     WHOIS:
       '<b>WHOIS / RDAP</b> gir domenregistreringsdata via Registration Data Access Protocol (<a href="https://www.rfc-editor.org/rfc/rfc7480">RFC 7480</a>).<br><br>' +
+      '<b>Låser:</b> <code>clientTransferProhibited</code>, <code>clientDeleteProhibited</code> og <code>clientUpdateProhibited</code> settes av registraren; <code>server*</code>-variantene er en registerlås, der enhver endring krever verifisering utenom systemet. <code>pendingTransfer</code> betyr at en flytting pågår. Noen registre (f.eks. .no og .de) publiserer ingen statuskoder. Raden <b>DNSSEC (register)</b> viser om registeret har DS-poster for delegeringen, sammenholdt med det DNS sier.<br><br>' +
       'Data hentes fra den autoritative RDAP-serveren for domenets TLD via <code>rdap.org</code>.<br><br>' +
       '<b>Nykkelfelter:</b> <b>Registrar</b> \u2014 hvem som administrerer registreringen. ' +
       '<b>Utl\u00f8per</b> \u2014 n\u00e5r registreringen m\u00e5 fornyes. ' +
@@ -800,6 +853,13 @@ const LANG_NO = {
       '<b>Ingen bindende krav:</b> <b>Sverige</b> \u2014 PTS anbefaler IPv6 og foreslo i 2022 at myndigheter, kommuner og regioner skulle pålegges å støtte det for nettsider, e-post og DNS, men ingen forskrift er vedtatt. <b>Danmark</b> \u2014 IPv6 inngår ikke i de tekniske minimumskravene for statlige myndigheter.<br><br>' +
       'Denne sjekken spør etter AAAA-poster for selve domenet, alle MX-verter og alle NS-verter. ' +
       'Det påvirker <b>ikke</b> den samlede sikkerhetsscoren \u2014 kun informativt.',
+    AUTOCONF:
+      '<b>Autokonfigurasjon av e-postklient</b> er måten et e-postprogram gjør en adresse som <code>bruker@example.com</code> om til servernavn, porter og krypteringsinnstillinger på, uten at brukeren skriver dem inn. Tre mekanismer kan ses fra DNS og én fra en offentlig database:<br><br>' +
+      '<b>SRV-poster</b> (<a href="https://www.rfc-editor.org/rfc/rfc6186">RFC 6186</a>): <code>_submission._tcp</code>, <code>_imap._tcp</code>, <code>_imaps._tcp</code>, <code>_pop3._tcp</code> og <code>_pop3s._tcp</code>, pluss <code>_submissions._tcp</code> fra <a href="https://www.rfc-editor.org/rfc/rfc8314">RFC 8314</a> og <code>_jmap._tcp</code> fra <a href="https://www.rfc-editor.org/rfc/rfc8620">RFC 8620</a>. Et mål på «<code>.</code>» sier uttrykkelig at tjenesten ikke tilbys (<a href="https://www.rfc-editor.org/rfc/rfc2782">RFC 2782</a>). RFC 8314 anbefaler implisitt TLS (<code>imaps</code> 993, <code>pop3s</code> 995, <code>submissions</code> 465) framfor STARTTLS på klartekstportene. Hvis SRV-svaret ikke er DNSSEC-validert, må en klient som følger RFC 6186 §6 / <a href="https://www.rfc-editor.org/rfc/rfc7817">RFC 7817</a> sjekke serversertifikatet mot e-postdomenet, ikke SRV-målet.<br><br>' +
+      '<b>Microsoft Autodiscover</b>: Outlook slår opp <code>_autodiscover._tcp.<domain></code> SRV og <code>autodiscover.<domain></code> (et CNAME til <code>autodiscover.outlook.com</code> betyr Microsoft 365), etter først å ha prøvd <code>https://<domain>/autodiscover/autodiscover.xml</code> direkte — det HTTPS-steget kan ikke testes fra en nettleser.<br><br>' +
+      '<b>Mozilla autoconfig</b>: Thunderbird henter <code>config-v1.1.xml</code> fra <code>autoconfig.<domain></code> eller <code>https://<domain>/.well-known/autoconfig/mail/</code>, og spør den sentrale ISPDB-en på <code>autoconfig.thunderbird.net</code>, som denne fanen slår opp direkte (den sender korrekte CORS-hoder, så domenenavnet som sjekkes sendes til Mozilla). Apple Mail og iOS har ingen DNS-mekanisme; de gjetter og bruker konfigurasjonsprofiler.<br><br>' +
+      '<b>Denne sjekken</b> slår opp de sju SRV-navnene, Autodiscover-SRV og -verten, autoconfig-verten og ISPDB-en, løser opp hvert SRV-mål og flagger tjenester som bare finnes i klartekst, mål som ikke kan løses opp eller er CNAME, og ikke-standard porter. ' +
+      'Den påvirker <b>ikke</b> den samlede sikkerhetspoengsummen — kun informativ.',
     SELECTOR_HELP:
       '<b>Hva er en DKIM-selektor?</b> En selektor er en kort etikett (f.eks. <code>google</code>) som forteller mottakende e-postservere hvilken offentlig n\u00f8kkel de skal bruke n\u00e5r de bekrefter DKIM-signaturen p\u00e5 en e-post. ' +
       'Et domene kan ha flere selektorer \u2014 \u00e9n per e-postleverand\u00f8r eller for n\u00f8kkelrotasjon.<br><br>' +

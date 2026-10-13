@@ -9,8 +9,8 @@ const domains = process.argv.slice(2).length ? process.argv.slice(2) : ['cloudfl
     const app = load({ live: true, console });
     app.currentDomain = domain;
     const t0 = Date.now();
-    const names = ['dnssec','mx','ptr','dane','spf','dkim','dmarc','bimi','tlsrpt','mtasts','caa','rpki','ipv6','securityTxt','whois'];
-    const fns = [app.checkDNSSEC, app.checkMX, app.checkPTR, app.checkDANE, app.checkSPF, () => app.checkDKIM(domain, []), app.checkDMARC, app.checkBIMI, app.checkTLSRPT, app.checkMTASTS, app.checkCAA, app.checkRPKI, app.checkIPv6, app.checkSecurityTxt, app.checkWHOIS];
+    const names = ['dnssec','mx','ptr','dane','spf','dkim','dmarc','bimi','tlsrpt','mtasts','caa','rpki','ipv6','securityTxt','whois','autoconf'];
+    const fns = [app.checkDNSSEC, app.checkMX, app.checkPTR, app.checkDANE, app.checkSPF, () => app.checkDKIM(domain, []), app.checkDMARC, app.checkBIMI, app.checkTLSRPT, app.checkMTASTS, app.checkCAA, app.checkRPKI, app.checkIPv6, app.checkSecurityTxt, app.checkWHOIS, app.checkAutoconfig];
     const settled = await Promise.allSettled(fns.map(f => f(domain)));
     const r = {};
     names.forEach((n, i) => { r[n] = settled[i]; });
