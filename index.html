@@ -777,8 +777,14 @@
     Also see <a href="https://passwordscon.org" target="_blank" rel="noopener noreferrer">passwordscon.org</a>.
     <br>
     <details id="changelog">
-      <summary>Version 2026-October-13-8 &mdash; click for changelog</summary>
+      <summary>Version 2026-October-13-9 &mdash; click for changelog</summary>
       <div id="changelog-content">
+        <div class="cl-entry">
+          <span class="cl-version">2026-October-13-9</span>
+          <ul class="cl-changes">
+            <li><b>Layout.</b> CAA tab: host names in the per-host CAA table render as inline code instead of full-width record boxes.</li>
+          </ul>
+        </div>
         <div class="cl-entry">
           <span class="cl-version">2026-October-13-8</span>
           <ul class="cl-changes">
@@ -9636,7 +9642,7 @@ function renderCAA(result) {
             table.appendChild(head);
             for (const h of tlsHosts) {
               const tr = document.createElement('tr');
-              const hc = document.createElement('td'); hc.appendChild(el('code', 'mono', h.host)); tr.appendChild(hc);
+              const hc = document.createElement('td'); hc.appendChild(el('code', null, h.host)); tr.appendChild(hc);
               tr.appendChild(el('td', null, h.role === 'mx' ? 'MX' : 'MTA-STS'));
               const sc = document.createElement('td');
               if (h.status === 'restricted') sc.appendChild(el('span', 'badge badge-good', ts('CAA_HOST_RESTRICTED')));
